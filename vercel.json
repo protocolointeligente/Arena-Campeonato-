@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/arena-campeonatos-v2-intervencao-19.html"
+    }
+  ]
+}
