@@ -15,6 +15,8 @@ const firebaseConfig = `const FIREBASE_CONFIG = {
 };`;
 
 let output = html.replace(/const FIREBASE_CONFIG = \{[\s\S]*?\n\};/, firebaseConfig);
+output = output.replace(/<link rel="manifest" href="[^"]*">/g, '<link rel="manifest" href="/manifest.webmanifest">');
+output = output.replace(/<link rel="icon"[^>]*>/g, '<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">');
 output = output.replace(
   'return{nome:x.nome||\'Campeonato\',formato:x.formato||\'liga\',status:x.status||\'rascunho\',updated:Date.now(),data:JSON.stringify(x)};',
   'return{ownerUid:obj.ownerUid||\'\',nome:x.nome||\'Campeonato\',formato:x.formato||\'liga\',status:x.status||\'rascunho\',updated:Date.now(),data:JSON.stringify(x)};'

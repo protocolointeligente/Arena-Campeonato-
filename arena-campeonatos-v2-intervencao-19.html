@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ARENA 2.0 — Gerenciador de Campeonatos</title>
 <meta name="theme-color" id="themeColorMeta" content="#0a1410">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1046,15 +1048,15 @@ ${d.formato==='mata'||d.formato==='grupos'?`<label class="fld"><span>Disputa de 
 ${brandingConfigHTML()}<hr class="sep"><h4 style="font-size:18px;margin-bottom:12px">Suspensões</h4><label class="fld"><span>Amarelos para suspensão</span><input type="number" min="0" value="${d.cfg.yellowLimit||3}" onchange="state.cfg.yellowLimit=Math.max(0,+this.value||0);persist();renderManage()"><div class="hint">Regra de suspensão individual. É independente da pontuação disciplinar da equipe.</div></label>
 ${opsConfigHTML()}<hr class="sep"><h4 style="font-size:18px;margin-bottom:10px">Inscrições</h4><div class="banner"><code>${esc(registrationLinkFor(d.id))}</code><button class="btn primary sm" onclick="copyRegistrationLink('${d.id}')">Copiar link de inscrição</button></div><hr class="sep"><h4 style="font-size:18px;margin-bottom:10px">Compartilhar &amp; dados</h4><div class="banner" style="margin-top:0"><code>${esc(shareLinkFor(d.id))}</code><button class="btn primary sm" onclick="copyShareId('${d.id}')">Copiar link</button></div><div class="row"><button class="btn ghost sm" onclick="exportPDF()">⬇ PDF</button><button class="btn ghost sm" onclick="exportJSON()">⬇ JSON</button><button class="btn ghost sm" onclick="clearResults()">↺ Zerar resultados</button><button class="btn ghost sm danger" onclick="delT('${d.id}')">🗑 Excluir</button></div></div>`;}
 function criteriaEditor(d){
-  const order=(d.cfg.criterios&&d.cfg.criterios.length?d.cfg.criterios:['P','V','SG','GP']).slice();
+  const order=(d.cfg.criterios&&d.cfg.criterios.length?d.cfg.criterios:['P','V','SG','GP','DISC']).slice();
   const tail=order.filter(c=>c!=='P');
   const pool=['V','SG','GP','GC','CD','DISC'].filter(c=>!order.includes(c));
   const fixed=`<div class="critrow fixed"><span class="cnum">1</span><span class="cname">Pontos</span><span class="dim" style="font-size:11px">principal</span></div>`;
-  const rows=tail.map((c,i)=>`<div class="critrow"><span class="cnum">${i+2}</span><span class="cname">${CRIT_LABEL[c]}</span><span class="cbtns"><button class="lnk" onclick="critMove(${i},-1)" ${i===0?'disabled':''}>&#9650;</button><button class="lnk" onclick="critMove(${i},1)" ${i===tail.length-1?'disabled':''}>&#9660;</button><button class="lnk danger" onclick="critRemove(${i})">&#10005;</button></span></div>`).join('');
+  const rows=tail.map((c,i)=>`<div class="critrow"><span class="cnum">${i+2}</span><span class="cname">${CRIT_LABEL[c]}${c==='DISC'?'<small class="dim" style="display:block;font-size:11px">0 é melhor que -1</small>':''}</span><span class="cbtns"><button class="lnk" title="Aumentar importância" aria-label="Aumentar importância" onclick="critMove(${i},-1)" ${i===0?'disabled':''}>↑</button><button class="lnk" title="Reduzir importância" aria-label="Reduzir importância" onclick="critMove(${i},1)" ${i===tail.length-1?'disabled':''}>↓</button><button class="lnk danger" title="Remover critério" aria-label="Remover critério" onclick="critRemove(${i})">×</button></span></div>`).join('');
   const add=pool.length?`<div class="row" style="margin-top:8px;align-items:center"><select id="critAddSel" style="flex:1">${pool.map(c=>`<option value="${c}">${CRIT_LABEL[c]}</option>`).join('')}</select><button class="btn ghost sm" onclick="critAdd()">+ Incluir</button></div>`:'';
-  return `<div class="critlist">${fixed}${rows}</div>${add}`;
+  return `<div class="banner" style="margin-bottom:10px"><b>Como funciona:</b> o critério no topo tem maior importância. Pontos é fixo em primeiro; use ↑ e ↓ para ordenar os demais. Selecione <b>Disciplina (fair-play)</b> para usar cartões como desempate.</div><div class="critlist">${fixed}${rows}</div>${add}`;
 }
-function critTail(){const o=(state.cfg.criterios||['P','V','SG','GP']).slice();return o.filter(c=>c!=='P');}
+function critTail(){const o=(state.cfg.criterios||['P','V','SG','GP','DISC']).slice();return o.filter(c=>c!=='P');}
 function critCommit(tail){state.cfg.criterios=['P'].concat(tail);persist();renderManage();}
 function critMove(i,dir){const t=critTail();const j=i+dir;if(j<0||j>=t.length)return;[t[i],t[j]]=[t[j],t[i]];critCommit(t);}
 function critRemove(i){const t=critTail();t.splice(i,1);critCommit(t);}

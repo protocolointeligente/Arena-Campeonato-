@@ -1,0 +1,14 @@
+{
+  "name": "ARENA Campeonatos",
+  "short_name": "ARENA",
+  "description": "Gestão e organização de competições esportivas",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#169c4b",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
