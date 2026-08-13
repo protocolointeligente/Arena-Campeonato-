@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prepare-legacy.mjs",
     "preview": "vite preview",
     "verify": "node scripts/verify-routes.mjs"
   },
