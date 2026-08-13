@@ -365,7 +365,7 @@ async function doLogin(){
   const email=$('#au_email').value.trim(),pw=$('#au_pw').value;
   try{await fbAuth.signInWithEmailAndPassword(email,pw);}catch(e){toast(authErr(e));}
 }
-async function doLogout(){try{await fbAuth.signOut();}catch(e){}go('home');}
+async function doLogout(){try{await fbAuth.signOut();}catch(e){}authMode='login';renderAuth();}
 function authErr(e){const c=(e&&e.code)||'';if(c.includes('email-already'))return'E-mail já cadastrado — faça login.';if(c.includes('wrong-password')||c.includes('invalid-cred'))return'E-mail ou senha incorretos.';if(c.includes('user-not-found'))return'Conta não encontrada.';if(c.includes('weak-password'))return'Senha muito fraca (mín. 6).';return(e&&e.message)||'Erro de autenticação.';}
 let authMode='login';
 function renderAuth(){
@@ -1301,7 +1301,8 @@ function boot(){
   const params=new URLSearchParams(location.search);
   const ins=params.get('inscrever');if(ins){enterRegistration(ins);return;}
   const ver=params.get('ver');if(ver){enterViewer(ver);return;}
-   fbAuth.onAuthStateChanged(async u=>{DEMO_MODE=false;currentUser=u;if(!u){billingProfile=null;platformAdminProfile=null;renderLandingPage();}else{await Promise.all([loadBilling(),loadPlatformAdmin()]);renderHome();}renderHeaderActions();});
+   fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+   fbAuth.onAuthStateChanged(async u=>{DEMO_MODE=false;currentUser=u;if(!u){billingProfile=null;platformAdminProfile=null;authMode='login';renderAuth();}else{await Promise.all([loadBilling(),loadPlatformAdmin()]);renderHome();}renderHeaderActions();});
 }
 boot();
 </script>
