@@ -217,7 +217,8 @@ textarea{resize:vertical;min-height:130px;font-family:var(--body)}
 
 /* ARENA 2.0 — INTERVENÇÃO 6: DASHBOARD / NAVEGAÇÃO */
 .manage-shell{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;align-items:start;margin-top:16px}
-.side-nav{position:sticky;top:76px;background:rgba(19,36,28,.94);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:var(--sh)}
+ .side-nav{position:sticky;top:76px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:var(--sh)}
+ html[data-theme="light"] .side-nav{background:rgba(255,255,255,.94)}
 .side-nav .nav-section{font:600 11px var(--cond);letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);padding:10px 10px 5px}
 .side-nav button{width:100%;border:0;background:transparent;color:var(--muted);text-align:left;padding:10px 11px;border-radius:9px;font:600 14px var(--body);cursor:pointer;display:flex;align-items:center;gap:9px}
 .side-nav button:hover{background:var(--panel2);color:var(--txt)}.side-nav button.active{background:var(--grass-glow);color:var(--grass)}
@@ -745,7 +746,7 @@ function renderLandingPage(){
   </div>`;
 }
 async function renderHome(){
-  state=null;renderHeaderActions();
+  state=null;resetArenaTheme();applyAppTheme();renderHeaderActions();
   $('#app').innerHTML=`<div class="hero"><h1>A gestão esportiva<br>nunca foi tão <em>fácil</em></h1><p>Sistema de organização e gestão de competições esportivas</p></div>
     <div id="usagePlan">${loadingHTML('Carregando seu plano...')}</div>
     <div class="row" style="justify-content:center;margin-bottom:30px">
@@ -783,7 +784,8 @@ function copyRegistrationLink(id){const l=registrationLinkFor(id);navigator.clip
    Identidade visual + patrocinadores + central de publicação
    ============================================================ */
 function ensureBranding(){if(!state)return;state.branding=state.branding||{};if(!state.branding.accent)state.branding.accent='#2fcf6b';if(!Array.isArray(state.sponsors))state.sponsors=[];}
-function applyArenaTheme(){ensureBranding();document.documentElement.style.setProperty('--grass',state.branding.accent||'#2fcf6b');}
+ function resetArenaTheme(){document.documentElement.style.setProperty('--grass','#2fcf6b');}
+ function applyArenaTheme(){ensureBranding();document.documentElement.style.setProperty('--grass',state.branding.accent||'#2fcf6b');}
 function readAndResizeImage(file,maxW,maxH,quality){return new Promise((resolve,reject)=>{if(!file)return resolve('');if(file.size>8*1024*1024)return reject(new Error('Imagem maior que 8 MB'));const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{let w=im.width,h=im.height,r=Math.min(1,maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality||.78));};im.onerror=()=>reject(new Error('Imagem inválida'));im.src=fr.result;};fr.onerror=()=>reject(fr.error);fr.readAsDataURL(file);});}
 async function setBrandImage(kind,input){try{ensureBranding();const file=input.files&&input.files[0];if(!file)return;state.branding[kind]=await readAndResizeImage(file,kind==='cover'?1400:500,kind==='cover'?700:500,kind==='cover'?.72:.82);persist();renderManage();toast(kind==='cover'?'Capa atualizada':'Logo atualizada');}catch(e){toast(e.message||'Não foi possível processar a imagem');}}
 function clearBrandImage(kind){ensureBranding();state.branding[kind]='';persist();renderManage();}
