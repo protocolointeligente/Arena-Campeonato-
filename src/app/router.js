@@ -1,5 +1,6 @@
 const routes = new Map();
 let currentRoute = null;
+let resolvingDynamicRoute = false;
 
 export function route(path, render) { routes.set(path, render); }
 
@@ -14,7 +15,14 @@ export function replace(path) {
 }
 
 export function renderRoute() {
-  if (typeof window.__arenaRenderRoute === 'function') return window.__arenaRenderRoute();
+  if (typeof window.__arenaRenderRoute === 'function' && !resolvingDynamicRoute) {
+    resolvingDynamicRoute = true;
+    try {
+      return window.__arenaRenderRoute();
+    } finally {
+      resolvingDynamicRoute = false;
+    }
+  }
   const path = window.location.pathname;
   currentRoute = routes.get(path) || routes.get('/');
   currentRoute?.();
