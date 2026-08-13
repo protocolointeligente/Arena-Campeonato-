@@ -687,7 +687,7 @@ function suspensionInfo(athleteId){const lim=(state.cfg&&state.cfg.yellowLimit)|
 /* ============================================================
    ROTEAMENTO / HEADER
    ============================================================ */
-function goSafe(){if(RO){location.search='';return;}go('home');}
+ function goSafe(){if(RO){location.search='';return;}if(DEMO_MODE||currentUser){go('home');return;}renderLandingPage();}
 function go(s,a){closeModal();if(viewerUnsub){viewerUnsub();viewerUnsub=null;}RO=false;if(s==='home')renderHome();else if(s==='setup')renderSetup();else if(s==='draw')renderDraw();else if(s==='manage')renderManage();window.scrollTo(0,0);}
 function renderHeaderActions(){
   const el=$('#headerActions');
