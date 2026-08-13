@@ -358,7 +358,8 @@ function saveConfig(){
 async function doRegister(){
   const name=$('#au_name').value.trim(),email=$('#au_email').value.trim(),pw=$('#au_pw').value;
   if(!email||pw.length<6)return toast('E-mail válido e senha de 6+ caracteres');
-  try{const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);if(name)await cred.user.updateProfile({displayName:name});toast('Conta criada!');}
+  if(!$('#au_lgpd')?.checked)return toast('Leia e autorize o tratamento de dados para criar sua conta');
+  try{const cred=await fbAuth.createUserWithEmailAndPassword(email,pw);if(name)await cred.user.updateProfile({displayName:name});await fbDb.collection('users').doc(cred.user.uid).set({email:cred.user.email||email,privacyConsent:{accepted:true,version:ARENA_PRIVACY_VERSION,acceptedAt:Date.now()}},{merge:true});toast('Conta criada!');}
   catch(e){toast(authErr(e));}
 }
 async function doLogin(){
@@ -382,6 +383,7 @@ function renderAuth(){
       ${reg?`<label class="fld"><span>Nome</span><input type="text" id="au_name" placeholder="Seu nome"></label>`:''}
       <label class="fld"><span>E-mail</span><input type="email" id="au_email" placeholder="voce@email.com"></label>
       <label class="fld"><span>Senha</span><input type="password" id="au_pw" placeholder="mínimo 6 caracteres"></label>
+      ${reg?`<label style="display:flex;gap:9px;align-items:flex-start;margin:12px 0"><input id="au_lgpd" type="checkbox" style="width:auto;margin-top:4px"><span class="hint">Autorizo o tratamento dos meus dados para criação e uso da conta ARENA, conforme a <button type="button" class="lnk" onclick="renderPrivacyCenter()">Política de Privacidade e LGPD</button>.</span></label>`:''}
       <button class="btn primary block" onclick="${reg?'doRegister()':'doLogin()'}">${reg?'Criar conta':'Entrar'}</button>
       ${!reg?`<button class="btn ghost block" style="margin-top:10px" onclick="enterDemoMode()">▶ Entrar como usuário Demo</button>`:''}
       <p class="hint">${reg?'Ao criar a conta você poderá montar campeonatos e compartilhar o link de acompanhamento.':'Acesse para gerenciar seus campeonatos.'}</p>
@@ -760,7 +762,7 @@ async function renderHome(){
     <div id="usagePlan">${loadingHTML('Carregando seu plano...')}</div>
     <div class="row" style="justify-content:center;margin-bottom:30px">
       <button id="newChampBtn" class="btn primary" onclick="startNewChampionship()" style="padding:13px 26px;font-size:16px">+ Criar Campeonato</button>
-       <button class="btn ghost" onclick="renderTutorial()">📘 Tutorial</button>${DEMO_MODE?'':`<button class="btn" onclick="importJSON()">⬆ Importar .json</button><button class="btn ghost" onclick="renderPlans()">Planos</button><button class="btn ghost" onclick="renderPrivacyCenter()">🛡️ LGPD</button><button class="btn ghost" onclick="renderAuditCenter()">✓ Auditoria</button><button class="btn ghost" onclick="renderSecurityCenter()">🔒 Produção</button><button class="btn ghost" onclick="renderBetaHardening()">🧪 Beta</button>${isPlatformSuperadmin()?'<button class="btn primary" onclick="renderSuperadmin()">⚡ Superadmin</button>':''}`}</div>
+       <button class="btn ghost" onclick="renderTutorial()">📘 Tutorial</button>${DEMO_MODE?'':`<button class="btn" onclick="importJSON()">⬆ Importar .json</button><button class="btn ghost" onclick="renderPlans()">Planos</button><button class="btn ghost" onclick="renderPrivacyCenter()">🛡️ LGPD</button><button class="btn ghost" onclick="renderAuditCenter()">✓ Auditoria</button>${isPlatformSuperadmin()?'<button class="btn ghost" onclick="renderSecurityCenter()">🔒 Produção</button><button class="btn ghost" onclick="renderBetaHardening()">🧪 Beta</button><button class="btn primary" onclick="renderSuperadmin()">⚡ Superadmin</button>':''}`}</div>
     <h2 style="font-family:var(--cond);font-size:18px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px">Meus campeonatos</h2>
     <div id="savedList">${loadingHTML('Buscando na nuvem...')}</div>`;
   let list=[];try{[list]=await Promise.all([Store.mine(),loadBilling()]);}catch(e){$('#savedList').innerHTML=`<div class="empty card pad"><div class="ic">⚠️</div><p>Não consegui carregar.<br><span class="dim">${esc(e.message||e)}</span></p></div>`;return;}
@@ -1289,6 +1291,11 @@ function enterViewer(id){
     state=doc;renderManage();
   });}catch(e){$('#app').innerHTML=`<div class="empty card pad"><div class="ic">⚠️</div><p>${esc(e.message||e)}</p></div>`;}
 }
+
+const _renderSecurityCenter=renderSecurityCenter;
+renderSecurityCenter=function(){if(!isPlatformSuperadmin()){toast('A área de Produção é exclusiva do superadmin');return renderHome();}return _renderSecurityCenter();};
+const _renderBetaHardening=renderBetaHardening;
+renderBetaHardening=function(){if(!isPlatformSuperadmin()){toast('A área Beta é exclusiva do superadmin');return renderHome();}return _renderBetaHardening();};
 
 /* ---------- BOOT ---------- */
 function boot(){
