@@ -1,7 +1,7 @@
 import './theme.js';
 import '../styles/tokens.css';
 import '../styles/layout.css';
-import { route, renderRoute } from './router.js';
+import { route, renderRoute, navigate } from './router.js';
 import { applyTheme } from './theme.js';
 import { renderLanding } from '../pages/landing.js';
 import { renderDemo } from '../pages/demo.js';
