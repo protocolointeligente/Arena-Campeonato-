@@ -47,7 +47,7 @@ export async function getChampionship(id) { const snapshot = await getDoc(doc(pr
 export async function saveChampionship(value) {
   const batch = writeBatch(db);
   batch.set(doc(privateCollection, value.id), payload(value));
-  batch.set(doc(publicCollection, value.id), { nome: value.nome || 'Campeonato', formato: value.formato || 'liga', status: value.status || 'rascunho', updated: Date.now(), data: JSON.stringify(publicState(value)) });
+  batch.set(doc(publicCollection, value.id), { ownerUid: payload(value).ownerUid, nome: value.nome || 'Campeonato', formato: value.formato || 'liga', status: value.status || 'rascunho', updated: Date.now(), data: JSON.stringify(publicState(value)) });
   await batch.commit();
 }
 

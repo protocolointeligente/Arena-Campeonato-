@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/platformAdmins/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function isOwner() {
+      return signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function isCollaborator() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() in resource.data.collaboratorEmails;
+    }
+
+    function canManageChampionship() {
+      return isPlatformAdmin() || isOwner() || isCollaborator();
+    }
+
+    match /championships/{championshipId} {
+      allow read: if canManageChampionship();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if canManageChampionship();
+
+      match /registrations/{registrationId} {
+        allow read, update, delete: if canManageChampionship();
+        allow create: if signedIn()
+          || (exists(/databases/$(database)/documents/publicChampionships/$(championshipId))
+            && get(/databases/$(database)/documents/publicChampionships/$(championshipId)).data.status != 'arquivado');
+      }
+
+      match /auditLogs/{auditId} {
+        allow read: if canManageChampionship();
+        allow create: if canManageChampionship();
+      }
+    }
+
+    match /publicChampionships/{championshipId} {
+      allow read: if true;
+      allow create, update: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow create, update: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow delete: if isPlatformAdmin();
+    }
+
+    match /platformAdmins/{userId} {
+      allow read: if isPlatformAdmin() || (signedIn() && request.auth.uid == userId);
+      allow write: if isPlatformAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
