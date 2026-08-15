@@ -37,8 +37,8 @@ export function updateAthlete(team, athleteId, { nome, dob, numero }) {
   const before = { ...athlete };
   const trimmedNome = (nome || '').trim();
   athlete.nome = trimmedNome || athlete.nome;
-  athlete.dob = (dob || '').trim();
-  athlete.numero = (numero || '').trim();
+  if (dob !== undefined) athlete.dob = (dob || '').trim();
+  if (numero !== undefined) athlete.numero = (numero || '').trim();
   return { ok: true, before, after: { ...athlete } };
 }
 
@@ -56,7 +56,9 @@ export function setAthletePhoto(team, athleteId, dataUrl) {
 }
 
 export function setTeamLogo(team, dataUrl) {
+  if (!team) return { ok: false };
   team.logo = dataUrl;
+  return { ok: true };
 }
 
 export function compressPhoto(file) {

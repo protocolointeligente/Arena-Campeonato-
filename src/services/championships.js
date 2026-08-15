@@ -15,8 +15,8 @@ function parseSnapshot(snapshot) {
 function publicState(value) {
   const state = clone(value);
   delete state.collaborators; delete state.ownerEmail; delete state.ownerUid; delete state.billing; delete state._catLoaded;
-  (state.categories || []).forEach((category) => (category.teams || []).forEach((team) => delete team.registration));
-  (state.teams || []).forEach((team) => delete team.registration);
+  (state.categories || []).forEach((category) => (category.teams || []).forEach((team) => { delete team.registration; (team.roster || []).forEach((athlete) => delete athlete.foto); }));
+  (state.teams || []).forEach((team) => { delete team.registration; (team.roster || []).forEach((athlete) => delete athlete.foto); });
   return state;
 }
 

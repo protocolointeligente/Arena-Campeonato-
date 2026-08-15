@@ -81,6 +81,13 @@ describe('updateAthlete', () => {
     const team = { id: 't1', roster: [] };
     expect(updateAthlete(team, 'ghost', { nome: 'X' })).toEqual({ ok: false, reason: 'Atleta não encontrado.' });
   });
+
+  it('preserves dob and numero when they are omitted from the update payload', () => {
+    const team = { id: 't1', roster: [{ id: 'a1', nome: 'Kept', dob: '2005-01-01', numero: '7' }] };
+    updateAthlete(team, 'a1', { nome: 'Renamed' });
+    expect(team.roster[0].dob).toBe('2005-01-01');
+    expect(team.roster[0].numero).toBe('7');
+  });
 });
 
 describe('removeAthlete', () => {
@@ -116,7 +123,8 @@ describe('setAthletePhoto', () => {
 describe('setTeamLogo', () => {
   it('sets the team logo', () => {
     const team = { id: 't1', nome: 'A' };
-    setTeamLogo(team, 'data:image/jpeg;base64,logo');
+    const result = setTeamLogo(team, 'data:image/jpeg;base64,logo');
+    expect(result).toEqual({ ok: true });
     expect(team.logo).toBe('data:image/jpeg;base64,logo');
   });
 });

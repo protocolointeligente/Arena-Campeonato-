@@ -26,9 +26,10 @@ footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted)
 .championship-tabs { display:flex; gap:8px; overflow:auto; border-bottom:1px solid var(--line); margin-bottom:24px; }
 .championship-tabs button { border:0; border-bottom:3px solid transparent; background:transparent; color:var(--muted); padding:12px 14px; cursor:pointer; white-space:nowrap; }
 .championship-tabs button.active { color:var(--championship-accent); border-bottom-color:var(--championship-accent); }
-.team-row,.game-row { display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+.team-row,.game-row { display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
 .game-row { grid-template-columns:1fr 70px 24px 70px 1fr; }
-.team-row input,.game-row input,select,input[type=color] { border:1px solid var(--line); background:var(--surface-muted); color:var(--text); border-radius:8px; padding:10px; }
+.ath-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+.team-row input,.game-row input,.ath-row input,select,input[type=color] { border:1px solid var(--line); background:var(--surface-muted); color:var(--text); border-radius:8px; padding:10px; }
 .table-wrap { overflow:auto; } table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-size:12px; text-transform:uppercase; }
 label { display:block; margin:16px 0; } label input,label select { display:block; width:100%; margin-top:8px; }
 @media (max-width: 760px) { .hero, .grid { grid-template-columns: 1fr; } .hero { min-height: 0; padding: 50px 0; } }
