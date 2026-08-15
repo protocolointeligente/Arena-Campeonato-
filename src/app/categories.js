@@ -1,4 +1,5 @@
 import { clone, uid } from './utils.js';
+import { ensurePhases, loadPhaseIntoRoot, saveRootIntoPhase, activePhaseOf } from './phases.js';
 
 export function ensureCategories(state) {
   if (!state) return state;
@@ -18,6 +19,7 @@ export function ensureCategories(state) {
   }
   state.categories.forEach((category) => {
     if (!Array.isArray(category.teams)) category.teams = clone(state.teams || []);
+    ensurePhases(category, state);
   });
   return state;
 }
@@ -27,15 +29,17 @@ export function activeCategory(state) {
 }
 
 export function loadCategoryIntoRoot(state, category) {
+  ensurePhases(category, state);
   state.teams = clone(category.teams || []);
-  state.matches = clone(category.matches || []);
+  loadPhaseIntoRoot(state, activePhaseOf(category));
 }
 
 export function saveRootIntoActive(state) {
   const category = activeCategory(state);
   if (!category) return;
+  ensurePhases(category, state);
   category.teams = clone(state.teams || []);
-  category.matches = clone(state.matches || []);
+  saveRootIntoPhase(state, activePhaseOf(category));
 }
 
 export function switchCategory(state, id) {
@@ -50,12 +54,26 @@ export function switchCategory(state, id) {
 
 export function addCategory(state) {
   saveRootIntoActive(state);
+  const phase = {
+    id: uid(),
+    nome: 'Fase principal',
+    ordem: 1,
+    status: 'planejada',
+    formato: 'liga',
+    cfg: clone(state.cfg || {}),
+    grupos: [],
+    matches: [],
+    bracket: null,
+    participantTeamIds: null,
+    progression: null,
+  };
   const category = {
     id: uid(),
     nome: `Categoria ${state.categories.length + 1}`,
     ordem: state.categories.length + 1,
     teams: [],
-    matches: [],
+    phases: [phase],
+    activePhaseId: phase.id,
   };
   state.categories.push(category);
   state.activeCategoryId = category.id;
