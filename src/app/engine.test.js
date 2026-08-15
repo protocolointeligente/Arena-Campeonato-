@@ -78,6 +78,8 @@ describe('generateActivePhase', () => {
     const state = championship();
     state.categories[0].phases[0].formato = 'grupos';
     state.categories[0].phases[0].cfg = { turnos: 1, nGrupos: 2 };
+    state.formato = 'grupos';
+    state.cfg = { turnos: 1, nGrupos: 2 };
     const result = generateActivePhase(state);
     expect(result).toEqual({ ok: true });
     expect(state.grupos).toHaveLength(2);
@@ -89,6 +91,7 @@ describe('generateActivePhase', () => {
     state.teams = state.teams.slice(0, 3);
     state.categories[0].teams = state.teams;
     state.categories[0].phases[0].formato = 'gxg';
+    state.formato = 'gxg';
     const result = generateActivePhase(state);
     expect(result).toEqual({ ok: false, reason: 'Interzonas precisa de pelo menos 4 equipes.' });
   });
@@ -96,6 +99,7 @@ describe('generateActivePhase', () => {
   it('generates a gxg phase split into two groups of teams', () => {
     const state = championship();
     state.categories[0].phases[0].formato = 'gxg';
+    state.formato = 'gxg';
     const result = generateActivePhase(state);
     expect(result).toEqual({ ok: true });
     expect(state.grupos).toHaveLength(2);
@@ -105,6 +109,7 @@ describe('generateActivePhase', () => {
   it('reports ok:false for an unsupported format (mata — deferred to Phase 3a)', () => {
     const state = championship();
     state.categories[0].phases[0].formato = 'mata';
+    state.formato = 'mata';
     const result = generateActivePhase(state);
     expect(result.ok).toBe(false);
   });
