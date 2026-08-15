@@ -38,6 +38,8 @@ export function buildGxg(idxsA, idxsB, turnos) {
 }
 
 export function generateActivePhase(state) {
+  // root state is the source of truth for the active phase's formato/cfg — mutating phase.formato/cfg
+  // without syncing root first is silently discarded by saveRootIntoActive below.
   saveRootIntoActive(state);
   const category = activeCategory(state);
   ensurePhases(category, state);

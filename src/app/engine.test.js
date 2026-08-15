@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { roundRobin, buildFixtures, buildGxg, generateActivePhase } from './engine.js';
+import { ensureCategories, activeCategory } from './categories.js';
+import { addPhase, setPhaseFormat, switchPhase } from './phases.js';
 
 describe('roundRobin', () => {
   it('pairs every team against every other team exactly once, for an even count', () => {
@@ -112,5 +114,41 @@ describe('generateActivePhase', () => {
     state.formato = 'mata';
     const result = generateActivePhase(state);
     expect(result.ok).toBe(false);
+  });
+});
+
+describe('cross-module round trip', () => {
+  it('composes ensureCategories, phase add/format/switch, and generateActivePhase like championship.js does', () => {
+    const state = {
+      id: 'ch1',
+      teams: [{ id: 't1' }, { id: 't2' }, { id: 't3' }, { id: 't4' }],
+      categories: [],
+      matches: [],
+      formato: 'liga',
+      cfg: { turnos: 1 },
+    };
+
+    ensureCategories(state);
+    expect(state.categories).toHaveLength(1);
+    expect(activeCategory(state).phases).toHaveLength(1);
+
+    let result = generateActivePhase(state);
+    expect(result).toEqual({ ok: true });
+    expect(state.matches).toHaveLength(6);
+
+    addPhase(state, activeCategory(state));
+    expect(state.matches).toHaveLength(0);
+    expect(activeCategory(state).phases[0].matches).toHaveLength(6);
+
+    setPhaseFormat(state, activeCategory(state), activeCategory(state).activePhaseId, 'grupos');
+    result = generateActivePhase(state);
+    expect(result).toEqual({ ok: true });
+    expect(state.grupos.length).toBeGreaterThan(0);
+    expect(state.matches.every((m) => m.grupo != null)).toBe(true);
+
+    switchPhase(state, activeCategory(state), activeCategory(state).phases[0].id);
+    expect(state.matches).toHaveLength(6);
+    expect(state.formato).toBe('liga');
+    expect(activeCategory(state).phases[0].matches).toHaveLength(6);
   });
 });
