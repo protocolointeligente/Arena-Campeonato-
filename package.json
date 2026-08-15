@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "vite build && node scripts/prepare-legacy.mjs",
     "preview": "vite preview",
-    "verify": "node scripts/verify-routes.mjs"
+    "verify": "node scripts/verify-routes.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "firebase": "^12.17.1",
     "jspdf": "^4.2.1",
     "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.10"
   }
 }
