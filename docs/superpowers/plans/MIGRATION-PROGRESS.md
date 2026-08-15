@@ -31,7 +31,7 @@ log below. Only stop for a genuine blocker.
 | # | Phase | Scope (from the published audit) | Status | Plan | Merge commit |
 |---|---|---|---|---|---|
 | 1 | Shared foundations | esc/clone/uid, fmtDateBR/brl/ageFrom, toast/modal/loadingHTML | ✅ Done | `2026-08-15-migration-phase1-foundations.md` | `73da3ab` (+ `d684c28` test-scope fix) |
-| 2a | Categories | addCategory/removeCategory/renameCategory/ensureCategories/activeCategory/switchCategory/categoryBar/categorySnapshot/categoryTeamLimitReached/canAddTeams | ⏳ Next | — | — |
+| 2a | Categories | addCategory/removeCategory/renameCategory/ensureCategories/activeCategory/switchCategory/categoryBar (categorySnapshot/categoryTeamLimitReached/canAddTeams deferred to Phase 6, billing-coupled) | 🔧 In progress | `2026-08-15-migration-phase2a-categories.md` | — |
 | 2b | Teams & athletes (full roster) | addAthlete/delAthlete/editAthlete/saveAthlete/athleteById/athName/eaPhoto/compressPhoto/readAndResizeImage/pickLogo/teamById/teamNameById/teamLogoMini/renTeam/delT | Not started | — | — |
 | 2c | Venues & officials | addVenue/delVenue/venueById/addOfficial/delOfficial/officialById/staffRow/setStaff | Not started | — | — |
 | 2d | Phases & format (liga/grupos/mata-mata) | addPhase/removePhase/renamePhase/ensurePhases/activePhase/switchPhase/phaseBar/phaseSnapshot/phaseComplete/phaseParticipants/newPhaseFromRoot/loadPhaseIntoRoot/saveRootIntoActive/loadCategoryIntoRoot/setPhaseFormat/generateActivePhase/setFmt/renderFmtOpts/setProgressMode/setProgressCount/setProgressTarget/progressBar/progressionSummary/applyProgression/qualifiedFromPhase | Not started | — | — |
