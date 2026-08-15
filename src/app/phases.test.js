@@ -6,11 +6,12 @@ import {
 } from './phases.js';
 
 describe('PHASE_FORMATS', () => {
-  it('lists liga/grupos/gxg only — mata is deferred to Phase 3a', () => {
+  it('lists liga/grupos/gxg/mata', () => {
     expect(PHASE_FORMATS).toEqual([
       ['liga', 'Pontos Corridos'],
       ['grupos', 'Fase de Grupos'],
       ['gxg', 'Grupo × Grupo'],
+      ['mata', 'Mata-Mata'],
     ]);
   });
 });
@@ -121,8 +122,11 @@ describe('phaseComplete', () => {
     expect(phaseComplete(phase)).toBe(true);
   });
 
-  it('is false for mata format — bracket completion needs the draw engine (Phase 3a)', () => {
-    expect(phaseComplete({ formato: 'mata', bracket: {} })).toBe(false);
+  it('mata format is complete once the final tie has a winner', () => {
+    expect(phaseComplete({ formato: 'mata', bracket: null })).toBe(false);
+    expect(phaseComplete({ formato: 'mata', bracket: { rounds: [[{ winner: null }]] } })).toBe(false);
+    expect(phaseComplete({ formato: 'mata', bracket: { rounds: [[{ winner: 't1' }]] } })).toBe(true);
+    expect(phaseComplete({ formato: 'mata', bracket: { rounds: [[], [{ winner: 't1' }]] } })).toBe(true);
   });
 });
 

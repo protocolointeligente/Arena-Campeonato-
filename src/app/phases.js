@@ -4,6 +4,7 @@ export const PHASE_FORMATS = [
   ['liga', 'Pontos Corridos'],
   ['grupos', 'Fase de Grupos'],
   ['gxg', 'Grupo × Grupo'],
+  ['mata', 'Mata-Mata'],
 ];
 
 function blankPhase(state, nome, ordem) {
@@ -84,9 +85,12 @@ export function phaseParticipants(state, phase) {
 
 export function phaseComplete(phase) {
   if (!phase) return false;
-  // mata (bracket) completion needs winnerOf/tieObj — Phase 3a/3b. Unreachable today:
-  // the format picker never offers 'mata' yet (see this plan's Rescope note).
-  if (phase.formato === 'mata') return false;
+  if (phase.formato === 'mata') {
+    if (!phase.bracket) return false;
+    const rounds = phase.bracket.rounds || [];
+    const last = rounds[rounds.length - 1];
+    return !!(last && last[0] && last[0].winner != null);
+  }
   return (phase.matches || []).length > 0 && (phase.matches || []).every((m) => m.hg != null && m.ag != null);
 }
 
