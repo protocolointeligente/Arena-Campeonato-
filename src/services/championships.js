@@ -1,9 +1,9 @@
 import { collection, doc, getDoc, getDocs, query, where, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
+import { clone } from '../app/utils.js';
 
 const privateCollection = collection(db, 'championships');
 const publicCollection = collection(db, 'publicChampionships');
-const clone = (value) => JSON.parse(JSON.stringify(value));
 
 function parseSnapshot(snapshot) {
   const data = snapshot.data();
