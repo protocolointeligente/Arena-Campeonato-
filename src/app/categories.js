@@ -16,11 +16,14 @@ export function ensureCategories(state) {
   if (!state.activeCategoryId || !state.categories.some((category) => category.id === state.activeCategoryId)) {
     state.activeCategoryId = state.categories[0].id;
   }
+  state.categories.forEach((category) => {
+    if (!Array.isArray(category.teams)) category.teams = clone(state.teams || []);
+  });
   return state;
 }
 
 export function activeCategory(state) {
-  return state.categories.find((category) => category.id === state.activeCategoryId) || state.categories[0];
+  return (state.categories || []).find((category) => category.id === state.activeCategoryId) || (state.categories || [])[0];
 }
 
 export function loadCategoryIntoRoot(state, category) {
