@@ -13,8 +13,8 @@ log below. Only stop for a genuine blocker.
 ## How each phase runs
 
 1. Write/refresh the phase's plan under `docs/superpowers/plans/` (writing-plans skill).
-2. `EnterWorktree` (isolated worktree — recommended default, established Phase 1).
-3. Execute via `superpowers:subagent-driven-development`: implementer → task review → (fix loop) per task, ledger at `.superpowers/sdd/progress.md` inside the worktree.
+2. `EnterWorktree`, then immediately `git merge main --ff-only` (worktrees branch from `origin/main`, not local `main` — see the decision log entry below).
+3. Execute via `superpowers:subagent-driven-development`: implementer → task review → (fix loop) per task, ledger at `.superpowers/sdd/progress.md` inside the worktree. Every new/changed `class="..."` gets checked against `layout.css`/`tokens.css` for both the class's own rule and any `<class> <child-selector>` rule — see "Process note" below.
 4. Final whole-branch review (opus) → fix Critical/Important → re-review.
 5. `npm test && npm run build && npm run verify` green on the merged result.
 6. Merge to `main` locally (recommended default, established Phase 1), delete branch, clean up worktree.
@@ -43,6 +43,15 @@ log below. Only stop for a genuine blocker.
 - `categoriesView()`'s category row (2-3 children) now sits in the same 4-column `.team-row` grid the roster UI needed; the unused 4th track shifts its "Remover" button ~10px from where it sat before. Cosmetic only.
 - `updateAthlete`'s `dob`/`numero` fields accept only strings (`(dob || '').trim()`-style coercion) — fine for every current DOM-sourced caller, but worth a guard if a future non-DOM caller (e.g. a bulk-import feature) ever passes a number or Date.
 
+## Known follow-ups — Phase 2c (Venues, Officials & Team Staff)
+
+- `venueById`/`officialById` are ported and tested but uncalled until Phase 3b wires them into match scheduling — same "early, not dead" status as Phase 2b's read helpers.
+- `officials[].phone` is supported by `ops.js` and not yet populated by any UI, so no leak today — but when Phase 3b's match-ops screen adds a phone field, `publicState()` (`services/championships.js`) needs to strip it before it reaches `publicChampionships`, the same way `foto` was stripped in Phase 2b.
+
+## Process note: the class/CSS mismatch bug, three times running
+
+Phase 2b (`.row` used with no CSS rule; `.team-row` overflowing a 5-child athlete row) and Phase 2c (`.team-row` overflowing a 4-child staff row; then the fix's replacement `.row` having no input styling) all shipped the same root cause: markup written against a CSS class without checking what that class's rule — or its children's rule — actually does. Every instance was only caught by the whole-branch review, never the task-level one. **Standing instruction from Phase 2d onward:** for every new or changed `class="..."` in a diff, grep `layout.css`/`tokens.css` for that exact class **and** for `<that-class> <child-selector>` rules (e.g. `.row input`, not just `.row`) before considering the task done — both at implementer self-review and at task-review time, not deferred to the final pass.
+
 ## Phase status
 
 | # | Phase | Scope (from the published audit) | Status | Plan | Merge commit |
@@ -50,7 +59,7 @@ log below. Only stop for a genuine blocker.
 | 1 | Shared foundations | esc/clone/uid, fmtDateBR/brl/ageFrom, toast/modal/loadingHTML | ✅ Done | `2026-08-15-migration-phase1-foundations.md` | `73da3ab` (+ `d684c28` test-scope fix) |
 | 2a | Categories | addCategory/removeCategory/renameCategory/ensureCategories/activeCategory/switchCategory/categoryBar (categorySnapshot/categoryTeamLimitReached/canAddTeams deferred to Phase 6, billing-coupled) | ✅ Done | `2026-08-15-migration-phase2a-categories.md` | `6c625a8` |
 | 2b | Teams & roster | addAthlete/delAthlete/editAthlete/saveAthlete/athleteById/athName/eaPhoto/compressPhoto/pickLogo/teamById/teamNameById/teamLogoMini (delT→already covered by home.js; readAndResizeImage→moved to Phase 5, branding-coupled; renTeam→existing flow already covers it, seedNames half deferred to Phase 3a) | ✅ Done | `2026-08-15-migration-phase2b-roster.md` | `d433ada` |
-| 2c | Venues, officials & team staff | addVenue/delVenue/venueById/addOfficial/delOfficial/officialById/staffRow/setStaff | 🔧 In progress | `2026-08-15-migration-phase2c-ops.md` | — |
+| 2c | Venues, officials & team staff | addVenue/delVenue/venueById/addOfficial/delOfficial/officialById/staffRow/setStaff | ✅ Done | `2026-08-15-migration-phase2c-ops.md` | `082f9ea` |
 | 2d | Phases & format (liga/grupos/mata-mata) | addPhase/removePhase/renamePhase/ensurePhases/activePhase/switchPhase/phaseBar/phaseSnapshot/phaseComplete/phaseParticipants/newPhaseFromRoot/loadPhaseIntoRoot/saveRootIntoActive/loadCategoryIntoRoot/setPhaseFormat/generateActivePhase/setFmt/renderFmtOpts/setProgressMode/setProgressCount/setProgressTarget/progressBar/progressionSummary/applyProgression/qualifiedFromPhase | Not started | — | — |
 | 3a | Draw & bracket engine | drawBracket/drawGroups/runDraw/confirmDraw/finishDraw/toggleSeed/refreshSeeds/seedOrder/genCross/makeBracketFromOrdered/buildFixtures/buildGxg/nextPow2/roundRobin/renderDraw/renderBracketView/renderMataFromGroups/advanceBracket/loserOf/findTie | Not started | — | — |
 | 3b | Matches & scoring | setScore/setTie/tieHTML/tieObj/matchRow/matchMeta/matchContext/matchEvents/openMatchOps/saveMatchOps/opsConfigHTML/mark/clearResults/nextMatchesCard/allMatchObjs/h2h/resolveTie | Not started | — | — |
