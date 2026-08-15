@@ -3,6 +3,7 @@ import '../styles/tokens.css';
 import '../styles/layout.css';
 import { route, renderRoute, navigate } from './router.js';
 import { applyTheme } from './theme.js';
+import { ensureUiRoot } from './ui.js';
 import { renderLanding } from '../pages/landing.js';
 import { renderDemo } from '../pages/demo.js';
 import { renderAuth } from '../pages/auth.js';
@@ -19,6 +20,7 @@ import { renderPublication } from '../pages/publication.js';
 
 const root = document.querySelector('#app');
 applyTheme();
+ensureUiRoot();
 route('/', () => renderLanding(root));
 route('/login', () => renderAuth(root, 'login'));
 route('/register', () => renderAuth(root, 'register'));

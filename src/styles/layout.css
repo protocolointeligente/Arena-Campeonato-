@@ -30,3 +30,10 @@ footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted)
 .table-wrap { overflow:auto; } table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-size:12px; text-transform:uppercase; }
 label { display:block; margin:16px 0; } label input,label select { display:block; width:100%; margin-top:8px; }
 @media (max-width: 760px) { .hero, .grid { grid-template-columns: 1fr; } .hero { min-height: 0; padding: 50px 0; } }
+
+#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(150%); background: var(--surface-muted); border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 10px; z-index: 200; transition: .35s; box-shadow: 0 8px 24px rgba(0,0,0,.18); font-weight: 600; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+.spin { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--brand); border-radius: 50%; animation: rot .8s linear infinite; margin: 0 auto; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; place-items: center; padding: 20px; z-index: 100; }
+.modal-overlay.open { display: grid; }
