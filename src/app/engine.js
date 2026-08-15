@@ -66,9 +66,9 @@ export function makeBracketFromOrdered(ids, cfg) {
   return bracket;
 }
 
-export function resolveTie(tie, single) {
+export function resolveTie(tie, single, allowBye = true) {
   if (tie.a == null && tie.b == null) { tie.winner = null; return; }
-  if (tie.a == null || tie.b == null) { tie.winner = tie.a || tie.b; return; }
+  if (tie.a == null || tie.b == null) { tie.winner = allowBye ? (tie.a || tie.b) : null; return; }
   let ag, bg;
   if (single) { ag = tie.ag1; bg = tie.bg1; }
   else { ag = (tie.ag1 || 0) + (tie.ag2 || 0); bg = (tie.bg1 || 0) + (tie.bg2 || 0); }
@@ -92,7 +92,7 @@ export function loserOf(tie) {
 export function advanceBracket(bracket, cfg) {
   const rounds = bracket.rounds;
   const single = !!(cfg && cfg.maoUnica);
-  rounds.forEach((round) => round.forEach((tie) => resolveTie(tie, single)));
+  rounds.forEach((round, ri) => round.forEach((tie) => resolveTie(tie, single, ri === 0)));
   for (let r = 0; r < rounds.length - 1; r++) {
     rounds[r].forEach((tie, i) => {
       const target = rounds[r + 1][Math.floor(i / 2)];
@@ -106,8 +106,8 @@ export function advanceBracket(bracket, cfg) {
       bracket.third.b = loserOf(semis[1]);
     }
   }
-  rounds.forEach((round) => round.forEach((tie) => resolveTie(tie, single)));
-  if (bracket.third) resolveTie(bracket.third, single);
+  rounds.forEach((round, ri) => round.forEach((tie) => resolveTie(tie, single, ri === 0)));
+  if (bracket.third) resolveTie(bracket.third, single, false);
 }
 
 export function findTie(bracket, id) {

@@ -207,6 +207,16 @@ describe('resolveTie', () => {
     resolveTie(tie, true);
     expect(tie.winner).toBe('t1');
   });
+
+  it('the allowBye parameter (default true) controls whether a one-sided tie auto-advances', () => {
+    const tieA = tieObj('t1', null);
+    resolveTie(tieA, true); // no third arg — defaults to allowBye:true, existing behavior
+    expect(tieA.winner).toBe('t1');
+
+    const tieB = tieObj('t1', null);
+    resolveTie(tieB, true, false); // explicit allowBye:false — a pending propagation slot, not a bye
+    expect(tieB.winner).toBeNull();
+  });
 });
 
 describe('winnerOf / loserOf', () => {
@@ -249,6 +259,23 @@ describe('advanceBracket', () => {
     advanceBracket(bracket, { maoUnica: true });
     expect(bracket.rounds[1][0].a).toBeNull();
     expect(bracket.rounds[1][0].b).toBeNull();
+  });
+
+  it('does not crown a premature winner when one semifinal is decided but its sibling is still pending', () => {
+    const bracket = makeBracketFromOrdered(['t1', 't2', 't3', 't4'], {});
+    const [semi1, semi2] = bracket.rounds[0];
+    semi1.ag1 = 2; semi1.bg1 = 0; // t1 beats t2 — semi1 decided
+    // semi2 left unscored — still pending
+    advanceBracket(bracket, { maoUnica: true });
+    expect(semi1.winner).toBe('t1');
+    expect(semi2.winner).toBeNull();
+    const final = bracket.rounds[1][0];
+    expect(final.a).toBe('t1'); // propagated from the decided semifinal
+    expect(final.b).toBeNull(); // still waiting on semi2
+    expect(final.winner).toBeNull(); // must NOT auto-crown t1 — the final hasn't been played
+    expect(bracket.third.a).toBe('t2'); // semi1's loser is known and propagates
+    expect(bracket.third.b).toBeNull(); // semi2's loser isn't known yet
+    expect(bracket.third.winner).toBeNull(); // must NOT auto-crown t2 — third place hasn't been contested
   });
 });
 
