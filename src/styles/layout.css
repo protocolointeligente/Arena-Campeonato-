@@ -43,3 +43,5 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .catpill { border: 1px solid var(--line); background: var(--surface-muted); color: var(--muted); padding: 8px 12px; border-radius: 999px; white-space: nowrap; font-weight: 700; font-size: 13px; cursor: pointer; }
 .catpill:hover { border-color: var(--brand); color: var(--text); }
 .catpill.active { background: var(--brand); border-color: var(--brand); color: white; }
+
+.miniphoto { display: inline-block; vertical-align: middle; }
