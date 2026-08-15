@@ -37,6 +37,89 @@ export function buildGxg(idxsA, idxsB, turnos) {
   return matches;
 }
 
+export function tieObj(a, b) {
+  return { id: uid(), a, b, ag1: null, bg1: null, ag2: null, bg2: null, apen: null, bpen: null, winner: null, info1: '', info2: '', scorers: [] };
+}
+
+export function nextPow2(n) {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+export function makeBracketFromOrdered(ids, cfg) {
+  const list = ids.slice();
+  const size = nextPow2(list.length);
+  while (list.length < size) list.push(null);
+  const rounds = [];
+  let cur = [];
+  for (let i = 0; i < list.length; i += 2) cur.push(tieObj(list[i], list[i + 1]));
+  rounds.push(cur);
+  while (cur.length > 1) {
+    const next = [];
+    for (let i = 0; i < cur.length; i += 2) next.push(tieObj(null, null));
+    rounds.push(next);
+    cur = next;
+  }
+  const bracket = { rounds };
+  if (size >= 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
+  return bracket;
+}
+
+export function resolveTie(tie, single) {
+  if (tie.a == null && tie.b == null) { tie.winner = null; return; }
+  if (tie.a == null || tie.b == null) { tie.winner = tie.a || tie.b; return; }
+  let ag, bg;
+  if (single) { ag = tie.ag1; bg = tie.bg1; }
+  else { ag = (tie.ag1 || 0) + (tie.ag2 || 0); bg = (tie.bg1 || 0) + (tie.bg2 || 0); }
+  const filled = single ? (tie.ag1 != null && tie.bg1 != null) : (tie.ag1 != null && tie.bg1 != null && tie.ag2 != null && tie.bg2 != null);
+  if (!filled) { tie.winner = null; return; }
+  if (ag > bg) tie.winner = tie.a;
+  else if (bg > ag) tie.winner = tie.b;
+  else if (tie.apen != null && tie.bpen != null && tie.apen !== tie.bpen) tie.winner = tie.apen > tie.bpen ? tie.a : tie.b;
+  else tie.winner = null;
+}
+
+export function winnerOf(tie) {
+  return tie && tie.winner != null ? tie.winner : null;
+}
+
+export function loserOf(tie) {
+  if (tie.winner == null) return null;
+  return tie.winner === tie.a ? tie.b : tie.a;
+}
+
+export function advanceBracket(bracket, cfg) {
+  const rounds = bracket.rounds;
+  const single = !!(cfg && cfg.maoUnica);
+  rounds.forEach((round) => round.forEach((tie) => resolveTie(tie, single)));
+  for (let r = 0; r < rounds.length - 1; r++) {
+    rounds[r].forEach((tie, i) => {
+      const target = rounds[r + 1][Math.floor(i / 2)];
+      target[i % 2 === 0 ? 'a' : 'b'] = tie.winner;
+    });
+  }
+  if (bracket.third && rounds.length >= 2) {
+    const semis = rounds[rounds.length - 2];
+    if (semis.length === 2) {
+      bracket.third.a = loserOf(semis[0]);
+      bracket.third.b = loserOf(semis[1]);
+    }
+  }
+  rounds.forEach((round) => round.forEach((tie) => resolveTie(tie, single)));
+  if (bracket.third) resolveTie(bracket.third, single);
+}
+
+export function findTie(bracket, id) {
+  if (!bracket) return null;
+  for (const round of bracket.rounds) {
+    const tie = round.find((t) => t.id === id);
+    if (tie) return tie;
+  }
+  if (bracket.third && bracket.third.id === id) return bracket.third;
+  return null;
+}
+
 export function generateActivePhase(state) {
   // root state is the source of truth for the active phase's formato/cfg — mutating phase.formato/cfg
   // without syncing root first is silently discarded by saveRootIntoActive below.
@@ -69,8 +152,11 @@ export function generateActivePhase(state) {
     const idxsA = groups[0].map((id) => teams.findIndex((t) => t.id === id));
     const idxsB = groups[1].map((id) => teams.findIndex((t) => t.id === id));
     phase.matches = buildGxg(idxsA, idxsB, turnos);
+  } else if (phase.formato === 'mata') {
+    const ids = participants.map((ti) => teams[ti].id);
+    phase.bracket = makeBracketFromOrdered(ids, phase.cfg);
   } else {
-    return { ok: false, reason: 'Este formato ainda não está disponível nesta fase da migração.' };
+    return { ok: false, reason: 'Formato de fase desconhecido.' };
   }
   phase.status = 'andamento';
   loadPhaseIntoRoot(state, phase);
