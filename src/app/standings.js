@@ -2,6 +2,7 @@ import { allMatchObjs } from './matches.js';
 import { athName } from './roster.js';
 import { phaseParticipants, phaseComplete, loadPhaseIntoRoot } from './phases.js';
 import { saveRootIntoActive } from './categories.js';
+import { makeBracketFromOrdered, advanceBracket } from './engine.js';
 
 export const CRIT_LABEL = { P: 'Pontos', V: 'Vitórias', SG: 'Saldo de gols', GP: 'Gols pró', GC: 'Gols contra', DISC: 'Disciplina (fair-play)', CD: 'Confronto direto' };
 const CRIT_DIR = { P: 'desc', V: 'desc', SG: 'desc', GP: 'desc', GC: 'asc', DISC: 'desc' };
@@ -126,4 +127,31 @@ export function cardRanking(state) {
 
 export function standsToRows(teams, st) {
   return st.map((s, i) => [i + 1, teams[s.team].nome, s.P, s.J, s.V, s.E, s.D, s.GP, s.GC, (s.SG > 0 ? '+' : '') + s.SG, s.pct.toFixed(1)]);
+}
+
+export function genCross(state) {
+  const classificam = (state.cfg && state.cfg.classificam) || 2;
+  const byPos = [];
+  (state.grupos || []).forEach((group, gi) => {
+    const idxs = group.map((id) => state.teams.findIndex((t) => t.id === id));
+    const st = computeStandings(state.teams, idxs, (state.matches || []).filter((m) => m.grupo === gi), state.cfg || {});
+    for (let p = 0; p < classificam; p++) {
+      byPos[p] = byPos[p] || [];
+      byPos[p].push(st[p] ? state.teams[st[p].team].id : null);
+    }
+  });
+  let seedList = [];
+  const W = byPos[0] || [], R = byPos[1] || [];
+  if (classificam >= 2 && W.length === R.length && W.length > 1) {
+    for (let i = 0; i < W.length; i++) {
+      const j = i % 2 === 0 ? i + 1 : i - 1;
+      seedList.push(W[i]);
+      seedList.push(R[j] != null ? R[j] : R[i]);
+    }
+  } else {
+    byPos.forEach((arr) => arr.forEach((id) => seedList.push(id)));
+  }
+  state.bracket = makeBracketFromOrdered(seedList, state.cfg);
+  advanceBracket(state.bracket, state.cfg || {});
+  return { ok: true };
 }

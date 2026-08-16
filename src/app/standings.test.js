@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows } from './standings.js';
+import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross } from './standings.js';
 
 const teams = [{ id: 'a', nome: 'Alfa' }, { id: 'b', nome: 'Beta' }, { id: 'c', nome: 'Gama' }];
 
@@ -180,5 +180,33 @@ describe('standsToRows', () => {
   it('formats standings rows as flat arrays for tabular export', () => {
     const st = [{ team: 0, P: 9, J: 3, V: 3, E: 0, D: 0, GP: 6, GC: 1, SG: 5, pct: 100 }];
     expect(standsToRows(teams, st)).toEqual([[1, 'Alfa', 9, 3, 3, 0, 0, 6, 1, '+5', '100.0']]);
+  });
+});
+
+describe('genCross', () => {
+  it("builds a cross-seeded bracket from each group's top classificam finishers", () => {
+    const teams = [{ id: 'a1' }, { id: 'a2' }, { id: 'b1' }, { id: 'b2' }];
+    const state = {
+      teams,
+      cfg: { classificam: 2 },
+      grupos: [['a1', 'a2'], ['b1', 'b2']],
+      matches: [
+        { home: 0, away: 1, hg: 2, ag: 0, grupo: 0 },
+        { home: 2, away: 3, hg: 2, ag: 0, grupo: 1 },
+      ],
+    };
+    const result = genCross(state);
+    expect(result).toEqual({ ok: true });
+    expect(state.bracket).toBeTruthy();
+    const ids = state.bracket.rounds[0].flatMap((tie) => [tie.a, tie.b]).sort();
+    expect(ids).toEqual(['a1', 'a2', 'b1', 'b2']);
+  });
+
+  it('falls back to grouping by finishing position when group sizes are uneven', () => {
+    const teams = [{ id: 'a1' }, { id: 'a2' }, { id: 'b1' }];
+    const state = { teams, cfg: { classificam: 2 }, grupos: [['a1', 'a2'], ['b1']], matches: [] };
+    const result = genCross(state);
+    expect(result).toEqual({ ok: true });
+    expect(state.bracket.rounds[0].length).toBeGreaterThan(0);
   });
 });
