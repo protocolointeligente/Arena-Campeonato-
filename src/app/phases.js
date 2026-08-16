@@ -143,6 +143,7 @@ export function setPhaseFormat(state, category, id, fmt) {
   phase.grupos = [];
   phase.matches = [];
   phase.bracket = null;
+  if (fmt !== 'grupos' && phase.progression && phase.progression.mode === 'perGroup') phase.progression.mode = 'overall';
   if (category.activePhaseId === id) loadPhaseIntoRoot(state, phase);
   return { ok: true };
 }

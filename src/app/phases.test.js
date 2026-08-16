@@ -239,6 +239,13 @@ describe('setPhaseFormat', () => {
     const category = { phases: [{ id: 'p1' }], activePhaseId: 'p1' };
     expect(setPhaseFormat({}, category, 'ghost', 'grupos')).toEqual({ ok: false });
   });
+
+  it('resets a perGroup progression mode to overall when leaving grupos format', () => {
+    const state = { formato: 'grupos', matches: [] };
+    const category = { phases: [{ id: 'p1', formato: 'grupos', grupos: [], matches: [], bracket: null, progression: { mode: 'perGroup', count: 2, targetPhaseId: 'p2' } }], activePhaseId: 'p1' };
+    setPhaseFormat(state, category, 'p1', 'liga');
+    expect(category.phases[0].progression.mode).toBe('overall');
+  });
 });
 
 describe('progression config', () => {
