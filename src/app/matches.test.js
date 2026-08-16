@@ -126,12 +126,14 @@ describe('saveMatchOps', () => {
     expect(saveMatchOps(state, 'ghost', {})).toEqual({ ok: false });
   });
 
-  it('clearing the venue selection actually clears the displayed venue, even after a prior save populated venueText via migration', () => {
-    const state = { matches: [{ id: 'm1', home: 0, away: 1, meta: {} }], venues: [{ id: 'v1', name: 'Arena' }], officials: [] };
-    saveMatchOps(state, 'm1', { venueId: 'v1' });
-    metaLine(state, state.matches[0]); // simulates a render pass, which triggers matchMeta's info-migration backfill
-    saveMatchOps(state, 'm1', { venueId: '' });
-    expect(metaLine(state, state.matches[0])).toBe('');
+  it('clearing the venue selection wipes stale legacy venueText migrated from match.info', () => {
+    // match.info carries real legacy free text with a location segment; matchMeta's
+    // one-time migration (triggered inside saveMatchOps) backfills it into meta.venueText.
+    const state = { matches: [{ id: 'm1', home: 0, away: 1, info: '12/08/2026 · 19:00 · Ginásio Central', meta: {} }], venues: [], officials: [] };
+    const result = saveMatchOps(state, 'm1', { venueId: '' });
+    expect(result.ok).toBe(true);
+    expect(state.matches[0].meta.venueText).toBe('');
+    expect(metaLine(state, state.matches[0])).not.toContain('Ginásio Central');
   });
 });
 
