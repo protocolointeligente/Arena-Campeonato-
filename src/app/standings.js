@@ -133,7 +133,7 @@ export function genCross(state) {
   const classificam = (state.cfg && state.cfg.classificam) || 2;
   const byPos = [];
   (state.grupos || []).forEach((group, gi) => {
-    const idxs = group.map((id) => state.teams.findIndex((t) => t.id === id));
+    const idxs = group.map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
     const st = computeStandings(state.teams, idxs, (state.matches || []).filter((m) => m.grupo === gi), state.cfg || {});
     for (let p = 0; p < classificam; p++) {
       byPos[p] = byPos[p] || [];
@@ -143,6 +143,10 @@ export function genCross(state) {
   let seedList = [];
   const W = byPos[0] || [], R = byPos[1] || [];
   if (classificam >= 2 && W.length === R.length && W.length > 1) {
+    // Legacy's own R[j]-with-R[i]-fallback can assign the same team to two ties at once when a
+    // group has fewer teams than `classificam` (R[j] and R[i] can resolve to the same id). Track
+    // used ids and fall back to a null bye instead of a duplicate — makeBracketFromOrdered/
+    // advanceBracket already treat null slots as byes, so this degrades safely.
     const used = new Set();
     for (let i = 0; i < W.length; i++) {
       const w = W[i];

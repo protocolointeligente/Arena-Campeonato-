@@ -68,14 +68,14 @@ function mount(root, initial) {
     if (state.formato === 'grupos') {
       if (!(state.grupos || []).length) return `<div class="card"><p class="muted">Nenhum grupo gerado ainda.</p></div>`;
       return state.grupos.map((group, gi) => {
-        const idxs = group.map((id) => state.teams.findIndex((t) => t.id === id));
+        const idxs = group.map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
         const st = computeStandings(state.teams, idxs, (state.matches || []).filter((m) => m.grupo === gi), state.cfg || {});
         return `<div class="card" style="margin-top:${gi ? '16px' : '0'}"><h2>Grupo ${String.fromCharCode(65 + gi)}</h2>${standingsTableHTML(st, state.cfg?.classificam || 2)}</div>`;
       }).join('');
     }
     if (state.formato === 'gxg') {
-      const A = (state.grupos?.[0] || []).map((id) => state.teams.findIndex((t) => t.id === id));
-      const B = (state.grupos?.[1] || []).map((id) => state.teams.findIndex((t) => t.id === id));
+      const A = (state.grupos?.[0] || []).map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
+      const B = (state.grupos?.[1] || []).map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
       const stA = computeStandings(state.teams, A, state.matches || [], state.cfg || {});
       const stB = computeStandings(state.teams, B, state.matches || [], state.cfg || {});
       return `<div class="card"><h2>Grupo A</h2>${standingsTableHTML(stA, 0)}</div><div class="card" style="margin-top:16px"><h2>Grupo B</h2>${standingsTableHTML(stB, 0)}</div>`;
