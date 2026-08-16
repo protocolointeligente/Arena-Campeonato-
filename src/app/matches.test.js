@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, allMatchObjs, toISODate } from './matches.js';
+import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, allMatchObjs, addMatchEvent, removeMatchEvent, toISODate } from './matches.js';
 
 describe('matchMeta', () => {
   it('creates an empty meta object when absent', () => {
@@ -179,5 +179,70 @@ describe('allMatchObjs', () => {
 
   it('handles a state with no matches or bracket', () => {
     expect(allMatchObjs({})).toEqual([]);
+  });
+});
+
+describe('addMatchEvent', () => {
+  it('appends a goal event with a generated id, defaulting athleteId to null and name to empty string', () => {
+    const match = { id: 'm1' };
+    const result = addMatchEvent(match, { type: 'goal', teamId: 't1', athleteId: 'a1' });
+    expect(result.ok).toBe(true);
+    expect(match.events).toHaveLength(1);
+    expect(match.events[0]).toMatchObject({ type: 'goal', teamId: 't1', athleteId: 'a1', name: '' });
+    expect(match.events[0].id).toBeTruthy();
+  });
+
+  it('records an anonymous event (no athleteId) with a free-text name', () => {
+    const match = {};
+    const result = addMatchEvent(match, { type: 'yellow', teamId: 't1', name: 'Torcedor 7' });
+    expect(result.event).toMatchObject({ type: 'yellow', teamId: 't1', athleteId: null, name: 'Torcedor 7' });
+  });
+
+  it('rejects an unknown event type without mutating the object', () => {
+    const match = {};
+    const result = addMatchEvent(match, { type: 'foul', teamId: 't1' });
+    expect(result).toEqual({ ok: false });
+    expect(match.events).toBeUndefined();
+  });
+
+  it('appends to an existing events array on a bracket tie object, same as a match', () => {
+    const tie = { id: 't1', events: [{ id: 'e0', type: 'goal', teamId: 't1', athleteId: null, name: '' }] };
+    addMatchEvent(tie, { type: 'red', teamId: 't2', athleteId: 'a9' });
+    expect(tie.events).toHaveLength(2);
+    expect(tie.events[1]).toMatchObject({ type: 'red', teamId: 't2', athleteId: 'a9' });
+  });
+});
+
+describe('removeMatchEvent', () => {
+  it('removes an event by index', () => {
+    const match = { events: [{ id: 'e0', type: 'goal' }, { id: 'e1', type: 'yellow' }] };
+    const result = removeMatchEvent(match, 0);
+    expect(result).toEqual({ ok: true });
+    expect(match.events).toEqual([{ id: 'e1', type: 'yellow' }]);
+  });
+
+  it('rejects an out-of-range index without mutating', () => {
+    const match = { events: [{ id: 'e0', type: 'goal' }] };
+    expect(removeMatchEvent(match, 5)).toEqual({ ok: false });
+    expect(removeMatchEvent(match, -1)).toEqual({ ok: false });
+    expect(match.events).toHaveLength(1);
+  });
+
+  it('rejects removing from an object with no events array', () => {
+    expect(removeMatchEvent({}, 0)).toEqual({ ok: false });
+  });
+});
+
+describe('clearResults events reset', () => {
+  it('clears match.events alongside scores', () => {
+    const state = { matches: [{ id: 'm1', hg: 2, ag: 1, scorers: ['x'], events: [{ id: 'e0', type: 'goal' }] }] };
+    clearResults(state);
+    expect(state.matches[0].events).toEqual([]);
+  });
+
+  it('clears bracket tie events alongside scores', () => {
+    const state = { matches: [], bracket: { rounds: [[{ id: 't1', a: 'x', b: 'y', ag1: 2, events: [{ id: 'e0', type: 'yellow' }] }]], third: null } };
+    clearResults(state);
+    expect(state.bracket.rounds[0][0].events).toEqual([]);
   });
 });

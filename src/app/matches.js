@@ -1,6 +1,7 @@
 import { fmtDateBR } from './format.js';
 import { venueById, officialById } from './ops.js';
 import { advanceBracket } from './engine.js';
+import { uid } from './utils.js';
 
 export function toISODate(value) {
   if (!value) return '';
@@ -64,9 +65,9 @@ export function saveMatchOps(state, matchId, { date, time, venueId, refereeId, t
 }
 
 export function clearResults(state) {
-  (state.matches || []).forEach((match) => { match.hg = null; match.ag = null; match.scorers = []; });
+  (state.matches || []).forEach((match) => { match.hg = null; match.ag = null; match.scorers = []; match.events = []; });
   if (state.bracket) {
-    const resetTie = (tie) => { tie.ag1 = tie.bg1 = tie.ag2 = tie.bg2 = tie.apen = tie.bpen = null; tie.winner = null; tie.scorers = []; };
+    const resetTie = (tie) => { tie.ag1 = tie.bg1 = tie.ag2 = tie.bg2 = tie.apen = tie.bpen = null; tie.winner = null; tie.scorers = []; tie.events = []; };
     (state.bracket.rounds || []).forEach((round) => round.forEach(resetTie));
     if (state.bracket.third) resetTie(state.bracket.third);
     advanceBracket(state.bracket, state.cfg);
@@ -81,4 +82,20 @@ export function allMatchObjs(state) {
     if (state.bracket.third) out.push(state.bracket.third);
   }
   return out;
+}
+
+const EVENT_TYPES = ['goal', 'yellow', 'red'];
+
+export function addMatchEvent(obj, { type, teamId, athleteId, name } = {}) {
+  if (!obj || !EVENT_TYPES.includes(type)) return { ok: false };
+  obj.events = obj.events || [];
+  const event = { id: uid(), type, teamId, athleteId: athleteId || null, name: name || '' };
+  obj.events.push(event);
+  return { ok: true, event };
+}
+
+export function removeMatchEvent(obj, index) {
+  if (!obj || !Array.isArray(obj.events) || index < 0 || index >= obj.events.length) return { ok: false };
+  obj.events.splice(index, 1);
+  return { ok: true };
 }
