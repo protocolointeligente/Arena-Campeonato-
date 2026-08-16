@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, toISODate } from './matches.js';
+import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, allMatchObjs, toISODate } from './matches.js';
 
 describe('matchMeta', () => {
   it('creates an empty meta object when absent', () => {
@@ -160,5 +160,24 @@ describe('clearResults', () => {
 
   it('is a no-op-safe on a state with no matches/bracket', () => {
     expect(clearResults({})).toEqual({ ok: true });
+  });
+});
+
+describe('allMatchObjs', () => {
+  it('returns league/group matches when there is no bracket', () => {
+    const state = { matches: [{ id: 'm1' }, { id: 'm2' }] };
+    expect(allMatchObjs(state)).toEqual([{ id: 'm1' }, { id: 'm2' }]);
+  });
+
+  it('includes every bracket tie plus the third-place tie', () => {
+    const state = {
+      matches: [],
+      bracket: { rounds: [[{ id: 't1' }, { id: 't2' }], [{ id: 't3' }]], third: { id: 't4' } },
+    };
+    expect(allMatchObjs(state)).toEqual([{ id: 't1' }, { id: 't2' }, { id: 't3' }, { id: 't4' }]);
+  });
+
+  it('handles a state with no matches or bracket', () => {
+    expect(allMatchObjs({})).toEqual([]);
   });
 });

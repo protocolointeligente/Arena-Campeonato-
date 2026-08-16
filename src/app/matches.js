@@ -73,3 +73,12 @@ export function clearResults(state) {
   }
   return { ok: true };
 }
+
+export function allMatchObjs(state) {
+  const out = [...(state.matches || [])];
+  if (state.bracket) {
+    (state.bracket.rounds || []).forEach((round) => out.push(...round));
+    if (state.bracket.third) out.push(state.bracket.third);
+  }
+  return out;
+}
