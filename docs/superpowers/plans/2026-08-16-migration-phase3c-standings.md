@@ -19,7 +19,7 @@
 - The Phase 2d follow-up bug — `setPhaseFormat` never resets `progression.mode` off `'perGroup'` when a phase's format changes away from `grupos`, leaving the mode `<select>` and the summary text disagreeing — is fixed here (Task 4), as flagged in that follow-up as "the natural place to decide the right behavior."
 - The Phase 3a follow-up bug — `standings()` (Tabela tab) shows an all-zero table for a `mata` phase instead of redirecting, unlike `games()`/`config()`'s existing one-line redirect — is fixed here (Task 5), matching the pattern those two already use.
 
-**Pure vs. DOM split**, continuing the established pattern: `src/app/standings.js` (new) and `src/app/matches.js` (extended) hold all data computation, no DOM. `src/app/engine.js` gains `genCross` (mutates `state.bracket`, same contract as its existing `advanceBracket`). `src/pages/championship.js`'s `standings()` is rewritten, `bracketView()` is extended for `grupos` phases, `fasesView()` gains a "Classificar →" button, and a new `scorersView()`/Artilharia tab is added.
+**Pure vs. DOM split**, continuing the established pattern: `src/app/standings.js` (new) and `src/app/matches.js` (extended) hold all data computation, no DOM. `src/app/standings.js` also gains `genCross` (mutates `state.bracket`, same contract as `engine.js`'s existing `advanceBracket`, which it calls). `src/pages/championship.js`'s `standings()` is rewritten, `bracketView()` is extended for `grupos` phases, `fasesView()` gains a "Classificar →" button, and a new `scorersView()`/Artilharia tab is added.
 
 **Tech Stack:** Same as prior phases — vanilla JS ES modules, Vitest.
 
@@ -30,16 +30,15 @@
 - `npm run build`, `npm run verify`, `npm test` must all succeed after every task.
 - No new UI framework — `data-*` + `bind()`.
 - **Every new/changed `class="..."` must be checked against `layout.css`/`tokens.css`**, for both the class's own rule and any descendant-selector rule (standing instruction since Phase 2d). This phase introduces **no new classes** — every new element reuses `.card`, `.table-wrap table`, `.actions`, `.btn`/`.btn.primary`/`.btn.ghost`, and the already-precedented (if unstyled) `.sm` modifier (`matches.js`'s Phase 3b `matchOpsModal` button already used `class="btn ghost sm"` with no CSS rule — do not add a new pattern, reuse that exact precedent). Qualification-zone row highlighting uses an inline `style="background:var(--surface-muted)"` (an existing design token), not a new class.
-- Avoid import cycles: `src/app/standings.js` may import from `src/app/matches.js`, `src/app/roster.js`, `src/app/phases.js`, and `src/app/categories.js` (all one-directional — none of those import `standings.js`). `src/app/engine.js` may import from `src/app/standings.js` (engine already sits "above" phases/categories in the dependency graph). Do not import `engine.js` from `standings.js`.
+- Avoid import cycles: `src/app/standings.js` may import from `src/app/matches.js`, `src/app/roster.js`, `src/app/phases.js`, `src/app/categories.js`, and `src/app/engine.js` (all one-directional). **Correction found during Task 2's review:** `src/app/matches.js` already imports `advanceBracket` from `src/app/engine.js` (added in Phase 3b's review-fix commit, `clearResults` calls it) — so `engine.js` must **not** import `standings.js` (that would close the cycle `engine.js → standings.js → matches.js → engine.js`). `genCross` therefore lives in `standings.js`, not `engine.js` (Task 3, revised below), importing `makeBracketFromOrdered`/`advanceBracket` from `engine.js` the same one-directional way `matches.js` already does.
 
 ## File Structure
 
 | File | Responsibility |
 |---|---|
 | `src/app/matches.js` | Add: `allMatchObjs(state)` — flattens `state.matches` + every bracket tie (rounds + third place) into one array, no DOM |
-| `src/app/standings.js` | Create: `computeStandings`, `standingsForPhase`, `qualifiedFromPhase`, `applyProgression`, `scorerRanking`, `cardRanking`, `standsToRows`, `CRIT_LABEL` — no DOM |
+| `src/app/standings.js` | Create: `computeStandings`, `standingsForPhase`, `qualifiedFromPhase`, `applyProgression`, `scorerRanking`, `cardRanking`, `standsToRows`, `CRIT_LABEL`, `genCross` — no DOM |
 | `src/app/standings.test.js` | Tests for the above |
-| `src/app/engine.js` | Add: `genCross(state)` — builds a cross-seeded bracket from group standings |
 | `src/app/phases.js` | Fix: `setPhaseFormat` resets `progression.mode` off `'perGroup'` when leaving `grupos` |
 | `src/pages/championship.js` | Rewrite `standings()` (per-group/gxg tables, mata redirect, tie-break legend); extend `bracketView()` for `grupos` phases (`genCross` wiring); add "Classificar →" to `fasesView()`; add `scorersView()` + Artilharia tab |
 
@@ -468,19 +467,21 @@ git commit -m "feat: port standings computation, progression, and scorer/card ra
 
 ---
 
-### Task 3: Cross-bracket generation — `genCross` in `src/app/engine.js`
+### Task 3: Cross-bracket generation — `genCross` in `src/app/standings.js`
+
+**Revised during Task 2's review** (see Global Constraints' import-cycle correction above): `genCross` was originally planned for `src/app/engine.js`, but `matches.js` (a `standings.js` dependency) already imports `engine.js` — an `engine.js → standings.js` import would close a cycle. `genCross` lives in `standings.js` instead, importing from `engine.js` the same one-directional way `matches.js` already does.
 
 **Files:**
-- Modify: `src/app/engine.js`
-- Modify: `src/app/engine.test.js`
+- Modify: `src/app/standings.js`
+- Modify: `src/app/standings.test.js`
 
 **Interfaces:**
-- Consumes: `computeStandings` from `./standings.js`; existing `makeBracketFromOrdered`, `advanceBracket` (same file).
+- Consumes: `makeBracketFromOrdered`, `advanceBracket` from `./engine.js`; existing `computeStandings` (same file, from Task 2).
 - Produces: `genCross(state): {ok}` — imported by Task 5.
 
 - [ ] **Step 1: Add the failing tests**
 
-Append to `src/app/engine.test.js`:
+Append to `src/app/standings.test.js`:
 ```js
 describe('genCross', () => {
   it("builds a cross-seeded bracket from each group's top classificam finishers", () => {
@@ -510,23 +511,23 @@ describe('genCross', () => {
   });
 });
 ```
-Update the top import line to include `genCross`:
+Add `genCross` to `src/app/standings.test.js`'s top import line:
 ```js
-import { roundRobin, buildFixtures, buildGxg, tieObj, nextPow2, makeBracketFromOrdered, resolveTie, winnerOf, loserOf, advanceBracket, findTie, generateActivePhase, genCross } from './engine.js';
+import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross } from './standings.js';
 ```
-(Match whatever the existing import list actually contains — add `genCross` to it.)
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npm test -- engine`
+Run: `npm test -- standings`
 Expected: FAIL — `genCross is not a function`.
 
-- [ ] **Step 3: Implement `genCross` in `src/app/engine.js`**
+- [ ] **Step 3: Implement `genCross` in `src/app/standings.js`**
 
-Add the import and function (adapted from legacy `genCross`, `:969`):
+Add this import to the top of `src/app/standings.js` (alongside the existing ones):
 ```js
-import { computeStandings } from './standings.js';
+import { makeBracketFromOrdered, advanceBracket } from './engine.js';
 ```
+Then add the function (adapted from legacy `genCross`, `:969`; it calls the file's own `computeStandings` directly, no import needed for that):
 ```js
 export function genCross(state) {
   const classificam = (state.cfg && state.cfg.classificam) || 2;
@@ -558,13 +559,13 @@ export function genCross(state) {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `npm test -- engine`
+Run: `npm test -- standings`
 Expected: all tests pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/app/engine.js src/app/engine.test.js
+git add src/app/standings.js src/app/standings.test.js
 git commit -m "feat: add genCross, building a cross-seeded bracket from group standings"
 ```
 
@@ -647,7 +648,7 @@ git commit -m "fix: reset perGroup progression mode when a phase leaves grupos f
 - Modify: `src/pages/championship.js`
 
 **Interfaces:**
-- Consumes: `computeStandings`, `applyProgression`, `scorerRanking`, `CRIT_LABEL` from `../app/standings.js`; `genCross` from `../app/engine.js` (extends its existing import).
+- Consumes: `computeStandings`, `applyProgression`, `scorerRanking`, `CRIT_LABEL`, `genCross` from `../app/standings.js`.
 
 No new automated tests (DOM wiring; Task 2/3's suites cover the logic). Same "no live browser in this sandbox" fallback as prior phases — verify by inspection, report `DONE_WITH_CONCERNS` if so.
 
@@ -659,8 +660,8 @@ import { generateActivePhase, advanceBracket, findTie } from '../app/engine.js';
 ```
 Replace with:
 ```js
-import { generateActivePhase, advanceBracket, findTie, genCross } from '../app/engine.js';
-import { computeStandings, applyProgression, scorerRanking, CRIT_LABEL } from '../app/standings.js';
+import { generateActivePhase, advanceBracket, findTie } from '../app/engine.js';
+import { computeStandings, applyProgression, scorerRanking, CRIT_LABEL, genCross } from '../app/standings.js';
 ```
 
 - [ ] **Step 2: Add the Artilharia tab to the nav and the "Classificar →" button's markup**
@@ -800,4 +801,4 @@ git commit -m "feat: wire per-group standings, progression, cross-bracket genera
 
 **Placeholder scan** — no TBD/TODO; every step has literal code.
 
-**Type consistency** — `computeStandings(teams, idxs, matches, cfg)` signature is consistent across `standings.js`, `engine.js`'s `genCross`, and `championship.js`'s `standings()`/`bracketView()` call sites. `state`/`category`/`srcId` parameter order in `applyProgression` matches `categories.js`/`phases.js`'s existing `state, category, id` convention.
+**Type consistency** — `computeStandings(teams, idxs, matches, cfg)` signature is consistent across `standings.js` (including its own `genCross`) and `championship.js`'s `standings()`/`bracketView()` call sites. `state`/`category`/`srcId` parameter order in `applyProgression` matches `categories.js`/`phases.js`'s existing `state, category, id` convention.
