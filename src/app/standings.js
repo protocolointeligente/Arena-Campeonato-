@@ -84,6 +84,7 @@ export function qualifiedFromPhase(state, phase, mode, count) {
 }
 
 export function applyProgression(state, category, srcId, { force = false } = {}) {
+  saveRootIntoActive(state);
   const src = (category.phases || []).find((p) => p.id === srcId);
   if (!src || !src.progression || !src.progression.targetPhaseId) return { ok: false, reason: 'no-target' };
   const target = (category.phases || []).find((p) => p.id === src.progression.targetPhaseId);

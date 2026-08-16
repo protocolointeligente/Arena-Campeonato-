@@ -136,6 +136,8 @@ describe('applyProgression', () => {
     category.phases[0].formato = 'grupos';
     category.phases[0].grupos = [];
     category.phases[0].progression.mode = 'perGroup';
+    state.formato = 'grupos';
+    state.grupos = [];
     expect(applyProgression(state, category, 'p1')).toEqual({ ok: false, reason: 'no-qualifiers' });
   });
 });
