@@ -62,7 +62,7 @@ export function makeBracketFromOrdered(ids, cfg) {
     cur = next;
   }
   const bracket = { rounds };
-  if (size >= 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
+  if (ids.length >= 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
   return bracket;
 }
 
@@ -92,7 +92,19 @@ export function loserOf(tie) {
 export function advanceBracket(bracket, cfg) {
   const rounds = bracket.rounds;
   const single = !!(cfg && cfg.maoUnica);
-  rounds.forEach((round, ri) => round.forEach((tie) => resolveTie(tie, single, ri === 0)));
+  // A round-0 tie is structurally empty iff both sides were null at construction (padding).
+  // A round r>0 tie is structurally empty iff BOTH of its feeder ties (round r-1) are
+  // structurally empty — i.e. no real team can ever reach it. Purely score-independent,
+  // so this is safe to recompute every call.
+  const empty = [rounds[0].map((tie) => tie.a == null && tie.b == null)];
+  for (let r = 1; r < rounds.length; r++) {
+    empty.push(rounds[r].map((_, i) => empty[r - 1][2 * i] && empty[r - 1][2 * i + 1]));
+  }
+  // A tie is allowed to auto-advance a lone present side as a "bye" when it's round 0
+  // (a genuine construction-time bye) OR when exactly one of its two feeder ties is
+  // structurally empty (that feeder can never produce an opponent — not "pending", "never").
+  const allowBye = (r, i) => r === 0 || empty[r - 1][2 * i] !== empty[r - 1][2 * i + 1];
+  rounds.forEach((round, r) => round.forEach((tie, i) => resolveTie(tie, single, allowBye(r, i))));
   for (let r = 0; r < rounds.length - 1; r++) {
     rounds[r].forEach((tie, i) => {
       const target = rounds[r + 1][Math.floor(i / 2)];
@@ -106,7 +118,7 @@ export function advanceBracket(bracket, cfg) {
       bracket.third.b = loserOf(semis[1]);
     }
   }
-  rounds.forEach((round, ri) => round.forEach((tie) => resolveTie(tie, single, ri === 0)));
+  rounds.forEach((round, r) => round.forEach((tie, i) => resolveTie(tie, single, allowBye(r, i))));
   if (bracket.third) resolveTie(bracket.third, single, false);
 }
 

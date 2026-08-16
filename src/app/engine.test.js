@@ -164,6 +164,10 @@ describe('makeBracketFromOrdered', () => {
     expect(makeBracketFromOrdered(['t1', 't2', 't3', 't4'], { terceiro: false }).third).toBeUndefined();
     expect(makeBracketFromOrdered(['t1', 't2'], {}).third).toBeUndefined();
   });
+
+  it('does not create a third-place tie for fewer than 4 real teams, even after padding', () => {
+    expect(makeBracketFromOrdered(['t1', 't2', 't3'], {}).third).toBeUndefined();
+  });
 });
 
 describe('resolveTie', () => {
@@ -276,6 +280,37 @@ describe('advanceBracket', () => {
     expect(bracket.third.a).toBe('t2'); // semi1's loser is known and propagates
     expect(bracket.third.b).toBeNull(); // semi2's loser isn't known yet
     expect(bracket.third.winner).toBeNull(); // must NOT auto-crown t2 — third place hasn't been contested
+  });
+
+  it('every team count from 2 to 16 can reach a champion by scoring every playable tie', () => {
+    for (let n = 2; n <= 16; n++) {
+      const ids = Array.from({ length: n }, (_, i) => `t${i + 1}`);
+      const bracket = makeBracketFromOrdered(ids, {});
+      const cfg = { maoUnica: true };
+      // Repeatedly score every scorable-but-unscored tie with a fixed winner (lower-numbered
+      // side), re-advancing between rounds, until the bracket stops changing.
+      let changed = true;
+      let guard = 0;
+      while (changed && guard++ < 20) {
+        changed = false;
+        advanceBracket(bracket, cfg);
+        for (const round of bracket.rounds) {
+          for (const tie of round) {
+            if (tie.a != null && tie.b != null && tie.winner == null && tie.ag1 == null) {
+              tie.ag1 = 1; tie.bg1 = 0; // side 'a' always wins when both sides are known
+              changed = true;
+            }
+          }
+        }
+        if (bracket.third && bracket.third.a != null && bracket.third.b != null && bracket.third.winner == null && bracket.third.ag1 == null) {
+          bracket.third.ag1 = 1; bracket.third.bg1 = 0;
+          changed = true;
+        }
+      }
+      advanceBracket(bracket, cfg);
+      const finalRound = bracket.rounds[bracket.rounds.length - 1];
+      expect(finalRound[0].winner, `n=${n} should reach a champion`).not.toBeNull();
+    }
   });
 });
 
