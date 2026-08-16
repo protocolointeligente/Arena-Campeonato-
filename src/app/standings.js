@@ -143,10 +143,16 @@ export function genCross(state) {
   let seedList = [];
   const W = byPos[0] || [], R = byPos[1] || [];
   if (classificam >= 2 && W.length === R.length && W.length > 1) {
+    const used = new Set();
     for (let i = 0; i < W.length; i++) {
+      const w = W[i];
       const j = i % 2 === 0 ? i + 1 : i - 1;
-      seedList.push(W[i]);
-      seedList.push(R[j] != null ? R[j] : R[i]);
+      let r = R[j] != null ? R[j] : R[i];
+      if (r != null && used.has(r)) r = null;
+      if (w != null) used.add(w);
+      if (r != null) used.add(r);
+      seedList.push(w);
+      seedList.push(r);
     }
   } else {
     byPos.forEach((arr) => arr.forEach((id) => seedList.push(id)));

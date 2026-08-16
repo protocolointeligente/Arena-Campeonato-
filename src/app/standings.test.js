@@ -202,11 +202,12 @@ describe('genCross', () => {
     expect(ids).toEqual(['a1', 'a2', 'b1', 'b2']);
   });
 
-  it('falls back to grouping by finishing position when group sizes are uneven', () => {
+  it('never assigns the same team to two ties, even with uneven group sizes', () => {
     const teams = [{ id: 'a1' }, { id: 'a2' }, { id: 'b1' }];
     const state = { teams, cfg: { classificam: 2 }, grupos: [['a1', 'a2'], ['b1']], matches: [] };
     const result = genCross(state);
     expect(result).toEqual({ ok: true });
-    expect(state.bracket.rounds[0].length).toBeGreaterThan(0);
+    const ids = state.bracket.rounds[0].flatMap((tie) => [tie.a, tie.b]).filter((id) => id != null);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
