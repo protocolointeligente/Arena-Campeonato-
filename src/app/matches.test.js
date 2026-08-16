@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults } from './matches.js';
+import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, toISODate } from './matches.js';
 
 describe('matchMeta', () => {
   it('creates an empty meta object when absent', () => {
@@ -11,10 +11,16 @@ describe('matchMeta', () => {
   it('migrates a legacy free-text info string into structured fields, once', () => {
     const match = { info: '12/08/2026 · 19:00 · Ginásio Central' };
     const meta = matchMeta(match);
-    expect(meta.date).toBe('12/08/2026');
+    expect(meta.date).toBe('2026-08-12');
     expect(meta.time).toBe('19:00');
     expect(meta.venueText).toBe('Ginásio Central');
     expect(meta._migrated).toBe(true);
+  });
+
+  it('does not migrate a non-date first segment into meta.date', () => {
+    const match = { info: 'Ginásio Central' };
+    const meta = matchMeta(match);
+    expect(meta.date).toBeFalsy();
   });
 
   it('does not re-migrate once already migrated, even if info changes', () => {
@@ -26,6 +32,22 @@ describe('matchMeta', () => {
   it('preserves existing meta fields already set', () => {
     const match = { meta: { venueId: 'v1' } };
     expect(matchMeta(match).venueId).toBe('v1');
+  });
+});
+
+describe('toISODate', () => {
+  it('converts dd/mm/yyyy to yyyy-mm-dd', () => {
+    expect(toISODate('12/08/2026')).toBe('2026-08-12');
+  });
+
+  it('passes an already-ISO date through unchanged', () => {
+    expect(toISODate('2026-08-12')).toBe('2026-08-12');
+  });
+
+  it('returns empty string for anything that is not a recognizable date', () => {
+    expect(toISODate('Ginásio Central')).toBe('');
+    expect(toISODate('')).toBe('');
+    expect(toISODate(null)).toBe('');
   });
 });
 
@@ -102,6 +124,14 @@ describe('saveMatchOps', () => {
   it('reports ok:false for an unknown match id', () => {
     const state = { matches: [] };
     expect(saveMatchOps(state, 'ghost', {})).toEqual({ ok: false });
+  });
+
+  it('clearing the venue selection actually clears the displayed venue, even after a prior save populated venueText via migration', () => {
+    const state = { matches: [{ id: 'm1', home: 0, away: 1, meta: {} }], venues: [{ id: 'v1', name: 'Arena' }], officials: [] };
+    saveMatchOps(state, 'm1', { venueId: 'v1' });
+    metaLine(state, state.matches[0]); // simulates a render pass, which triggers matchMeta's info-migration backfill
+    saveMatchOps(state, 'm1', { venueId: '' });
+    expect(metaLine(state, state.matches[0])).toBe('');
   });
 });
 

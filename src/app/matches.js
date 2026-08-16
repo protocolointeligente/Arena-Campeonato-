@@ -1,11 +1,20 @@
 import { fmtDateBR } from './format.js';
 import { venueById, officialById } from './ops.js';
+import { advanceBracket } from './engine.js';
+
+export function toISODate(value) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const brMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+  return '';
+}
 
 export function matchMeta(match) {
   match.meta = match.meta || {};
   if (match.info && !match.meta._migrated) {
     const parts = splitInfo(match.info);
-    match.meta.date = match.meta.date || parts.data;
+    match.meta.date = match.meta.date || toISODate(parts.data);
     match.meta.time = match.meta.time || parts.hora;
     match.meta.venueText = match.meta.venueText || parts.local;
     match.meta._migrated = true;
@@ -45,6 +54,7 @@ export function saveMatchOps(state, matchId, { date, time, venueId, refereeId, t
   meta.date = date || '';
   meta.time = time || '';
   meta.venueId = venueId || '';
+  meta.venueText = '';
   meta.refereeId = refereeId || '';
   meta.tableOfficialId = tableOfficialId || '';
   meta.status = status || 'scheduled';
@@ -59,6 +69,7 @@ export function clearResults(state) {
     const resetTie = (tie) => { tie.ag1 = tie.bg1 = tie.ag2 = tie.bg2 = tie.apen = tie.bpen = null; tie.winner = null; tie.scorers = []; };
     (state.bracket.rounds || []).forEach((round) => round.forEach(resetTie));
     if (state.bracket.third) resetTie(state.bracket.third);
+    advanceBracket(state.bracket, state.cfg);
   }
   return { ok: true };
 }
