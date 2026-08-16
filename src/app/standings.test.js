@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross, suspensionInfo } from './standings.js';
+import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross, suspensionInfo, critMove, critRemove, critAdd } from './standings.js';
 
 const teams = [{ id: 'a', nome: 'Alfa' }, { id: 'b', nome: 'Beta' }, { id: 'c', nome: 'Gama' }];
 
@@ -237,5 +237,31 @@ describe('suspensionInfo', () => {
   it('ignores events for other athletes and non-card event types', () => {
     const state = { matches: [{ id: 'm1', events: [{ type: 'goal', athleteId: 'ath1' }, { type: 'yellow', athleteId: 'ath2' }] }] };
     expect(suspensionInfo(state, 'ath1')).toEqual({ y: 0, r: 0, suspended: false, reason: '' });
+  });
+});
+
+describe('critMove/critRemove/critAdd', () => {
+  it('critMove swaps two tail entries by index, keeping P fixed first', () => {
+    expect(critMove(['P', 'V', 'SG', 'GP'], 0, 1)).toEqual(['P', 'SG', 'V', 'GP']);
+  });
+
+  it('critMove is a no-op past either boundary', () => {
+    const order = ['P', 'V', 'SG', 'GP'];
+    expect(critMove(order, 0, -1)).toEqual(order);
+    expect(critMove(order, 2, 1)).toEqual(order);
+  });
+
+  it('critRemove drops a tail entry by index', () => {
+    expect(critRemove(['P', 'V', 'SG', 'GP'], 1)).toEqual(['P', 'V', 'GP']);
+  });
+
+  it('critAdd appends a new criterion once, ignoring duplicates', () => {
+    expect(critAdd(['P', 'V'], 'DISC')).toEqual(['P', 'V', 'DISC']);
+    expect(critAdd(['P', 'V', 'DISC'], 'DISC')).toEqual(['P', 'V', 'DISC']);
+  });
+
+  it('all three treat a missing/empty criterios array as just P', () => {
+    expect(critMove(undefined, 0, 1)).toEqual(['P']);
+    expect(critAdd([], 'V')).toEqual(['P', 'V']);
   });
 });

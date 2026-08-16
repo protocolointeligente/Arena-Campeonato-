@@ -177,3 +177,23 @@ export function suspensionInfo(state, athleteId) {
   const pending = r > 0 || (lim > 0 && y > 0 && y % lim === 0);
   return { y, r, suspended: pending, reason: r > 0 ? 'vermelho' : (pending ? lim + 'º amarelo' : '') };
 }
+
+export function critMove(criterios, i, dir) {
+  const tail = (criterios || []).filter((c) => c !== 'P');
+  const j = i + dir;
+  if (j < 0 || j >= tail.length) return ['P', ...tail];
+  [tail[i], tail[j]] = [tail[j], tail[i]];
+  return ['P', ...tail];
+}
+
+export function critRemove(criterios, i) {
+  const tail = (criterios || []).filter((c) => c !== 'P');
+  tail.splice(i, 1);
+  return ['P', ...tail];
+}
+
+export function critAdd(criterios, value) {
+  const tail = (criterios || []).filter((c) => c !== 'P');
+  if (value && !tail.includes(value)) tail.push(value);
+  return ['P', ...tail];
+}
