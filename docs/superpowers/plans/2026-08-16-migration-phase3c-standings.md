@@ -502,12 +502,13 @@ describe('genCross', () => {
     expect(ids).toEqual(['a1', 'a2', 'b1', 'b2']);
   });
 
-  it('falls back to grouping by finishing position when group sizes are uneven', () => {
+  it('never assigns the same team to two ties, even with uneven group sizes', () => {
     const teams = [{ id: 'a1' }, { id: 'a2' }, { id: 'b1' }];
     const state = { teams, cfg: { classificam: 2 }, grupos: [['a1', 'a2'], ['b1']], matches: [] };
     const result = genCross(state);
     expect(result).toEqual({ ok: true });
-    expect(state.bracket.rounds[0].length).toBeGreaterThan(0);
+    const ids = state.bracket.rounds[0].flatMap((tie) => [tie.a, tie.b]).filter((id) => id != null);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 ```
@@ -543,10 +544,20 @@ export function genCross(state) {
   let seedList = [];
   const W = byPos[0] || [], R = byPos[1] || [];
   if (classificam >= 2 && W.length === R.length && W.length > 1) {
+    // Legacy's own R[j]-with-R[i]-fallback can assign the same team to two ties at once when a
+    // group has fewer teams than `classificam` (R[j] and R[i] can resolve to the same id). Track
+    // used ids and fall back to a null bye instead of a duplicate — makeBracketFromOrdered/
+    // advanceBracket already treat null slots as byes, so this degrades safely.
+    const used = new Set();
     for (let i = 0; i < W.length; i++) {
+      const w = W[i];
       const j = i % 2 === 0 ? i + 1 : i - 1;
-      seedList.push(W[i]);
-      seedList.push(R[j] != null ? R[j] : R[i]);
+      let r = R[j] != null ? R[j] : R[i];
+      if (r != null && used.has(r)) r = null;
+      if (w != null) used.add(w);
+      if (r != null) used.add(r);
+      seedList.push(w);
+      seedList.push(r);
     }
   } else {
     byPos.forEach((arr) => arr.forEach((id) => seedList.push(id)));
