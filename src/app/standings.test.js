@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross } from './standings.js';
+import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross, suspensionInfo } from './standings.js';
 
 const teams = [{ id: 'a', nome: 'Alfa' }, { id: 'b', nome: 'Beta' }, { id: 'c', nome: 'Gama' }];
 
@@ -209,5 +209,33 @@ describe('genCross', () => {
     expect(result).toEqual({ ok: true });
     const ids = state.bracket.rounds[0].flatMap((tie) => [tie.a, tie.b]).filter((id) => id != null);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('suspensionInfo', () => {
+  it('flags a red card as an immediate suspension', () => {
+    const state = { matches: [{ id: 'm1', events: [{ type: 'red', athleteId: 'ath1' }] }] };
+    expect(suspensionInfo(state, 'ath1')).toEqual({ y: 0, r: 1, suspended: true, reason: 'vermelho' });
+  });
+
+  it('flags the Nth yellow card as a suspension, using cfg.yellowLimit', () => {
+    const state = {
+      cfg: { yellowLimit: 2 },
+      matches: [
+        { id: 'm1', events: [{ type: 'yellow', athleteId: 'ath1' }] },
+        { id: 'm2', events: [{ type: 'yellow', athleteId: 'ath1' }] },
+      ],
+    };
+    expect(suspensionInfo(state, 'ath1')).toEqual({ y: 2, r: 0, suspended: true, reason: '2º amarelo' });
+  });
+
+  it('defaults yellowLimit to 3 when cfg has none', () => {
+    const state = { matches: [{ id: 'm1', events: [{ type: 'yellow', athleteId: 'ath1' }, { type: 'yellow', athleteId: 'ath1' }] }] };
+    expect(suspensionInfo(state, 'ath1')).toEqual({ y: 2, r: 0, suspended: false, reason: '' });
+  });
+
+  it('ignores events for other athletes and non-card event types', () => {
+    const state = { matches: [{ id: 'm1', events: [{ type: 'goal', athleteId: 'ath1' }, { type: 'yellow', athleteId: 'ath2' }] }] };
+    expect(suspensionInfo(state, 'ath1')).toEqual({ y: 0, r: 0, suspended: false, reason: '' });
   });
 });

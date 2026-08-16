@@ -165,3 +165,15 @@ export function genCross(state) {
   advanceBracket(state.bracket, state.cfg || {});
   return { ok: true };
 }
+
+export function suspensionInfo(state, athleteId) {
+  const lim = (state.cfg && state.cfg.yellowLimit) || 3;
+  let y = 0, r = 0;
+  allMatchObjs(state).forEach((m) => (m.events || []).forEach((e) => {
+    if (e.athleteId !== athleteId) return;
+    if (e.type === 'yellow') y++;
+    else if (e.type === 'red') r++;
+  }));
+  const pending = r > 0 || (lim > 0 && y > 0 && y % lim === 0);
+  return { y, r, suspended: pending, reason: r > 0 ? 'vermelho' : (pending ? lim + 'º amarelo' : '') };
+}
