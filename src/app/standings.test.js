@@ -245,10 +245,11 @@ describe('critMove/critRemove/critAdd', () => {
     expect(critMove(['P', 'V', 'SG', 'GP'], 0, 1)).toEqual(['P', 'SG', 'V', 'GP']);
   });
 
-  it('critMove is a no-op past either boundary', () => {
+  it('critMove is a no-op past either boundary, and does not mutate its input', () => {
     const order = ['P', 'V', 'SG', 'GP'];
-    expect(critMove(order, 0, -1)).toEqual(order);
-    expect(critMove(order, 2, 1)).toEqual(order);
+    expect(critMove(order, 0, -1)).toEqual(['P', 'V', 'SG', 'GP']);
+    expect(critMove(order, 2, 1)).toEqual(['P', 'V', 'SG', 'GP']);
+    expect(order).toEqual(['P', 'V', 'SG', 'GP']);
   });
 
   it('critRemove drops a tail entry by index', () => {
