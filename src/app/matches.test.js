@@ -231,6 +231,13 @@ describe('removeMatchEvent', () => {
   it('rejects removing from an object with no events array', () => {
     expect(removeMatchEvent({}, 0)).toEqual({ ok: false });
   });
+
+  it('rejects a non-integer index without mutating', () => {
+    const match = { events: [{ id: 'e0', type: 'goal' }, { id: 'e1', type: 'yellow' }] };
+    expect(removeMatchEvent(match, NaN)).toEqual({ ok: false });
+    expect(removeMatchEvent(match, 0.5)).toEqual({ ok: false });
+    expect(match.events).toHaveLength(2);
+  });
 });
 
 describe('clearResults events reset', () => {

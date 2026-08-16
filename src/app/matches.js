@@ -95,7 +95,7 @@ export function addMatchEvent(obj, { type, teamId, athleteId, name } = {}) {
 }
 
 export function removeMatchEvent(obj, index) {
-  if (!obj || !Array.isArray(obj.events) || index < 0 || index >= obj.events.length) return { ok: false };
+  if (!obj || !Array.isArray(obj.events) || !Number.isInteger(index) || index < 0 || index >= obj.events.length) return { ok: false };
   obj.events.splice(index, 1);
   return { ok: true };
 }
