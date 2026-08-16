@@ -62,7 +62,7 @@ export function makeBracketFromOrdered(ids, cfg) {
     cur = next;
   }
   const bracket = { rounds };
-  if (ids.length >= 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
+  if (size >= 4 && ids.length > size * 3 / 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
   return bracket;
 }
 
@@ -104,12 +104,17 @@ export function advanceBracket(bracket, cfg) {
   // (a genuine construction-time bye) OR when exactly one of its two feeder ties is
   // structurally empty (that feeder can never produce an opponent — not "pending", "never").
   const allowBye = (r, i) => r === 0 || empty[r - 1][2 * i] !== empty[r - 1][2 * i + 1];
-  rounds.forEach((round, r) => round.forEach((tie, i) => resolveTie(tie, single, allowBye(r, i))));
-  for (let r = 0; r < rounds.length - 1; r++) {
-    rounds[r].forEach((tie, i) => {
-      const target = rounds[r + 1][Math.floor(i / 2)];
-      target[i % 2 === 0 ? 'a' : 'b'] = tie.winner;
-    });
+  // Single interleaved pass: resolve round r, then immediately propagate r -> r+1, so
+  // round r+1 sees fresh slots when its own turn comes in this SAME loop — reaching the
+  // fixpoint in one call no matter how many rounds a bye cascade spans.
+  for (let r = 0; r < rounds.length; r++) {
+    rounds[r].forEach((tie, i) => resolveTie(tie, single, allowBye(r, i)));
+    if (r < rounds.length - 1) {
+      rounds[r].forEach((tie, i) => {
+        const target = rounds[r + 1][Math.floor(i / 2)];
+        target[i % 2 === 0 ? 'a' : 'b'] = tie.winner;
+      });
+    }
   }
   if (bracket.third && rounds.length >= 2) {
     const semis = rounds[rounds.length - 2];
@@ -118,7 +123,6 @@ export function advanceBracket(bracket, cfg) {
       bracket.third.b = loserOf(semis[1]);
     }
   }
-  rounds.forEach((round, r) => round.forEach((tie, i) => resolveTie(tie, single, allowBye(r, i))));
   if (bracket.third) resolveTie(bracket.third, single, false);
 }
 

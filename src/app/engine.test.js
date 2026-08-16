@@ -168,6 +168,14 @@ describe('makeBracketFromOrdered', () => {
   it('does not create a third-place tie for fewer than 4 real teams, even after padding', () => {
     expect(makeBracketFromOrdered(['t1', 't2', 't3'], {}).third).toBeUndefined();
   });
+
+  it('only creates a third-place tie when both semifinals will be real matches', () => {
+    // size=8 (padded), 5 real teams: one semi is a bye, no genuine third-place possible
+    expect(makeBracketFromOrdered(['t1','t2','t3','t4','t5'], {}).third).toBeUndefined();
+    expect(makeBracketFromOrdered(['t1','t2','t3','t4','t5','t6'], {}).third).toBeUndefined();
+    // size=8, 7 real teams: only one bye at the very bottom, both semis are real
+    expect(makeBracketFromOrdered(['t1','t2','t3','t4','t5','t6','t7'], {}).third).toBeDefined();
+  });
 });
 
 describe('resolveTie', () => {
@@ -309,6 +317,8 @@ describe('advanceBracket', () => {
       }
       advanceBracket(bracket, cfg);
       const finalRound = bracket.rounds[bracket.rounds.length - 1];
+      expect(finalRound[0].a, `n=${n} final should have both sides filled`).not.toBeNull();
+      expect(finalRound[0].b, `n=${n} final should have both sides filled`).not.toBeNull();
       expect(finalRound[0].winner, `n=${n} should reach a champion`).not.toBeNull();
     }
   });
