@@ -265,7 +265,7 @@ Replace with:
     const rows = cardRanking(state);
     const suspended = [];
     (state.teams || []).forEach((team) => (team.roster || []).forEach((athlete) => { const info = suspensionInfo(state, athlete.id); if (info.suspended) suspended.push({ athlete, team, info }); }));
-    const suspHTML = suspended.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--accent)"><h2>⛔ Suspensos para o próximo jogo</h2>${suspended.map((x) => `<div class="team-row"><span><strong>${esc(x.athlete.nome)}</strong> <span class="muted">— ${esc(x.team.nome)}</span></span><span class="muted">${esc(x.info.reason)}</span></div>`).join('')}</div>` : '';
+    const suspHTML = suspended.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--accent)"><h2>⛔ Suspensos para o próximo jogo</h2>${suspended.map((x) => `<div class="team-row"><span>⛔</span><span><strong>${esc(x.athlete.nome)}</strong> <span class="muted">— ${esc(x.team.nome)}</span></span><span class="muted">${esc(x.info.reason)}</span></div>`).join('')}</div>` : '';
     const table = rows.length ? `<div class="card"><h2>Cartões</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Atleta</th><th>Equipe</th><th>🟨</th><th>🟥</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.teamId ? esc(teamNameById(state, r.teamId) || '—') : '—'}</td><td>${r.y || ''}</td><td>${r.r || ''}</td></tr>`).join('')}</tbody></table></div></div>` : `<div class="card"><p class="muted">Nenhum cartão registrado.</p></div>`;
     return `<p class="muted" style="margin:0 0 12px;font-size:13px">Regra de suspensão: cartão vermelho ou ${lim} amarelos = 1 jogo de suspensão.</p>${suspHTML}${table}`;
   }
@@ -273,7 +273,7 @@ Replace with:
 
 - [ ] **Step 4: CSS check**
 
-Every element added in Steps 2–3 reuses `.card`, `.table-wrap table`, `.team-row`, `.muted`. The suspension-warning card's `border-color:var(--accent)` is an inline style using an existing token, not a new class. No new selectors needed. Confirm by re-reading the markup before moving on.
+Every element added in Steps 2–3 reuses `.card`, `.table-wrap table`, `.team-row` (3 children — the ⛔ spacer fills the 34px column, matching every other `.team-row` usage in the file), `.muted`. The suspension-warning card's `border-color:var(--accent)` is an inline style using an existing token, not a new class. No new selectors needed. Confirm by re-reading the markup before moving on.
 
 - [ ] **Step 5: Run the full test suite and build**
 
