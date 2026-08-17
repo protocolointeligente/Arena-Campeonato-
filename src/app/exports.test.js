@@ -41,4 +41,22 @@ describe('parseChampionshipImport', () => {
     expect(parseChampionshipImport(JSON.stringify({ nome: 'Copa' }))).toEqual({ ok: false, reason: 'invalid' });
     expect(parseChampionshipImport(JSON.stringify({ cfg: {} }))).toEqual({ ok: false, reason: 'invalid' });
   });
+
+  it('round-trips through championshipJSON, stripping owner identity and collaborators', () => {
+    const original = { id: 'orig-id', nome: 'Copa', formato: 'liga', cfg: { winPts: 3 }, teams: [], ownerUid: 'owner-123', ownerEmail: 'owner@example.com', collaborators: [{ email: 'friend@example.com', role: 'admin' }], billing: { plan: 'pro' } };
+    const exported = championshipJSON(original);
+    const result = parseChampionshipImport(exported.content);
+    expect(result.ok).toBe(true);
+    expect(result.value.id).not.toBe('orig-id');
+    expect(result.value.ownerUid).toBeUndefined();
+    expect(result.value.ownerEmail).toBeUndefined();
+    expect(result.value.collaborators).toBeUndefined();
+    expect(result.value.billing).toBeUndefined();
+  });
+
+  it('rejects a non-object cfg without throwing', () => {
+    expect(() => parseChampionshipImport(JSON.stringify({ formato: 'liga', cfg: 'not-an-object' }))).not.toThrow();
+    expect(parseChampionshipImport(JSON.stringify({ formato: 'liga', cfg: 'not-an-object' }))).toEqual({ ok: false, reason: 'invalid' });
+    expect(parseChampionshipImport(JSON.stringify({ formato: 'liga', cfg: null }))).toEqual({ ok: false, reason: 'invalid' });
+  });
 });

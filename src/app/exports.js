@@ -12,8 +12,12 @@ export function parseChampionshipImport(text) {
   } catch {
     return { ok: false, reason: 'invalid' };
   }
-  if (!value || !value.cfg || !value.formato) return { ok: false, reason: 'invalid' };
+  if (!value || typeof value !== 'object' || !value.formato || typeof value.cfg !== 'object' || !value.cfg) return { ok: false, reason: 'invalid' };
   value.id = uid();
   value.cfg.seedNames = value.cfg.seedNames || [];
+  delete value.ownerUid;
+  delete value.ownerEmail;
+  delete value.collaborators;
+  delete value.billing;
   return { ok: true, value };
 }
