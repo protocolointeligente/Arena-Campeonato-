@@ -19,6 +19,7 @@ import { renderSuperadmin } from '../pages/superadmin.js';
 import { renderAuditCenter } from '../pages/audit-center.js';
 import { renderSecurityCenter } from '../pages/security-center.js';
 import { renderPrivacyCenter } from '../pages/privacy-center.js';
+import { renderBetaHardening } from '../pages/beta-hardening.js';
 import { renderPublication } from '../pages/publication.js';
 
 const root = document.querySelector('#app');
@@ -33,7 +34,7 @@ route('/campeonatos/novo', () => renderNewChampionship(root));
 route('/planos', () => renderPlans(root));
 route('/superadmin', () => renderSuperadmin(root));
 route('/publicacao', () => renderLanding(root));
-const dynamicRoute = () => { const auditMatch = window.location.pathname.match(/^\/superadmin\/auditoria$/); if (auditMatch) return renderAuditCenter(root); const securityMatch = window.location.pathname.match(/^\/superadmin\/seguranca$/); if (securityMatch) return renderSecurityCenter(root); const privacyMatch = window.location.pathname.match(/^\/superadmin\/privacidade$/); if (privacyMatch) return renderPrivacyCenter(root); const publicationMatch = window.location.pathname.match(/^\/publicacao\/([^/]+)$/); if (publicationMatch) return renderPublication(root, publicationMatch[1]); const registrationMatch = window.location.pathname.match(/^\/inscrever\/([^/]+)$/); if (registrationMatch) return renderRegistration(root, registrationMatch[1]); const publicMatch = window.location.pathname.match(/^\/publico\/([^/]+)$/); if (publicMatch) return renderPublicChampionship(root, publicMatch[1]); const match = window.location.pathname.match(/^\/campeonatos\/([^/]+)$/); if (match && match[1] !== 'novo') return renderChampionship(root, match[1]); if (window.location.pathname === '/campeonatos/novo') return renderNewChampionship(root); renderRoute(); };
+const dynamicRoute = () => { const auditMatch = window.location.pathname.match(/^\/superadmin\/auditoria$/); if (auditMatch) return renderAuditCenter(root); const securityMatch = window.location.pathname.match(/^\/superadmin\/seguranca$/); if (securityMatch) return renderSecurityCenter(root); const privacyMatch = window.location.pathname.match(/^\/superadmin\/privacidade$/); if (privacyMatch) return renderPrivacyCenter(root); const betaMatch = window.location.pathname.match(/^\/superadmin\/beta$/); if (betaMatch) return renderBetaHardening(root); const publicationMatch = window.location.pathname.match(/^\/publicacao\/([^/]+)$/); if (publicationMatch) return renderPublication(root, publicationMatch[1]); const registrationMatch = window.location.pathname.match(/^\/inscrever\/([^/]+)$/); if (registrationMatch) return renderRegistration(root, registrationMatch[1]); const publicMatch = window.location.pathname.match(/^\/publico\/([^/]+)$/); if (publicMatch) return renderPublicChampionship(root, publicMatch[1]); const match = window.location.pathname.match(/^\/campeonatos\/([^/]+)$/); if (match && match[1] !== 'novo') return renderChampionship(root, match[1]); if (window.location.pathname === '/campeonatos/novo') return renderNewChampionship(root); renderRoute(); };
 window.__arenaRenderRoute = dynamicRoute;
 window.addEventListener('popstate', dynamicRoute);
 dynamicRoute();
