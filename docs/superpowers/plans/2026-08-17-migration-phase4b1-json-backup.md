@@ -252,7 +252,7 @@ Find:
 Replace with:
 ```js
   root.querySelector('[data-new]').onclick = () => navigate('/campeonatos/novo');
-  root.querySelector('[data-import-json]').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json'; input.onchange = () => { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const result = parseChampionshipImport(String(reader.result)); if (!result.ok) return toast('Arquivo inválido'); await saveChampionship(result.value); toast('Importado para sua conta'); navigate(`/campeonatos/${result.value.id}`); }; reader.readAsText(file); }; input.click(); };
+  root.querySelector('[data-import-json]').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json'; input.onchange = () => { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const result = parseChampionshipImport(String(reader.result)); if (!result.ok) return toast('Arquivo inválido'); try { await saveChampionship(result.value); toast('Importado para sua conta'); navigate(`/campeonatos/${result.value.id}`); } catch (error) { toast(error.message || 'Não foi possível importar'); } }; reader.readAsText(file); }; input.click(); };
 ```
 
 - [ ] **Step 4: CSS check**
