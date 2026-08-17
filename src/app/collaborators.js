@@ -12,8 +12,9 @@ export function ensureCollaborators(state) {
 }
 
 // NOTE: legacy also OR's in isPlatformSuperadmin() here so platform superadmins can
-// manage any championship. That panel doesn't exist in src/ yet (Phase 6b) — add the
-// override there once it does, rather than guessing its shape now.
+// manage any championship. isSuperadmin() (src/services/superadmin.js) is async, and
+// this module must stay synchronous/pure, so that override lives in the page layer
+// instead — see championship.js's persist()/managementView() gates.
 export function isOwner(state, user) {
   return !!(state && user && state.ownerUid === user.uid);
 }
@@ -78,5 +79,6 @@ export function removeManager(state, user, id) {
   ensureCollaborators(state);
   const before = state.collaborators.length;
   state.collaborators = state.collaborators.filter((c) => c.id !== id);
-  return { ok: state.collaborators.length < before };
+  if (state.collaborators.length === before) return { ok: false, reason: 'Colaborador não encontrado.' };
+  return { ok: true };
 }

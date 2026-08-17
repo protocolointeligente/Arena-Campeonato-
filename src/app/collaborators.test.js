@@ -175,4 +175,10 @@ describe('removeManager', () => {
     expect(result.ok).toBe(true);
     expect(state.collaborators).toHaveLength(0);
   });
+
+  it('no-ops for an unknown id with a reason', () => {
+    const state = championship();
+    const result = removeManager(state, OWNER, 'ghost');
+    expect(result).toEqual({ ok: false, reason: 'Colaborador não encontrado.' });
+  });
 });
