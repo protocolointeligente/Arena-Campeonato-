@@ -1,4 +1,44 @@
 import { navigate } from '../app/router.js';
-import { PLANS, PIX_KEY, requestPlan } from '../services/billing.js';
-export function renderPlans(root) { root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><small>PLANOS ARENA</small><h1>Escolha como <em>crescer</em></h1><p class="muted">Comece grátis e evolua conforme seus campeonatos aumentam.</p><div class="grid" style="margin-top:24px">${Object.values(PLANS).map((plan) => `<article class="card"><small>${plan.name}</small><h2>R$ ${plan.price.toFixed(2).replace('.', ',')}<small>/mês</small></h2><p class="muted">${plan.description}</p><button class="btn primary" data-plan="${plan.id}">Assinar com Pix</button></article>`).join('')}</div><p class="muted" style="margin-top:24px">O pagamento é confirmado manualmente pelo superadmin antes da liberação do acesso.</p></main></div>`; root.querySelector('[data-back]').onclick = () => navigate('/'); root.querySelectorAll('[data-plan]').forEach((button) => button.onclick = () => checkout(root, button.dataset.plan)); }
-function checkout(root, planId) { const plan = PLANS[planId]; root.querySelector('main').insertAdjacentHTML('beforeend', `<div class="modal-backdrop"><div class="card modal-card"><h2>Checkout Pix — ${plan.name}</h2><p class="muted">Pague <strong>R$ ${plan.price.toFixed(2).replace('.', ',')}</strong> usando a chave abaixo.</p><code class="pix-key">${PIX_KEY}</code><button class="btn" data-copy>Copiar chave Pix</button><button class="btn primary" data-paid>Já paguei</button><button class="btn ghost" data-close>Cancelar</button><p class="muted" data-message></p></div></div>`); const modal = root.querySelector('.modal-backdrop'); root.querySelector('[data-close]').onclick = () => modal.remove(); root.querySelector('[data-copy]').onclick = () => navigator.clipboard?.writeText(PIX_KEY); root.querySelector('[data-paid]').onclick = async () => { try { await requestPlan(planId); root.querySelector('[data-message]').textContent = 'Solicitação registrada. Aguarde a confirmação do pagamento.'; } catch (error) { root.querySelector('[data-message]').textContent = error.message || 'Entre na sua conta para continuar.'; } }; }
+import { esc } from '../app/utils.js';
+import { toast } from '../app/ui.js';
+import { auth } from '../services/firebase.js';
+import { planCardsHTML, planLimitText, currentPlan, choosePlan, confirmPlanRequest } from '../app/plans.js';
+
+export async function renderPlans(root) {
+  root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section"><div data-body><div class="card">Carregando planos...</div></div></main></div>`;
+  root.querySelector('[data-back]').onclick = () => navigate('/');
+  const body = root.querySelector('[data-body]');
+  const user = auth.currentUser;
+
+  async function load() {
+    if (!user) {
+      body.innerHTML = `<div class="card"><h2>Faça login</h2><p class="muted">Você precisa estar logado para ver seus planos.</p></div>`;
+      return;
+    }
+    renderBody();
+  }
+
+  function renderBody() {
+    const planId = currentPlan(user);
+    const plan = PLAN_DEFINITIONS[planId] || PLAN_DEFINITIONS.free;
+    body.innerHTML = `<div class="hero" style="padding-top:10px;min-height:0"><h1>PLANOS E <em>COBRANÇA</em></h1><p class="muted">Gerencie sua assinatura e veja os limites do seu plano.</p></div><div class="card" style="margin-top:18px"><h2>Plano atual: ${plan.name}</h2><p class="muted">${planLimitText(planId)}</p><p class="muted" style="margin-top:8px">Status: ${user.billing?.status === 'active' ? '✅ Ativo' : user.billing?.status === 'pending' ? '⏳ Pendente' : '⚪ Grátis'}</p></div><div class="card" style="margin-top:16px"><h2>Escolha seu plano</h2><div class="grid" style="margin-top:12px">${planCardsHTML(planId)}</div></div>`;
+    body.querySelectorAll('[data-choose-plan]').forEach((button) => {
+      button.onclick = async () => {
+        const planId = button.dataset.choosePlan;
+        if (planId === currentPlan(user)) return;
+        const result = choosePlan(user, planId);
+        if (!result.ok) return toast(result.reason);
+        if (result.pending) {
+          const confirmed = confirmPlanRequest(user, planId);
+          if (!confirmed.ok) return toast(confirmed.reason);
+          toast('Solicitação de upgrade enviada! Aguarde aprovação do superadmin.');
+        } else {
+          toast(`Plano ${PLAN_DEFINITIONS[planId].name} ativado!`);
+        }
+        renderBody();
+      };
+    });
+  }
+
+  await load();
+}
