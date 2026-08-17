@@ -16,6 +16,7 @@ import { renderPlans } from '../pages/plans.js';
 import { renderPublicChampionship } from '../pages/public-championship.js';
 import { renderRegistration } from '../pages/registration.js';
 import { renderSuperadmin } from '../pages/superadmin.js';
+import { renderAuditCenter } from '../pages/audit-center.js';
 import { renderPublication } from '../pages/publication.js';
 
 const root = document.querySelector('#app');
@@ -30,7 +31,7 @@ route('/campeonatos/novo', () => renderNewChampionship(root));
 route('/planos', () => renderPlans(root));
 route('/superadmin', () => renderSuperadmin(root));
 route('/publicacao', () => renderLanding(root));
-const dynamicRoute = () => { const publicationMatch = window.location.pathname.match(/^\/publicacao\/([^/]+)$/); if (publicationMatch) return renderPublication(root, publicationMatch[1]); const registrationMatch = window.location.pathname.match(/^\/inscrever\/([^/]+)$/); if (registrationMatch) return renderRegistration(root, registrationMatch[1]); const publicMatch = window.location.pathname.match(/^\/publico\/([^/]+)$/); if (publicMatch) return renderPublicChampionship(root, publicMatch[1]); const match = window.location.pathname.match(/^\/campeonatos\/([^/]+)$/); if (match && match[1] !== 'novo') return renderChampionship(root, match[1]); if (window.location.pathname === '/campeonatos/novo') return renderNewChampionship(root); renderRoute(); };
+const dynamicRoute = () => { const auditMatch = window.location.pathname.match(/^\/superadmin\/auditoria$/); if (auditMatch) return renderAuditCenter(root); const publicationMatch = window.location.pathname.match(/^\/publicacao\/([^/]+)$/); if (publicationMatch) return renderPublication(root, publicationMatch[1]); const registrationMatch = window.location.pathname.match(/^\/inscrever\/([^/]+)$/); if (registrationMatch) return renderRegistration(root, registrationMatch[1]); const publicMatch = window.location.pathname.match(/^\/publico\/([^/]+)$/); if (publicMatch) return renderPublicChampionship(root, publicMatch[1]); const match = window.location.pathname.match(/^\/campeonatos\/([^/]+)$/); if (match && match[1] !== 'novo') return renderChampionship(root, match[1]); if (window.location.pathname === '/campeonatos/novo') return renderNewChampionship(root); renderRoute(); };
 window.__arenaRenderRoute = dynamicRoute;
 window.addEventListener('popstate', dynamicRoute);
 dynamicRoute();
