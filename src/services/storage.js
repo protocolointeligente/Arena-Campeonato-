@@ -1,6 +1,7 @@
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebase.js';
 import { resizeImage } from '../app/images.js';
+import { compressPhoto } from '../app/roster.js';
 
 const BRAND_SPEC = {
   logo: { maxW: 500, maxH: 500, quality: 0.82 },
@@ -21,6 +22,24 @@ export async function uploadSponsorLogo(championshipId, file) {
   const dataUrl = await resizeImage(file, 360, 180, 0.78);
   if (!dataUrl) return '';
   const path = `championships/${championshipId}/sponsors/${Date.now()}.jpg`;
+  const fileRef = ref(storage, path);
+  await uploadString(fileRef, dataUrl, 'data_url');
+  return getDownloadURL(fileRef);
+}
+
+export async function uploadAthletePhoto(championshipId, file) {
+  const dataUrl = await compressPhoto(file);
+  if (!dataUrl) return '';
+  const path = `championships/${championshipId}/athletes/${Date.now()}.jpg`;
+  const fileRef = ref(storage, path);
+  await uploadString(fileRef, dataUrl, 'data_url');
+  return getDownloadURL(fileRef);
+}
+
+export async function uploadTeamLogo(championshipId, file) {
+  const dataUrl = await compressPhoto(file);
+  if (!dataUrl) return '';
+  const path = `championships/${championshipId}/teams/${Date.now()}.jpg`;
   const fileRef = ref(storage, path);
   await uploadString(fileRef, dataUrl, 'data_url');
   return getDownloadURL(fileRef);
