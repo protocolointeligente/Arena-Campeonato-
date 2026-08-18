@@ -78,7 +78,7 @@ describe('report utilities', () => {
     vi.resetModules();
     vi.doMock('jspdf', () => ({ jsPDF: undefined }));
     const { reportBase: reportBaseNoPdf } = await import('./reports.js');
-    const result = reportBaseNoPdf(mockState, 'Test', 'Sub');
+    const result = await reportBaseNoPdf(mockState, 'Test', 'Sub');
     expect(result).toBeNull();
   });
 });

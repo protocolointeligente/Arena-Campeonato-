@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import { computeStandings, scorerRanking, cardRanking, suspensionInfo } from './standings.js';
 import { allMatchObjs, matchMeta } from './matches.js';
 import { venueById, officialById } from './ops.js';
@@ -8,8 +7,14 @@ import { activeCategory } from './categories.js';
 import { fmtDateBR } from './format.js';
 import { esc } from './utils.js';
 
-export function reportBase(state, title, subtitle) {
-  if (typeof jsPDF !== 'function') { return null; }
+async function getJsPDF() {
+  const { jsPDF } = await import('jspdf');
+  return jsPDF;
+}
+
+export async function reportBase(state, title, subtitle) {
+  const jsPDF = await getJsPDF();
+  if (typeof jsPDF !== 'function') return null;
   const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const cat = activeCategory(state);
@@ -45,16 +50,16 @@ export function reportStandingsBlocks(state) {
   return blocks;
 }
 
-export function exportTeamsReport(state) {
-  const b = reportBase(state, 'Relação de equipes');
+export async function exportTeamsReport(state) {
+  const b = await reportBase(state, 'Relação de equipes');
   if (!b) return;
   const rows = state.teams.map((t, i) => [i + 1, t.nome, (t.roster || []).length, (t.staff && t.staff.tecnico) || '—']);
   b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Equipe', 'Atletas', 'Técnico']], body: rows, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } }));
   b.doc.save(reportName(state, 'equipes'));
 }
 
-export function exportRosterReport(state) {
-  const b = reportBase(state, 'Relação nominal de atletas');
+export async function exportRosterReport(state) {
+  const b = await reportBase(state, 'Relação nominal de atletas');
   if (!b) return;
   let y = b.y;
   state.teams.forEach((t) => {
@@ -67,8 +72,8 @@ export function exportRosterReport(state) {
   b.doc.save(reportName(state, 'atletas'));
 }
 
-export function exportScheduleReport(state) {
-  const b = reportBase(state, 'Tabela oficial de jogos');
+export async function exportScheduleReport(state) {
+  const b = await reportBase(state, 'Tabela oficial de jogos');
   if (!b) return;
   const rows = (state.matches || []).slice().sort((a, c) => {
     const A = matchMeta(a), C = matchMeta(c);
@@ -81,8 +86,8 @@ export function exportScheduleReport(state) {
   b.doc.save(reportName(state, 'tabela_jogos'));
 }
 
-export function exportStandingsReport(state) {
-  const b = reportBase(state, 'Classificação oficial');
+export async function exportStandingsReport(state) {
+  const b = await reportBase(state, 'Classificação oficial');
   if (!b) return;
   let y = b.y;
   const disc = (state.cfg?.criterios || []).includes('DISC');
@@ -96,16 +101,16 @@ export function exportStandingsReport(state) {
   b.doc.save(reportName(state, 'classificacao'));
 }
 
-export function exportScorersReport(state) {
-  const b = reportBase(state, 'Artilharia');
+export async function exportScorersReport(state) {
+  const b = await reportBase(state, 'Artilharia');
   if (!b) return;
   const rows = scorerRanking(state).map((r, i) => [i + 1, r.name, r.teamId ? (teamById(state, r.teamId)?.nome || '—') : '—', r.goals]);
   b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Atleta', 'Equipe', 'Gols']], body: rows, columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } }));
   b.doc.save(reportName(state, 'artilharia'));
 }
 
-export function exportDisciplineReport(state) {
-  const b = reportBase(state, 'Disciplina e suspensões', 'Amarelo −' + (state.cfg?.discYellow ?? 1) + ' · Vermelho −' + (state.cfg?.discRed ?? 5));
+export async function exportDisciplineReport(state) {
+  const b = await reportBase(state, 'Disciplina e suspensões', 'Amarelo −' + (state.cfg?.discYellow ?? 1) + ' · Vermelho −' + (state.cfg?.discRed ?? 5));
   if (!b) return;
   const rows = [];
   state.teams.forEach((t) => (t.roster || []).forEach((a) => {
@@ -116,8 +121,8 @@ export function exportDisciplineReport(state) {
   b.doc.save(reportName(state, 'disciplina'));
 }
 
-export function exportOfficialsReport(state) {
-  const b = reportBase(state, 'Escala de arbitragem');
+export async function exportOfficialsReport(state) {
+  const b = await reportBase(state, 'Escala de arbitragem');
   if (!b) return;
   const rows = (state.matches || []).map((m) => {
     const x = matchMeta(m), r = officialById(state, x.refereeId), t = officialById(state, x.tableOfficialId), v = venueById(state, x.venueId);
@@ -127,8 +132,8 @@ export function exportOfficialsReport(state) {
   b.doc.save(reportName(state, 'arbitragem'));
 }
 
-export function exportResultsReport(state) {
-  const b = reportBase(state, 'Resultados');
+export async function exportResultsReport(state) {
+  const b = await reportBase(state, 'Resultados');
   if (!b) return;
   const rows = (state.matches || []).filter((m) => m.hg != null && m.ag != null).map((m) => {
     const x = matchMeta(m);
@@ -138,8 +143,8 @@ export function exportResultsReport(state) {
   b.doc.save(reportName(state, 'resultados'));
 }
 
-export function exportRoundBulletin(state, roundNumber) {
-  const b = reportBase(state, 'Boletim da rodada');
+export async function exportRoundBulletin(state, roundNumber) {
+  const b = await reportBase(state, 'Boletim da rodada');
   if (!b) return;
   const rounds = [...new Set((state.matches || []).map((m) => m.rodada).filter(Boolean))].sort((a, c) => a - c);
   const rd = +roundNumber || rounds[rounds.length - 1] || 1;
@@ -159,8 +164,8 @@ export function exportRoundBulletin(state, roundNumber) {
   b.doc.save(reportName(state, 'boletim_rodada_' + rd));
 }
 
-export function exportPDF(state) {
-  if (typeof jsPDF !== 'function') return;
+export async function exportPDF(state) {
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   let y = 46;
@@ -227,8 +232,8 @@ function splitInfo(info) {
   return { data: parts[0] || '', hora: parts[1] || '', local: parts.slice(2).join(' · ') || '' };
 }
 
-export function printSumula(state, kind, id) {
-  if (typeof jsPDF !== 'function') return;
+export async function printSumula(state, kind, id) {
+  const { jsPDF } = await import('jspdf');
   const ctx = matchContext(state, kind, id);
   if (!ctx) return;
   const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
@@ -251,7 +256,7 @@ export function printSumula(state, kind, id) {
 }
 
 export async function exportAthleteCards(state, categoryId) {
-  if (typeof jsPDF !== 'function') return;
+  const { jsPDF } = await import('jspdf');
   const cat = (state.categories || []).find((c) => c.id === categoryId) || activeCategory(state);
   if (!cat) return;
   const athletes = [];
