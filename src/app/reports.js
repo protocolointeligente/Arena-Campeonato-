@@ -3,7 +3,6 @@ import { allMatchObjs, matchMeta } from './matches.js';
 import { venueById, officialById } from './ops.js';
 import { teamById, athName } from './roster.js';
 import { phaseParticipants, activePhaseOf } from './phases.js';
-import { activeCategory } from './categories.js';
 import { fmtDateBR } from './format.js';
 import { esc } from './utils.js';
 
@@ -12,197 +11,271 @@ async function getJsPDF() {
   return jsPDF;
 }
 
-export async function reportBase(state, title, subtitle) {
+function getCategories(state) {
+  return state.categories || [{ id: state.activeCategoryId || 'default', nome: 'Categoria', teams: state.teams || [], matches: state.matches || [], grupos: state.grupos || [], phases: state.phases || [], activePhaseId: state.activePhaseId, cfg: state.cfg, formato: state.formato }];
+}
+
+export async function reportBase(state, title, subtitle, categoryName, phaseName) {
   const jsPDF = await getJsPDF();
   if (typeof jsPDF !== 'function') return null;
   const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
-  const cat = activeCategory(state);
-  const phase = activePhaseOf(cat);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20, 60, 40); doc.text(state.nome || 'Campeonato', 40, 44);
   doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(title, 40, 66);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(110); doc.text([cat?.nome, phase?.nome, subtitle].filter(Boolean).join(' · '), 40, 82);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(110); doc.text([categoryName, phaseName, subtitle].filter(Boolean).join(' · '), 40, 82);
   doc.setFont('helvetica', 'bold'); doc.setTextColor(170); doc.text('ARENA', W - 40, 44, { align: 'right' });
   return { doc, y: 102, opt: { theme: 'grid', styles: { fontSize: 9, cellPadding: 4 }, headStyles: { fillColor: [26, 163, 83], textColor: 255 }, margin: { left: 40, right: 40 } } };
 }
 
-export function reportName(state, suffix) {
-  const cat = activeCategory(state);
-  return ((state.nome || 'campeonato') + '_' + (cat?.nome || 'categoria') + '_' + suffix).replace(/[^\w\-]+/g, '_') + '.pdf';
+export function reportName(state, suffix, categoryName) {
+  return ((state.nome || 'campeonato') + '_' + (categoryName || 'categoria') + '_' + suffix).replace(/[^\w\-]+/g, '_') + '.pdf';
 }
 
-export function reportStandingsBlocks(state) {
+export function reportStandingsBlocks(state, category) {
   const blocks = [];
-  const cat = activeCategory(state);
-  const phase = activePhaseOf(cat);
-  const cfg = phase?.cfg || state.cfg || {};
-  const formato = state.formato || 'liga';
+  const phase = activePhaseOf(category);
+  const cfg = phase?.cfg || category.cfg || state.cfg || {};
+  const formato = category.formato || state.formato || 'liga';
   if (formato === 'liga') {
-    const idxs = state.teams.map((_, i) => i);
-    blocks.push({ title: 'Classificação', st: computeStandings(state.teams, idxs, state.matches || [], cfg) });
+    const idxs = (category.teams || state.teams || []).map((_, i) => i);
+    blocks.push({ title: 'Classificação', st: computeStandings(category.teams || state.teams || [], idxs, category.matches || state.matches || [], cfg) });
   } else if (formato === 'grupos' || formato === 'gxg') {
-    (state.grupos || []).forEach((g, gi) => {
-      const idxs = g.map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
-      const ms = (state.matches || []).filter((m) => (m.grupo || 0) === gi);
-      blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(state.teams, idxs, ms, cfg) });
+    (category.grupos || state.grupos || []).forEach((g, gi) => {
+      const idxs = g.map((id) => (category.teams || state.teams || []).findIndex((t) => t.id === id)).filter((i) => i >= 0);
+      const ms = (category.matches || state.matches || []).filter((m) => (m.grupo || 0) === gi);
+      blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(category.teams || state.teams || [], idxs, ms, cfg) });
     });
   }
   return blocks;
 }
 
 export async function exportTeamsReport(state) {
-  const b = await reportBase(state, 'Relação de equipes');
-  if (!b) return;
-  const rows = state.teams.map((t, i) => [i + 1, t.nome, (t.roster || []).length, (t.staff && t.staff.tecnico) || '—']);
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Equipe', 'Atletas', 'Técnico']], body: rows, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'equipes'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Relação de equipes', '', cat.nome);
+    if (!b) return;
+    const rows = (cat.teams || state.teams || []).map((t, i) => [i + 1, t.nome, (t.roster || []).length, (t.staff && t.staff.tecnico) || '—']);
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Equipe', 'Atletas', 'Técnico']], body: rows, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'equipes', categories[0]?.nome));
 }
 
 export async function exportRosterReport(state) {
-  const b = await reportBase(state, 'Relação nominal de atletas');
-  if (!b) return;
-  let y = b.y;
-  state.teams.forEach((t) => {
-    if (y > 720) { b.doc.addPage(); y = 50; }
-    b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(11); b.doc.setTextColor(40); b.doc.text(t.nome, 40, y);
-    const rows = (t.roster || []).map((a, i) => [i + 1, a.nome, a.numero || '—', a.dob || '—']);
-    b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [['#', 'Atleta', 'Nº', 'Nascimento']], body: rows.length ? rows : [['—', 'Nenhum atleta cadastrado', '—', '—']], columnStyles: { 1: { halign: 'left' } } }));
-    y = b.doc.lastAutoTable.finalY + 18;
-  });
-  b.doc.save(reportName(state, 'atletas'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Relação nominal de atletas', '', cat.nome);
+    if (!b) return;
+    let y = b.y;
+    (cat.teams || state.teams || []).forEach((t) => {
+      if (y > 720) { b.doc.addPage(); y = 50; }
+      b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(11); b.doc.setTextColor(40); b.doc.text(t.nome, 40, y);
+      const rows = (t.roster || []).map((a, i) => [i + 1, a.nome, a.numero || '—', a.dob || '—']);
+      b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [['#', 'Atleta', 'Nº', 'Nascimento']], body: rows.length ? rows : [['—', 'Nenhum atleta cadastrado', '—', '—']], columnStyles: { 1: { halign: 'left' } } }));
+      y = b.doc.lastAutoTable.finalY + 18;
+    });
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'atletas', categories[0]?.nome));
 }
 
 export async function exportScheduleReport(state) {
-  const b = await reportBase(state, 'Tabela oficial de jogos');
-  if (!b) return;
-  const rows = (state.matches || []).slice().sort((a, c) => {
-    const A = matchMeta(a), C = matchMeta(c);
-    return ((A.date || '9999') + (A.time || '99')).localeCompare((C.date || '9999') + (C.time || '99'));
-  }).map((m) => {
-    const x = matchMeta(m), v = venueById(state, x.venueId), r = officialById(state, x.refereeId);
-    return [m.rodada || '—', fmtDateBR(x.date) || '—', x.time || '—', state.teams[m.home]?.nome || '—', state.teams[m.away]?.nome || '—', v?.name || '—', r?.name || '—'];
-  });
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Rod.', 'Data', 'Hora', 'Mandante', 'Visitante', 'Local', 'Árbitro']], body: rows, columnStyles: { 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' }, 6: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'tabela_jogos'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Tabela oficial de jogos', '', cat.nome);
+    if (!b) return;
+    const rows = (cat.matches || state.matches || []).slice().sort((a, c) => {
+      const A = matchMeta(a), C = matchMeta(c);
+      return ((A.date || '9999') + (A.time || '99')).localeCompare((C.date || '9999') + (C.time || '99'));
+    }).map((m) => {
+      const x = matchMeta(m), v = venueById(state, x.venueId), r = officialById(state, x.refereeId);
+      const teams = cat.teams || state.teams || [];
+      return [m.rodada || '—', fmtDateBR(x.date) || '—', x.time || '—', teams[m.home]?.nome || '—', teams[m.away]?.nome || '—', v?.name || '—', r?.name || '—'];
+    });
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Rod.', 'Data', 'Hora', 'Mandante', 'Visitante', 'Local', 'Árbitro']], body: rows, columnStyles: { 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' }, 6: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'tabela_jogos', categories[0]?.nome));
 }
 
 export async function exportStandingsReport(state) {
-  const b = await reportBase(state, 'Classificação oficial');
-  if (!b) return;
-  let y = b.y;
-  const disc = (state.cfg?.criterios || []).includes('DISC');
-  reportStandingsBlocks(state).forEach((bl) => {
-    b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(11); b.doc.setTextColor(40); b.doc.text(bl.title, 40, y);
-    const head = ['#', 'Equipe', 'P', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG'].concat(disc ? ['DISC'] : []);
-    const rows = bl.st.map((x, i) => [i + 1, state.teams[x.team]?.nome || '—', x.P, x.J, x.V, x.E, x.D, x.GP, x.GC, x.SG].concat(disc ? [x.DISC ?? 0] : []));
-    b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [head], body: rows, columnStyles: { 1: { halign: 'left' } } }));
-    y = b.doc.lastAutoTable.finalY + 18;
-  });
-  b.doc.save(reportName(state, 'classificacao'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Classificação oficial', '', cat.nome);
+    if (!b) return;
+    let y = b.y;
+    const disc = (cat.cfg?.criterios || state.cfg?.criterios || []).includes('DISC');
+    reportStandingsBlocks(state, cat).forEach((bl) => {
+      b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(11); b.doc.setTextColor(40); b.doc.text(bl.title, 40, y);
+      const head = ['#', 'Equipe', 'P', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG'].concat(disc ? ['DISC'] : []);
+      const teams = cat.teams || state.teams || [];
+      const rows = bl.st.map((x, i) => [i + 1, teams[x.team]?.nome || '—', x.P, x.J, x.V, x.E, x.D, x.GP, x.GC, x.SG].concat(disc ? [x.DISC ?? 0] : []));
+      b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [head], body: rows, columnStyles: { 1: { halign: 'left' } } }));
+      y = b.doc.lastAutoTable.finalY + 18;
+    });
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'classificacao', categories[0]?.nome));
 }
 
 export async function exportScorersReport(state) {
-  const b = await reportBase(state, 'Artilharia');
-  if (!b) return;
-  const rows = scorerRanking(state).map((r, i) => [i + 1, r.name, r.teamId ? (teamById(state, r.teamId)?.nome || '—') : '—', r.goals]);
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Atleta', 'Equipe', 'Gols']], body: rows, columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'artilharia'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Artilharia', '', cat.nome);
+    if (!b) return;
+    const teams = cat.teams || state.teams || [];
+    const rows = scorerRanking(state).filter(r => r.teamId && teams.find(t => t.id === r.teamId)).map((r, i) => [i + 1, r.name, r.teamId ? (teamById(state, r.teamId)?.nome || '—') : '—', r.goals]);
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['#', 'Atleta', 'Equipe', 'Gols']], body: rows, columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'artilharia', categories[0]?.nome));
 }
 
 export async function exportDisciplineReport(state) {
-  const b = await reportBase(state, 'Disciplina e suspensões', 'Amarelo −' + (state.cfg?.discYellow ?? 1) + ' · Vermelho −' + (state.cfg?.discRed ?? 5));
-  if (!b) return;
-  const rows = [];
-  state.teams.forEach((t) => (t.roster || []).forEach((a) => {
-    const si = suspensionInfo(state, a.id), cr = cardRanking(state).find((x) => x.athleteId === a.id);
-    if (cr || si.suspended) rows.push([a.nome, t.nome, cr?.y || 0, cr?.r || 0, -((cr?.y || 0) * (state.cfg?.discYellow ?? 1) + (cr?.r || 0) * (state.cfg?.discRed ?? 5)), si.suspended ? 'SUSPENSO' : 'Liberado']);
-  }));
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Atleta', 'Equipe', 'A', 'V', 'Disc.', 'Situação']], body: rows, columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'disciplina'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Disciplina e suspensões', 'Amarelo −' + (cat.cfg?.discYellow ?? state.cfg?.discYellow ?? 1) + ' · Vermelho −' + (cat.cfg?.discRed ?? state.cfg?.discRed ?? 5), cat.nome);
+    if (!b) return;
+    const rows = [];
+    const teams = cat.teams || state.teams || [];
+    teams.forEach((t) => (t.roster || []).forEach((a) => {
+      const si = suspensionInfo(state, a.id), cr = cardRanking(state).find((x) => x.athleteId === a.id);
+      if (cr || si.suspended) rows.push([a.nome, t.nome, cr?.y || 0, cr?.r || 0, -((cr?.y || 0) * (cat.cfg?.discYellow ?? state.cfg?.discYellow ?? 1) + (cr?.r || 0) * (cat.cfg?.discRed ?? state.cfg?.discRed ?? 5)), si.suspended ? 'SUSPENSO' : 'Liberado']);
+    }));
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Atleta', 'Equipe', 'A', 'V', 'Disc.', 'Situação']], body: rows, columnStyles: { 0: { halign: 'left' }, 1: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'disciplina', categories[0]?.nome));
 }
 
 export async function exportOfficialsReport(state) {
-  const b = await reportBase(state, 'Escala de arbitragem');
-  if (!b) return;
-  const rows = (state.matches || []).map((m) => {
-    const x = matchMeta(m), r = officialById(state, x.refereeId), t = officialById(state, x.tableOfficialId), v = venueById(state, x.venueId);
-    return [fmtDateBR(x.date) || '—', x.time || '—', (state.teams[m.home]?.nome || '—') + ' x ' + (state.teams[m.away]?.nome || '—'), r?.name || '—', t?.name || '—', v?.name || '—'];
-  });
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Data', 'Hora', 'Partida', 'Árbitro', 'Mesário', 'Local']], body: rows, columnStyles: { 2: { halign: 'left' }, 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'arbitragem'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Escala de arbitragem', '', cat.nome);
+    if (!b) return;
+    const rows = (cat.matches || state.matches || []).map((m) => {
+      const x = matchMeta(m), r = officialById(state, x.refereeId), t = officialById(state, x.tableOfficialId), v = venueById(state, x.venueId);
+      const teams = cat.teams || state.teams || [];
+      return [fmtDateBR(x.date) || '—', x.time || '—', (teams[m.home]?.nome || '—') + ' x ' + (teams[m.away]?.nome || '—'), r?.name || '—', t?.name || '—', v?.name || '—'];
+    });
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Data', 'Hora', 'Partida', 'Árbitro', 'Mesário', 'Local']], body: rows, columnStyles: { 2: { halign: 'left' }, 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'arbitragem', categories[0]?.nome));
 }
 
 export async function exportResultsReport(state) {
-  const b = await reportBase(state, 'Resultados');
-  if (!b) return;
-  const rows = (state.matches || []).filter((m) => m.hg != null && m.ag != null).map((m) => {
-    const x = matchMeta(m);
-    return [m.rodada || '—', fmtDateBR(x.date) || '—', state.teams[m.home]?.nome || '—', m.hg + ' x ' + m.ag, state.teams[m.away]?.nome || '—'];
-  });
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Rod.', 'Data', 'Mandante', 'Placar', 'Visitante']], body: rows, columnStyles: { 2: { halign: 'right' }, 4: { halign: 'left' } } }));
-  b.doc.save(reportName(state, 'resultados'));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Resultados', '', cat.nome);
+    if (!b) return;
+    const rows = (cat.matches || state.matches || []).filter((m) => m.hg != null && m.ag != null).map((m) => {
+      const x = matchMeta(m);
+      const teams = cat.teams || state.teams || [];
+      return [m.rodada || '—', fmtDateBR(x.date) || '—', teams[m.home]?.nome || '—', m.hg + ' x ' + m.ag, teams[m.away]?.nome || '—'];
+    });
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y, head: [['Rod.', 'Data', 'Mandante', 'Placar', 'Visitante']], body: rows, columnStyles: { 2: { halign: 'right' }, 4: { halign: 'left' } } }));
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
+  }
+  b.doc.save(reportName(state, 'resultados', categories[0]?.nome));
 }
 
 export async function exportRoundBulletin(state, roundNumber) {
-  const b = await reportBase(state, 'Boletim da rodada');
-  if (!b) return;
-  const rounds = [...new Set((state.matches || []).map((m) => m.rodada).filter(Boolean))].sort((a, c) => a - c);
-  const rd = +roundNumber || rounds[rounds.length - 1] || 1;
-  const ms = (state.matches || []).filter((m) => m.rodada === rd);
-  b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(12); b.doc.setTextColor(40); b.doc.text(rd + 'ª rodada', 40, b.y);
-  const rows = ms.map((m) => {
-    const x = matchMeta(m);
-    return [fmtDateBR(x.date) || '—', state.teams[m.home]?.nome || '—', (m.hg != null ? m.hg : '–') + ' x ' + (m.ag != null ? m.ag : '–'), state.teams[m.away]?.nome || '—'];
-  });
-  b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y + 8, head: [['Data', 'Mandante', 'Placar', 'Visitante']], body: rows, columnStyles: { 1: { halign: 'right' }, 3: { halign: 'left' } } }));
-  let y = b.doc.lastAutoTable.finalY + 18;
-  const scor = scorerRanking(state).slice(0, 10);
-  if (scor.length) {
-    b.doc.setFont('helvetica', 'bold'); b.doc.text('Artilharia', 40, y);
-    b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [['#', 'Atleta', 'Gols']], body: scor.map((r, i) => [i + 1, r.name, r.goals]) }));
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const b = await reportBase(state, 'Boletim da rodada', '', cat.nome);
+    if (!b) return;
+    const rounds = [...new Set((cat.matches || state.matches || []).map((m) => m.rodada).filter(Boolean))].sort((a, c) => a - c);
+    const rd = +roundNumber || rounds[rounds.length - 1] || 1;
+    const ms = (cat.matches || state.matches || []).filter((m) => m.rodada === rd);
+    b.doc.setFont('helvetica', 'bold'); b.doc.setFontSize(12); b.doc.setTextColor(40); b.doc.text(rd + 'ª rodada', 40, b.y);
+    const rows = ms.map((m) => {
+      const x = matchMeta(m);
+      const teams = cat.teams || state.teams || [];
+      return [fmtDateBR(x.date) || '—', teams[m.home]?.nome || '—', (m.hg != null ? m.hg : '–') + ' x ' + (m.ag != null ? m.ag : '–'), teams[m.away]?.nome || '—'];
+    });
+    b.doc.autoTable(Object.assign({}, b.opt, { startY: b.y + 8, head: [['Data', 'Mandante', 'Placar', 'Visitante']], body: rows, columnStyles: { 1: { halign: 'right' }, 3: { halign: 'left' } } }));
+    let y = b.doc.lastAutoTable.finalY + 18;
+    const scor = scorerRanking(state).filter(r => r.teamId && (cat.teams || state.teams || []).find(t => t.id === r.teamId)).slice(0, 10);
+    if (scor.length) {
+      b.doc.setFont('helvetica', 'bold'); b.doc.text('Artilharia', 40, y);
+      b.doc.autoTable(Object.assign({}, b.opt, { startY: y + 6, head: [['#', 'Atleta', 'Gols']], body: scor.map((r, i) => [i + 1, r.name, r.goals]) }));
+    }
+    if (categories.length > 1) {
+      b.doc.addPage();
+    }
   }
-  b.doc.save(reportName(state, 'boletim_rodada_' + rd));
+  b.doc.save(reportName(state, 'boletim_rodada_' + rd, categories[0]?.nome));
 }
 
 export async function exportPDF(state) {
   const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-  const W = doc.internal.pageSize.getWidth();
-  let y = 46;
-  const opt = { theme: 'grid', styles: { fontSize: 9, cellPadding: 4 }, headStyles: { fillColor: [26, 163, 83], textColor: 255 }, columnStyles: { 1: { halign: 'left' } }, margin: { left: 40, right: 40 } };
-  const pageGuard = (need) => { if (y > 800 - (need || 40)) { doc.addPage(); y = 46; } };
-  const sectionTitle = (txt) => { pageGuard(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(txt, 40, y); y += 4; };
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20, 60, 40); doc.text(state.nome || 'Campeonato', 40, y);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(120); doc.text((state.formato || 'liga') + '  ·  ' + new Date().toLocaleDateString('pt-BR'), 40, y + 16);
-  doc.setTextColor(170); doc.setFont('helvetica', 'bold'); doc.text('ARENA', W - 40, y, { align: 'right' }); y += 40;
-  const head = [['#', 'Equipe', 'P', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG', '%']];
-  const blocks = [];
-  if (state.formato === 'liga') blocks.push({ title: null, st: computeStandings(state.teams, state.teams.map((_, i) => i), state.matches || [], state.cfg || {}) });
-  else if (state.formato === 'grupos') (state.grupos || []).forEach((g, gi) => { const idxs = g.map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0); blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(state.teams, idxs, (state.matches || []).filter((m) => (m.grupo || 0) === gi), state.cfg || {}) }); });
-  else if (state.formato === 'gxg') (state.grupos || []).forEach((g, gi) => { const idxs = g.map((id) => state.teams.findIndex((t) => t.id === id)).filter((i) => i >= 0); blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(state.teams, idxs, state.matches || [], state.cfg || {}) }); });
-  if (blocks.length) { sectionTitle('Classificação'); y += 6; blocks.forEach((b) => { if (b.title) { pageGuard(50); doc.setFontSize(11); doc.setTextColor(40); doc.text(b.title, 40, y); y += 4; } const rows = b.st.map((s, i) => [i + 1, state.teams[s.team]?.nome || '—', s.P, s.J, s.V, s.E, s.D, s.GP, s.GC, (s.SG > 0 ? '+' : '') + s.SG, s.pct.toFixed(1)]); doc.autoTable(Object.assign({}, opt, { startY: y + 4, head, body: rows })); y = doc.lastAutoTable.finalY + 18; }); }
-  const tn = (id) => { const i = state.teams.findIndex((x) => x.id === id); return i >= 0 ? state.teams[i].nome : '—'; };
-  if (state.matches && state.matches.length) {
-    sectionTitle('Tabela de jogos');
-    let games;
-    if (state.formato === 'grupos') games = (state.grupos || []).map((_, gi) => ({ label: 'Grupo ' + String.fromCharCode(65 + gi), ms: (state.matches || []).filter((m) => (m.grupo || 0) === gi) }));
-    else if (state.formato === 'gxg') games = [{ label: 'Interzonas A × B', ms: state.matches || [] }];
-    else games = [{ label: null, ms: state.matches || [] }];
-    games.forEach((g) => { if (g.label) { y += 14; pageGuard(40); doc.setFontSize(11); doc.setTextColor(40); doc.text(g.label, 40, y); } const body = g.ms.slice().sort((a, b) => a.rodada - b.rodada).map((m) => { const sc = (m.hg != null && m.ag != null) ? `${m.hg} x ${m.ag}` : '– x –'; return [m.rodada + 'ª', tn(m.home), sc, tn(m.away), m.info || '']; }); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['Rod.', 'Mandante', 'Placar', 'Visitante', 'Data/Local']], body, columnStyles: { 1: { halign: 'right' }, 3: { halign: 'left' }, 4: { halign: 'left', fontSize: 8 } } })); y = doc.lastAutoTable.finalY + 14; });
+  const categories = getCategories(state);
+  for (const cat of categories) {
+    const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    let y = 46;
+    const opt = { theme: 'grid', styles: { fontSize: 9, cellPadding: 4 }, headStyles: { fillColor: [26, 163, 83], textColor: 255 }, columnStyles: { 1: { halign: 'left' } }, margin: { left: 40, right: 40 } };
+    const pageGuard = (need) => { if (y > 800 - (need || 40)) { doc.addPage(); y = 46; } };
+    const sectionTitle = (txt) => { pageGuard(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(txt, 40, y); y += 4; };
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20, 60, 40); doc.text(state.nome || 'Campeonato', 40, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(120); doc.text((state.formato || 'liga') + '  ·  ' + new Date().toLocaleDateString('pt-BR'), 40, y + 16);
+    doc.setTextColor(170); doc.setFont('helvetica', 'bold'); doc.text('ARENA', W - 40, y, { align: 'right' }); y += 40;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(cat.nome || 'Categoria', 40, y); y += 18;
+    const head = [['#', 'Equipe', 'P', 'J', 'V', 'E', 'D', 'GP', 'GC', 'SG', '%']];
+    const blocks = [];
+    const teams = cat.teams || state.teams || [];
+    const matches = cat.matches || state.matches || [];
+    const grupos = cat.grupos || state.grupos || [];
+    const cfg = cat.cfg || state.cfg || {};
+    const formato = cat.formato || state.formato || 'liga';
+    if (formato === 'liga') blocks.push({ title: null, st: computeStandings(teams, teams.map((_, i) => i), matches, cfg) });
+    else if (formato === 'grupos') grupos.forEach((g, gi) => { const idxs = g.map((id) => teams.findIndex((t) => t.id === id)).filter((i) => i >= 0); blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(teams, idxs, matches.filter((m) => (m.grupo || 0) === gi), cfg) }); });
+    else if (formato === 'gxg') grupos.forEach((g, gi) => { const idxs = g.map((id) => teams.findIndex((t) => t.id === id)).filter((i) => i >= 0); blocks.push({ title: 'Grupo ' + String.fromCharCode(65 + gi), st: computeStandings(teams, idxs, matches, cfg) }); });
+    if (blocks.length) { sectionTitle('Classificação'); y += 6; blocks.forEach((b) => { if (b.title) { pageGuard(50); doc.setFontSize(11); doc.setTextColor(40); doc.text(b.title, 40, y); y += 4; } const rows = b.st.map((s, i) => [i + 1, teams[s.team]?.nome || '—', s.P, s.J, s.V, s.E, s.D, s.GP, s.GC, (s.SG > 0 ? '+' : '') + s.SG, s.pct.toFixed(1)]); doc.autoTable(Object.assign({}, opt, { startY: y + 4, head, body: rows })); y = doc.lastAutoTable.finalY + 18; }); }
+    const tn = (id) => { const i = teams.findIndex((x) => x.id === id); return i >= 0 ? teams[i].nome : '—'; };
+    if (matches && matches.length) {
+      sectionTitle('Tabela de jogos');
+      let games;
+      if (formato === 'grupos') games = grupos.map((_, gi) => ({ label: 'Grupo ' + String.fromCharCode(65 + gi), ms: matches.filter((m) => (m.grupo || 0) === gi) }));
+      else if (formato === 'gxg') games = [{ label: 'Interzonas A × B', ms: matches }];
+      else games = [{ label: null, ms: matches }];
+      games.forEach((g) => { if (g.label) { y += 14; pageGuard(40); doc.setFontSize(11); doc.setTextColor(40); doc.text(g.label, 40, y); } const body = g.ms.slice().sort((a, b) => a.rodada - b.rodada).map((m) => { const sc = (m.hg != null && m.ag != null) ? `${m.hg} x ${m.ag}` : '– x –'; return [m.rodada + 'ª', tn(m.home), sc, tn(m.away), m.info || '']; }); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['Rod.', 'Mandante', 'Placar', 'Visitante', 'Data/Local']], body, columnStyles: { 1: { halign: 'right' }, 3: { halign: 'left' }, 4: { halign: 'left', fontSize: 8 } } })); y = doc.lastAutoTable.finalY + 14; });
+    }
+    if (cat.bracket || state.bracket) {
+      const bracket = cat.bracket || state.bracket;
+      sectionTitle('Chaveamento');
+      const single = cfg?.maoUnica;
+      const body = [];
+      const rowFor = (t, fase) => { if (t.a == null && t.b == null) return; const sc = single ? `${t.ag1 ?? '-'} x ${t.bg1 ?? '-'}` : `${(t.ag1 == null && t.ag2 == null) ? '-' : ((t.ag1 || 0) + (t.ag2 || 0))} x ${(t.bg1 == null && t.bg2 == null) ? '-' : ((t.bg1 || 0) + (t.bg2 || 0))}`; const pen = (t.apen != null && t.bpen != null) ? ` (pên ${t.apen}x${t.bpen})` : ''; body.push([fase, tn(t.a) + ' x ' + tn(t.b), sc + pen, t.winner ? tn(t.winner) : '']); };
+      (bracket.rounds || []).forEach((rd, idx) => { const size = rd.length * 2; rd.forEach((t) => rowFor(t, size + '-avos')); });
+      if (bracket.third) rowFor(bracket.third, '3º lugar');
+      doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['Fase', 'Confronto', 'Placar', 'Classificado']], body, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16;
+    }
+    const sc = scorerRanking(state).filter(r => r.teamId && teams.find(t => t.id === r.teamId));
+    if (sc.length) { sectionTitle('Artilharia'); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['#', 'Atleta', 'Equipe', 'Gols']], body: sc.map((r, i) => [i + 1, r.name, r.teamId ? tn(r.teamId) : '—', r.goals]), columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16; }
+    const cr = cardRanking(state).filter(r => r.teamId && teams.find(t => t.id === r.teamId));
+    if (cr.length) { sectionTitle('Disciplina (cartões)'); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['#', 'Atleta', 'Equipe', 'Amarelos', 'Vermelhos']], body: cr.map((r, i) => [i + 1, r.name, r.teamId ? tn(r.teamId) : '—', r.y, r.r]), columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16; }
+    if (categories.length > 1) {
+      doc.addPage();
+    }
   }
-  if (state.bracket) {
-    sectionTitle('Chaveamento');
-    const single = state.cfg?.maoUnica;
-    const body = [];
-    const rowFor = (t, fase) => { if (t.a == null && t.b == null) return; const sc = single ? `${t.ag1 ?? '-'} x ${t.bg1 ?? '-'}` : `${(t.ag1 == null && t.ag2 == null) ? '-' : ((t.ag1 || 0) + (t.ag2 || 0))} x ${(t.bg1 == null && t.bg2 == null) ? '-' : ((t.bg1 || 0) + (t.bg2 || 0))}`; const pen = (t.apen != null && t.bpen != null) ? ` (pên ${t.apen}x${t.bpen})` : ''; body.push([fase, tn(t.a) + ' x ' + tn(t.b), sc + pen, t.winner ? tn(t.winner) : '']); };
-    (state.bracket.rounds || []).forEach((rd, idx) => { const size = rd.length * 2; rd.forEach((t) => rowFor(t, size + '-avos')); });
-    if (state.bracket.third) rowFor(state.bracket.third, '3º lugar');
-    doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['Fase', 'Confronto', 'Placar', 'Classificado']], body, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16;
-  }
-  const sc = scorerRanking(state);
-  if (sc.length) { sectionTitle('Artilharia'); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['#', 'Atleta', 'Equipe', 'Gols']], body: sc.map((r, i) => [i + 1, r.name, r.teamId ? tn(r.teamId) : '—', r.goals]), columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16; }
-  const cr = cardRanking(state);
-  if (cr.length) { sectionTitle('Disciplina (cartões)'); doc.autoTable(Object.assign({}, opt, { startY: y + 8, head: [['#', 'Atleta', 'Equipe', 'Amarelos', 'Vermelhos']], body: cr.map((r, i) => [i + 1, r.name, r.teamId ? tn(r.teamId) : '—', r.y, r.r]), columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' } } })); y = doc.lastAutoTable.finalY + 16; }
   doc.save((state.nome || 'campeonato').replace(/[^\w\-]+/g, '_') + '.pdf');
 }
 

@@ -38,37 +38,43 @@ describe('report utilities', () => {
   };
 
   it('reportName generates sanitized filename', () => {
-    const name = reportName(mockState, 'teste');
+    const cat = mockState.categories[0];
+    const name = reportName(mockState, 'teste', cat.nome);
     expect(name).toMatch(/^Teste_Campeonato_Categoria_A_teste\.pdf$/);
   });
 
   it('reportStandingsBlocks returns blocks for liga format', () => {
-    const blocks = reportStandingsBlocks(mockState);
+    const cat = mockState.categories[0];
+    const blocks = reportStandingsBlocks(mockState, cat);
     expect(blocks).toHaveLength(1);
     expect(blocks[0].title).toBe('Classificação');
   });
 
   it('reportStandingsBlocks returns blocks for grupos format', () => {
+    const cat = { ...mockState.categories[0], formato: 'grupos' };
     const stateGrupos = {
       ...mockState,
       formato: 'grupos',
       grupos: [['t1'], ['t2']],
       matches: [],
+      categories: [cat],
     };
-    const blocks = reportStandingsBlocks(stateGrupos);
+    const blocks = reportStandingsBlocks(stateGrupos, cat);
     expect(blocks).toHaveLength(2);
     expect(blocks[0].title).toBe('Grupo A');
     expect(blocks[1].title).toBe('Grupo B');
   });
 
   it('reportStandingsBlocks returns blocks for gxg format', () => {
+    const cat = { ...mockState.categories[0], formato: 'gxg' };
     const stateGxg = {
       ...mockState,
       formato: 'gxg',
       grupos: [['t1'], ['t2']],
       matches: [],
+      categories: [cat],
     };
-    const blocks = reportStandingsBlocks(stateGxg);
+    const blocks = reportStandingsBlocks(stateGxg, cat);
     expect(blocks).toHaveLength(2);
     expect(blocks[0].title).toBe('Grupo A');
     expect(blocks[1].title).toBe('Grupo B');
