@@ -21,6 +21,7 @@ import { renderPrivacyCenter } from '../pages/privacy-center.js';
 import { renderBetaHardening } from '../pages/beta-hardening.js';
 import { renderPlansBilling } from '../pages/plans-billing.js';
 import { renderPublication } from '../pages/publication.js';
+import { renderScoreboardDisplay } from '../pages/scoreboard-display.js';
 import { setUser } from './store.js';
 import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoundary.js';
 import { getErrorLogger } from '../services/error-logger.js';
@@ -80,6 +81,10 @@ route('/inscrever/:id', safeRoute((params) => renderRegistration(mainContent, pa
 route('/publico/:id', safeRoute((params) => renderPublicChampionship(mainContent, params.id)));
 route('/equipe/:id/:teamId', safeRoute((params) => renderTeamPortal(mainContent, params.id, params.teamId)));
 route('/campeonatos/:id', safeRoute((params) => renderChampionship(mainContent, params.id)));
+route('/placar/:id/:matchId', safeRoute((params) => {
+  const kind = new URLSearchParams(window.location.search).get('kind') || 'match';
+  renderScoreboardDisplay(mainContent, params.id, params.matchId, kind);
+}));
 
 start();
 

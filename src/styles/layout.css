@@ -241,3 +241,12 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .scoreboard-clock-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .scoreboard-counter { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
 .scoreboard-server-row { display: flex; align-items: center; gap: 12px; }
+
+/* Scoreboard projection */
+.scoreboard-display { min-height: 100vh; background: #05070a; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 24px; text-align: center; }
+.scoreboard-display .teams { display: flex; align-items: center; justify-content: center; gap: 48px; width: 100%; }
+.scoreboard-display .team-name { font-size: clamp(24px, 4vw, 48px); font-weight: 700; text-transform: uppercase; }
+.scoreboard-display .team-score { font-size: clamp(80px, 16vw, 220px); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.scoreboard-display .clock { font-size: clamp(40px, 8vw, 96px); font-variant-numeric: tabular-nums; }
+.scoreboard-display .meta-row { display: flex; gap: 32px; font-size: clamp(16px, 2.4vw, 28px); color: #9aa5b1; flex-wrap: wrap; justify-content: center; }
+.scoreboard-display .fullscreen-btn { position: fixed; top: 16px; right: 16px; }
