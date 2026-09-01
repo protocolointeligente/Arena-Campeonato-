@@ -7,4 +7,9 @@ describe('games presentation', () => {
     expect(html).toContain('Registre os placares em sets.');
     expect(html).toContain('aria-label="A sets"');
   });
+
+  it('renders a scoreboard button per match', () => {
+    const html = renderGames({ getState: () => ({ scoreType: 'goals', formato: 'liga', teams: [{ nome: 'A' }, { nome: 'B' }], matches: [{ id: 'm1', home: 0, away: 1 }] }) });
+    expect(html).toContain('data-open-scoreboard="match:m1"');
+  });
 });

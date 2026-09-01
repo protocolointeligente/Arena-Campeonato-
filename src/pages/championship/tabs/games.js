@@ -38,6 +38,7 @@ export function renderGames(store) {
               <span class="muted" style="flex:1">${statusText ? `<strong>${statusText}</strong> · ` : ''}${esc(line)}</span>
               <button class="btn ghost sm" data-match-ops="${esc(match.id)}">Dados da partida</button>
               <button class="btn ghost sm" data-sumula="match:${esc(match.id)}">📋 Súmula</button>
+              <button class="btn ghost sm" data-open-scoreboard="match:${esc(match.id)}">🖥️ Placar</button>
             </div>
           `;
         }).join('') || '<p class="muted">Nenhum jogo gerado ainda.</p>'}

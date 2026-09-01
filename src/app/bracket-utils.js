@@ -28,6 +28,7 @@ export function tieRow(tie, state) {
           <input type="number" min="0" data-tie-score="${tie.id}:bpen" value="${tie.bpen ?? ''}" style="width:50px" title="Pênaltis — ${awayName}">
         ` : ''}
         <button class="btn ghost sm" data-sumula="tie:${esc(tie.id)}">📋 Súmula</button>
+        <button class="btn ghost sm" data-open-scoreboard="tie:${esc(tie.id)}">🖥️ Placar</button>
       ` : ''}
     </div>
   `;
