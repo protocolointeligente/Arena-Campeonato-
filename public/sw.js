@@ -1,4 +1,4 @@
-const CACHE = 'arena-shell-v1';
+const CACHE = 'arena-shell-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon.svg'];
 
 self.addEventListener('install', (event) => {
