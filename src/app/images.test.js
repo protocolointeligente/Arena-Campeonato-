@@ -14,3 +14,6 @@ describe('resizeImage', () => {
   // decoder or 2D canvas renderer, same accepted gap as roster.js's
   // compressPhoto (see docs/superpowers/plans/2026-08-15-migration-phase2b-roster.md).
 });
+
+
+

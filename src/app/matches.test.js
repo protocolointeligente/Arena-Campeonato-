@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, allMatchObjs, addMatchEvent, removeMatchEvent, toISODate } from './matches.js';
+import { matchMeta, splitInfo, metaLine, setScore, saveMatchOps, clearResults, allMatchObjs, scheduleConflicts, addMatchEvent, removeMatchEvent, toISODate } from './matches.js';
 
 describe('matchMeta', () => {
   it('creates an empty meta object when absent', () => {
@@ -86,6 +86,13 @@ describe('metaLine', () => {
 });
 
 describe('setScore', () => {
+  it('marks a match as finished when both score fields are filled', () => {
+    const state = { matches: [{ id: 'm1', hg: null, ag: null, meta: { status: 'scheduled' } }] };
+    setScore(state, 'm1', 'hg', '2');
+    setScore(state, 'm1', 'ag', '1');
+    expect(state.matches[0].meta.status).toBe('finished');
+  });
+
   it('updates the field and returns before/after', () => {
     const state = { matches: [{ id: 'm1', hg: null, ag: null }] };
     const result = setScore(state, 'm1', 'hg', '2');
@@ -94,14 +101,30 @@ describe('setScore', () => {
   });
 
   it('clears the field back to null on an empty string', () => {
-    const state = { matches: [{ id: 'm1', hg: 2, ag: 1 }] };
+    const state = { matches: [{ id: 'm1', hg: 2, ag: 1, meta: { status: 'finished' } }] };
     setScore(state, 'm1', 'hg', '');
     expect(state.matches[0].hg).toBeNull();
+    expect(state.matches[0].meta.status).toBe('scheduled');
+  });
+
+  it('resets finished match status when clearing all results', () => {
+    const state = { matches: [{ id: 'm1', hg: 2, ag: 1, meta: { status: 'finished' }, events: [{ type: 'goal' }] }] };
+    clearResults(state);
+    expect(state.matches[0]).toMatchObject({ hg: null, ag: null, events: [], meta: { status: 'scheduled' } });
   });
 
   it('reports ok:false for an unknown match id', () => {
     const state = { matches: [] };
     expect(setScore(state, 'ghost', 'hg', '1')).toEqual({ ok: false });
+  });
+
+  it('rejects invalid fields and values without mutating the match', () => {
+    const state = { matches: [{ id: 'm1', hg: 1, ag: 2 }] };
+    expect(setScore(state, 'm1', 'home', 3).ok).toBe(false);
+    expect(setScore(state, 'm1', 'hg', -1).ok).toBe(false);
+    expect(setScore(state, 'm1', 'hg', 'abc').ok).toBe(false);
+    expect(setScore(state, 'm1', 'hg', 100).ok).toBe(false);
+    expect(state.matches[0]).toMatchObject({ hg: 1, ag: 2 });
   });
 });
 
@@ -124,6 +147,12 @@ describe('saveMatchOps', () => {
   it('reports ok:false for an unknown match id', () => {
     const state = { matches: [] };
     expect(saveMatchOps(state, 'ghost', {})).toEqual({ ok: false });
+  });
+
+  it('rejects invalid operational data without mutating the match', () => {
+    const state = { matches: [{ id: 'm1', meta: { date: '2026-08-12', status: 'scheduled' } }], venues: [], officials: [] };
+    expect(saveMatchOps(state, 'm1', { date: '12/08/2026', time: '25:99', status: 'unknown' }).ok).toBe(false);
+    expect(state.matches[0].meta).toEqual({ date: '2026-08-12', status: 'scheduled' });
   });
 
   it('clearing the venue selection wipes stale legacy venueText migrated from match.info', () => {
@@ -182,6 +211,24 @@ describe('allMatchObjs', () => {
   });
 });
 
+describe('scheduleConflicts', () => {
+  it('detects shared venue and referee in the same time slot', () => {
+    const state = { matches: [
+      { id: 'm1', home: 0, away: 1, meta: { date: '2026-08-12', time: '19:00', venueId: 'v1', refereeId: 'o1' } },
+      { id: 'm2', home: 0, away: 2, meta: { date: '2026-08-12', time: '19:00', venueId: 'v1', refereeId: 'o1' } },
+      { id: 'm3', home: 1, away: 2, meta: { date: '2026-08-12', time: '20:00', venueId: 'v1', refereeId: 'o1' } },
+    ] };
+    const conflicts = scheduleConflicts(state);
+    expect(conflicts).toHaveLength(3);
+    expect(conflicts.map((item) => item.resource)).toEqual(expect.arrayContaining(['venueId', 'refereeId', 'teamId']));
+    expect(conflicts[0].matchIds).toEqual(['m1', 'm2']);
+  });
+
+  it('ignores unscheduled matches and empty resources', () => {
+    expect(scheduleConflicts({ matches: [{ id: 'm1', meta: {} }, { id: 'm2', meta: { date: '2026-08-12', time: '19:00' } }] })).toEqual([]);
+  });
+});
+
 describe('addMatchEvent', () => {
   it('appends a goal event with a generated id, defaulting athleteId to null and name to empty string', () => {
     const match = { id: 'm1' };
@@ -203,6 +250,13 @@ describe('addMatchEvent', () => {
     const result = addMatchEvent(match, { type: 'foul', teamId: 't1' });
     expect(result).toEqual({ ok: false });
     expect(match.events).toBeUndefined();
+  });
+
+  it('rejects events without a team and preserves anonymous events with a team', () => {
+    const match = {};
+    expect(addMatchEvent(match, { type: 'goal' }).ok).toBe(false);
+    expect(match.events).toBeUndefined();
+    expect(addMatchEvent(match, { type: 'goal', teamId: 't1', name: '' }).ok).toBe(true);
   });
 
   it('appends to an existing events array on a bracket tie object, same as a match', () => {
@@ -253,3 +307,29 @@ describe('clearResults events reset', () => {
     expect(state.bracket.rounds[0][0].events).toEqual([]);
   });
 });
+
+describe('modality score limits', () => {
+  it('allows higher point scores for point-based modalities', () => {
+    const state = { scoreType: 'points', matches: [{ id: 'm1', home: 0, away: 1 }] };
+    expect(setScore(state, 'm1', 'hg', 500).ok).toBe(true);
+    expect(setScore({ scoreType: 'goals', matches: [{ id: 'm1', home: 0, away: 1 }] }, 'm1', 'hg', 500).ok).toBe(false);
+  });
+
+  it('rejects tied final scores for sets and points', () => {
+    const state = { scoreType: 'sets', matches: [{ id: 'm1', home: 0, away: 1, hg: 1, ag: 0 }] };
+    expect(setScore(state, 'm1', 'ag', 1)).toMatchObject({ ok: false });
+    expect(state.matches[0].ag).toBe(0);
+  });
+
+  it('enforces setsToWin for set-based modalities', () => {
+    const state = { scoreType: 'sets', cfg: { setsToWin: 2 }, matches: [{ id: 'm1', home: 0, away: 1, hg: null, ag: null }] };
+    expect(setScore(state, 'm1', 'hg', 3).ok).toBe(true);
+    expect(setScore(state, 'm1', 'ag', 0)).toMatchObject({ ok: false });
+    expect(state.matches[0].ag).toBeNull();
+    expect(setScore(state, 'm1', 'hg', 2).ok).toBe(true);
+    expect(setScore(state, 'm1', 'ag', 1).ok).toBe(true);
+  });
+});
+
+
+

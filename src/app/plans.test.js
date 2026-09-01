@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { PLAN_DEFINITIONS, planCardsHTML, planLimitText, canCreateChampionship, choosePlan, currentPlan, confirmPlanRequest } from './plans.js';
+import { isSamePendingRequest } from '../services/billing.js';
 
 describe('plans', () => {
+  it('recognizes repeated pending requests as idempotent', () => {
+    expect(isSamePendingRequest({ status: 'pending', planId: 'pro' }, 'pro')).toBe(true);
+    expect(isSamePendingRequest({ status: 'pending', planId: 'free' }, 'pro')).toBe(false);
+    expect(isSamePendingRequest({ status: 'active', planId: 'pro' }, 'pro')).toBe(false);
+  });
   describe('PLAN_DEFINITIONS', () => {
     it('has free, pro, enterprise plans', () => {
       expect(PLAN_DEFINITIONS.free).toBeDefined();
@@ -160,3 +166,5 @@ describe('plans', () => {
     });
   });
 });
+
+

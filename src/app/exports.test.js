@@ -60,3 +60,6 @@ describe('parseChampionshipImport', () => {
     expect(parseChampionshipImport(JSON.stringify({ formato: 'liga', cfg: null }))).toEqual({ ok: false, reason: 'invalid' });
   });
 });
+
+
+

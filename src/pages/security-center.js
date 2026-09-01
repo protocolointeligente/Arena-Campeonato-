@@ -1,5 +1,5 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
 import { auth } from '../services/firebase.js';
 
 export async function renderSecurityCenter(root) {
@@ -41,3 +41,5 @@ export async function renderSecurityCenter(root) {
 
   await load();
 }
+
+

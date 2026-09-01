@@ -138,3 +138,6 @@ describe('compressPhoto', () => {
   // section — manual/browser verification is the accepted gap, same class
   // as Phase 1/2a's "no browser in this sandbox" limitation.
 });
+
+
+

@@ -1,4 +1,4 @@
-import { uid } from './utils.js';
+import { uid } from './utils.ts';
 
 export function teamById(state, id) {
   return (state.teams || []).find((team) => team.id === id) || null;
@@ -7,7 +7,7 @@ export function teamById(state, id) {
 export function athleteById(state, athleteId) {
   for (const team of state.teams || []) {
     const athlete = (team.roster || []).find((item) => item.id === athleteId);
-    if (athlete) return { athlete, team };
+    if (athlete) {return { athlete, team };}
   }
   return null;
 }
@@ -24,7 +24,7 @@ export function teamNameById(state, id) {
 
 export function addAthlete(team, { nome, dob, numero }) {
   const trimmed = (nome || '').trim();
-  if (!trimmed) return { ok: false, reason: 'Informe o nome.' };
+  if (!trimmed) {return { ok: false, reason: 'Informe o nome.' };}
   team.roster = team.roster || [];
   const athlete = { id: uid(), nome: trimmed, dob: (dob || '').trim(), numero: (numero || '').trim(), foto: '' };
   team.roster.push(athlete);
@@ -33,12 +33,12 @@ export function addAthlete(team, { nome, dob, numero }) {
 
 export function updateAthlete(team, athleteId, { nome, dob, numero }) {
   const athlete = (team.roster || []).find((item) => item.id === athleteId);
-  if (!athlete) return { ok: false, reason: 'Atleta não encontrado.' };
+  if (!athlete) {return { ok: false, reason: 'Atleta não encontrado.' };}
   const before = { ...athlete };
   const trimmedNome = (nome || '').trim();
   athlete.nome = trimmedNome || athlete.nome;
-  if (dob !== undefined) athlete.dob = (dob || '').trim();
-  if (numero !== undefined) athlete.numero = (numero || '').trim();
+  if (dob !== undefined) {athlete.dob = (dob || '').trim();}
+  if (numero !== undefined) {athlete.numero = (numero || '').trim();}
   return { ok: true, before, after: { ...athlete } };
 }
 
@@ -50,20 +50,20 @@ export function removeAthlete(team, athleteId) {
 
 export function setAthletePhoto(team, athleteId, dataUrl) {
   const athlete = (team.roster || []).find((item) => item.id === athleteId);
-  if (!athlete) return { ok: false };
+  if (!athlete) {return { ok: false };}
   athlete.foto = dataUrl;
   return { ok: true };
 }
 
 export function setTeamLogo(team, dataUrl) {
-  if (!team) return { ok: false };
+  if (!team) {return { ok: false };}
   team.logo = dataUrl;
   return { ok: true };
 }
 
 export function compressPhoto(file) {
   return new Promise((resolve) => {
-    if (!file) return resolve(null);
+    if (!file) {return resolve(null);}
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -86,3 +86,5 @@ export function compressPhoto(file) {
     reader.readAsDataURL(file);
   });
 }
+
+

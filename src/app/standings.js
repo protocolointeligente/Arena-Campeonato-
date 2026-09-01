@@ -12,9 +12,9 @@ function emptyStat(i) { return { team: i, P: 0, J: 0, V: 0, E: 0, D: 0, GP: 0, G
 function h2h(aIdx, bIdx, matches) {
   let pa = 0, pb = 0;
   matches.forEach((m) => {
-    if (m.hg == null || m.ag == null) return;
-    if (m.home === aIdx && m.away === bIdx) { if (m.hg > m.ag) pa += 3; else if (m.hg < m.ag) pb += 3; else { pa++; pb++; } }
-    else if (m.home === bIdx && m.away === aIdx) { if (m.hg > m.ag) pb += 3; else if (m.hg < m.ag) pa += 3; else { pa++; pb++; } }
+    if (m.hg == null || m.ag == null) {return;}
+    if (m.home === aIdx && m.away === bIdx) { if (m.hg > m.ag) {pa += 3;} else if (m.hg < m.ag) {pb += 3;} else { pa++; pb++; } }
+    else if (m.home === bIdx && m.away === aIdx) { if (m.hg > m.ag) {pb += 3;} else if (m.hg < m.ag) {pa += 3;} else { pa++; pb++; } }
   });
   return pa - pb;
 }
@@ -26,33 +26,33 @@ export function computeStandings(teams, idxs, matches, cfg = {}) {
   const drawPts = cfg.drawPts != null ? cfg.drawPts : 1;
   const lossPts = cfg.lossPts != null ? cfg.lossPts : 0;
   (matches || []).forEach((m) => {
-    if (m.hg == null || m.ag == null) return;
+    if (m.hg == null || m.ag == null) {return;}
     const H = map[m.home], A = map[m.away];
     if (H) { H.J++; H.GP += m.hg; H.GC += m.ag; if (m.hg > m.ag) { H.V++; H.P += winPts; } else if (m.hg < m.ag) { H.D++; H.P += lossPts; } else { H.E++; H.P += drawPts; } }
     if (A) { A.J++; A.GP += m.ag; A.GC += m.hg; if (m.ag > m.hg) { A.V++; A.P += winPts; } else if (m.ag < m.hg) { A.D++; A.P += lossPts; } else { A.E++; A.P += drawPts; } }
   });
   const arr = Object.values(map);
   const yp = cfg.discYellow != null ? cfg.discYellow : 1;
-  const rp = cfg.discRed != null ? cfg.discRed : 5;
+  const rp = cfg.discRed != null ? cfg.discRed : 2;
   const byId = {};
-  idxs.forEach((i) => { if (teams[i]) byId[teams[i].id] = map[i]; });
+  idxs.forEach((i) => { if (teams[i]) {byId[teams[i].id] = map[i];} });
   (matches || []).forEach((m) => (m.events || []).forEach((e) => {
     const s = byId[e.teamId];
-    if (!s) return;
-    if (e.type === 'yellow') s.CY = (s.CY || 0) + 1;
-    else if (e.type === 'red') s.CR = (s.CR || 0) + 1;
+    if (!s) {return;}
+    if (e.type === 'yellow') {s.CY = (s.CY || 0) + 1;}
+    else if (e.type === 'red') {s.CR = (s.CR || 0) + 1;}
   }));
   arr.forEach((s) => { s.SG = s.GP - s.GC; s.pct = s.J && winPts > 0 ? Math.round((s.P / (s.J * winPts)) * 1000) / 10 : 0; s.CY = s.CY || 0; s.CR = s.CR || 0; s.DISC = -(s.CY * yp + s.CR * rp); });
   const order = cfg.criterios || ['P', 'V', 'SG', 'GP'];
   const legacyH2H = !order.includes('CD') && cfg.confrontoDireto !== false;
   arr.sort((a, b) => {
     for (const c of order) {
-      if (c === 'CD') { const h = h2h(b.team, a.team, matches || []); if (h !== 0) return h; continue; }
+      if (c === 'CD') { const h = h2h(b.team, a.team, matches || []); if (h !== 0) {return h;} continue; }
       const dir = CRIT_DIR[c] || 'desc';
       const diff = dir === 'asc' ? a[c] - b[c] : b[c] - a[c];
-      if (diff) return diff;
+      if (diff) {return diff;}
     }
-    if (legacyH2H) { const d = h2h(b.team, a.team, matches || []); if (d !== 0) return d; }
+    if (legacyH2H) { const d = h2h(b.team, a.team, matches || []); if (d !== 0) {return d;} }
     return 0;
   });
   return arr;
@@ -87,12 +87,12 @@ export function qualifiedFromPhase(state, phase, mode, count) {
 export function applyProgression(state, category, srcId, { force = false } = {}) {
   saveRootIntoActive(state);
   const src = (category.phases || []).find((p) => p.id === srcId);
-  if (!src || !src.progression || !src.progression.targetPhaseId) return { ok: false, reason: 'no-target' };
+  if (!src || !src.progression || !src.progression.targetPhaseId) {return { ok: false, reason: 'no-target' };}
   const target = (category.phases || []).find((p) => p.id === src.progression.targetPhaseId);
-  if (!target) return { ok: false, reason: 'target-missing' };
-  if (!phaseComplete(src) && !force) return { ok: false, reason: 'incomplete' };
+  if (!target) {return { ok: false, reason: 'target-missing' };}
+  if (!phaseComplete(src) && !force) {return { ok: false, reason: 'incomplete' };}
   const ids = qualifiedFromPhase(state, src, src.progression.mode || 'overall', src.progression.count || 2);
-  if (!ids.length) return { ok: false, reason: 'no-qualifiers' };
+  if (!ids.length) {return { ok: false, reason: 'no-qualifiers' };}
   target.participantTeamIds = [...new Set(ids)];
   target.status = 'planejada';
   target.grupos = [];
@@ -106,23 +106,57 @@ export function applyProgression(state, category, srcId, { force = false } = {})
 export function scorerRanking(state) {
   const agg = {};
   allMatchObjs(state).forEach((m) => (m.events || []).forEach((e) => {
-    if (e.type !== 'goal') return;
+    if (e.type !== 'goal') {return;}
     const key = e.athleteId || `n:${(e.name || '').toLowerCase()}|${e.teamId || ''}`;
-    if (!agg[key]) agg[key] = { athleteId: e.athleteId, name: e.athleteId ? athName(state, e.athleteId) : (e.name || '—'), teamId: e.teamId, goals: 0 };
+    if (!agg[key]) {agg[key] = { athleteId: e.athleteId, name: e.athleteId ? athName(state, e.athleteId) : (e.name || '—'), teamId: e.teamId, goals: 0 };}
     agg[key].goals++;
   }));
   return Object.values(agg).sort((a, b) => b.goals - a.goals);
 }
 
+export function teamStats(state, teamId) {
+  const teams = state.teams || [];
+  const index = teams.findIndex((team) => team.id === teamId);
+  if (index < 0) {return null;}
+  const stats = { teamId, played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, setsFor: 0, setsAgainst: 0, yellow: 0, red: 0 };
+  allMatchObjs(state).forEach((match) => {
+    if (match.home !== index && match.away !== index) {return;}
+    if (match.hg == null || match.ag == null) {return;}
+    const home = match.home === index;
+    const scored = home ? match.hg : match.ag;
+    const conceded = home ? match.ag : match.hg;
+    stats.played++; stats.goalsFor += scored; stats.goalsAgainst += conceded; stats.setsFor += scored; stats.setsAgainst += conceded;
+    if (scored > conceded) {stats.wins++;} else if (scored === conceded) {stats.draws++;} else {stats.losses++;}
+    (match.events || []).forEach((event) => {if (event.teamId === teamId && event.type === 'yellow') {stats.yellow++;} if (event.teamId === teamId && event.type === 'red') {stats.red++;}});
+  });
+  return { ...stats, goalDifference: stats.goalsFor - stats.goalsAgainst, setsDifference: stats.setsFor - stats.setsAgainst };
+}
+
 export function cardRanking(state) {
   const agg = {};
   allMatchObjs(state).forEach((m) => (m.events || []).forEach((e) => {
-    if (e.type !== 'yellow' && e.type !== 'red') return;
+    if (e.type !== 'yellow' && e.type !== 'red') {return;}
     const key = e.athleteId || `n:${(e.name || '').toLowerCase()}|${e.teamId || ''}`;
-    if (!agg[key]) agg[key] = { athleteId: e.athleteId, name: e.athleteId ? athName(state, e.athleteId) : (e.name || '—'), teamId: e.teamId, y: 0, r: 0 };
-    if (e.type === 'yellow') agg[key].y++; else agg[key].r++;
+    if (!agg[key]) {agg[key] = { athleteId: e.athleteId, name: e.athleteId ? athName(state, e.athleteId) : (e.name || '—'), teamId: e.teamId, y: 0, r: 0 };}
+    if (e.type === 'yellow') {agg[key].y++;} else {agg[key].r++;}
   }));
   return Object.values(agg).filter((r) => r.y || r.r).sort((a, b) => (b.r * 3 + b.y) - (a.r * 3 + a.y));
+}
+
+export function athleteStats(state, athleteId) {
+  if (!athleteId) {return null;}
+  const stats = { athleteId, matches: 0, goals: 0, yellow: 0, red: 0 };
+  const appeared = new Set();
+  allMatchObjs(state).forEach((match) => (match.events || []).forEach((event) => {
+    if (event.athleteId !== athleteId) {return;}
+    if (match.id) {appeared.add(match.id);}
+    if (event.type === 'goal') {stats.goals++;}
+    if (event.type === 'yellow') {stats.yellow++;}
+    if (event.type === 'red') {stats.red++;}
+  }));
+  stats.matches = appeared.size;
+  stats.discipline = -(stats.yellow + stats.red * 2);
+  return stats;
 }
 
 export function standsToRows(teams, st) {
@@ -140,7 +174,7 @@ export function genCross(state) {
       byPos[p].push(st[p] ? state.teams[st[p].team].id : null);
     }
   });
-  let seedList = [];
+  const seedList = [];
   const W = byPos[0] || [], R = byPos[1] || [];
   if (classificam >= 2 && W.length === R.length && W.length > 1) {
     // Legacy's own R[j]-with-R[i]-fallback can assign the same team to two ties at once when a
@@ -152,9 +186,9 @@ export function genCross(state) {
       const w = W[i];
       const j = i % 2 === 0 ? i + 1 : i - 1;
       let r = R[j] != null ? R[j] : R[i];
-      if (r != null && used.has(r)) r = null;
-      if (w != null) used.add(w);
-      if (r != null) used.add(r);
+      if (r != null && used.has(r)) {r = null;}
+      if (w != null) {used.add(w);}
+      if (r != null) {used.add(r);}
       seedList.push(w);
       seedList.push(r);
     }
@@ -170,18 +204,22 @@ export function suspensionInfo(state, athleteId) {
   const lim = (state.cfg && state.cfg.yellowLimit) || 3;
   let y = 0, r = 0;
   allMatchObjs(state).forEach((m) => (m.events || []).forEach((e) => {
-    if (e.athleteId !== athleteId) return;
-    if (e.type === 'yellow') y++;
-    else if (e.type === 'red') r++;
+    if (e.athleteId !== athleteId) {return;}
+    if (e.type === 'yellow') {y++;}
+    else if (e.type === 'red') {r++;}
   }));
   const pending = r > 0 || (lim > 0 && y > 0 && y % lim === 0);
-  return { y, r, suspended: pending, reason: r > 0 ? 'vermelho' : (pending ? lim + 'º amarelo' : '') };
+  return { y, r, suspended: pending, reason: r > 0 ? 'vermelho' : (pending ? `${lim  }º amarelo` : '') };
+}
+
+export function isAthleteEligible(state, athleteId) {
+  return !!athleteId && !suspensionInfo(state, athleteId).suspended;
 }
 
 export function critMove(criterios, i, dir) {
   const tail = (criterios || []).filter((c) => c !== 'P');
   const j = i + dir;
-  if (j < 0 || j >= tail.length) return ['P', ...tail];
+  if (j < 0 || j >= tail.length) {return ['P', ...tail];}
   [tail[i], tail[j]] = [tail[j], tail[i]];
   return ['P', ...tail];
 }
@@ -194,6 +232,8 @@ export function critRemove(criterios, i) {
 
 export function critAdd(criterios, value) {
   const tail = (criterios || []).filter((c) => c !== 'P');
-  if (value && !tail.includes(value)) tail.push(value);
+  if (value && !tail.includes(value)) {tail.push(value);}
   return ['P', ...tail];
 }
+
+

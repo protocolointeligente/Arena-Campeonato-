@@ -19,23 +19,71 @@ service cloud.firestore {
     function isCollaborator() {
       return signedIn()
         && request.auth.token.email != null
-        && request.auth.token.email.lower() in resource.data.collaboratorEmails;
+        && lower(request.auth.token.email) in resource.data.collaboratorEmails;
     }
 
     function canManageChampionship() {
       return isPlatformAdmin() || isOwner() || isCollaborator();
     }
 
+    function planTeamLimit(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 999
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 64 : 16;
+    }
+
+    function planAthleteLimit(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 9999
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 1000 : 200;
+    }
+
+    function withinPlanLimits() {
+      return request.resource.data.teamCount is number
+        && request.resource.data.athleteCount is number
+        && request.resource.data.teamCount >= 0
+        && request.resource.data.athleteCount >= 0
+        && request.resource.data.teamCount <= planTeamLimit(request.resource.data.ownerUid)
+        && request.resource.data.athleteCount <= planAthleteLimit(request.resource.data.ownerUid);
+    }
+
     match /championships/{championshipId} {
       allow read: if canManageChampionship();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if canManageChampionship();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid && withinPlanLimits();
+      allow update: if canManageChampionship() && (isPlatformAdmin() || withinPlanLimits());
+      allow delete: if canManageChampionship();
 
       match /registrations/{registrationId} {
         allow read, update, delete: if canManageChampionship();
-        allow create: if signedIn()
-          || (exists(/databases/$(database)/documents/publicChampionships/$(championshipId))
-            && get(/databases/$(database)/documents/publicChampionships/$(championshipId)).data.status != 'arquivado');
+        allow create: if exists(/databases/$(database)/documents/publicChampionships/$(championshipId))
+            && get(/databases/$(database)/documents/publicChampionships/$(championshipId)).data.status != 'arquivado'
+            && request.resource.data.status == 'pending'
+            && request.resource.data.teamNameKey is string
+            && request.resource.data.teamNameKey.size() > 0
+            && request.resource.data.teamName is string
+            && request.resource.data.responsible is string
+            && request.resource.data.phone is string
+            && request.resource.data.email is string
+            && request.resource.data.consent == true
+            && request.resource.data.captchaToken is string
+            && request.resource.data.athletes is list
+            && request.resource.data.athletes.size() > 0
+            && request.resource.data.rosterMode is string
+            && ((request.resource.data.rosterMode == 'individual' && request.resource.data.athletes.size() == 1)
+              || (request.resource.data.rosterMode == 'dupla' && request.resource.data.athletes.size() == 2)
+              || (request.resource.data.rosterMode == 'team' && request.resource.data.athletes.size() <= 50))
+            && request.resource.data.created is number;
+      }
+
+      match /pollVotes/{voteId} {
+        allow read: if true;
+    allow create: if voteId == request.resource.data.pollId + '_' + request.resource.data.voterKey
+      && request.resource.data.pollId is string
+            && request.resource.data.optionId is string
+      && request.resource.data.voterKey is string
+      && request.resource.data.voterKey.size() > 8
+      && request.resource.data.voterKey.size() < 160
+      && request.resource.data.created is number
+      && request.resource.data.created <= request.time.toMillis();
+        allow update, delete: if false;
       }
 
       match /auditLogs/{auditId} {
@@ -52,7 +100,13 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
-      allow create, update: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow create: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow update: if isPlatformAdmin()
+        || (signedIn() && request.auth.uid == userId && (
+          request.resource.data.billing == resource.data.billing
+          || (request.resource.data.billing.status == 'pending'
+            && resource.data.billing.status != 'active')
+        ));
       allow delete: if isPlatformAdmin();
     }
 

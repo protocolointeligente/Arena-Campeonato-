@@ -1,4 +1,4 @@
-import { clone, uid } from './utils.js';
+import { clone, uid } from './utils.ts';
 
 export const PHASE_FORMATS = [
   ['liga', 'Pontos Corridos'],
@@ -14,6 +14,8 @@ function blankPhase(state, nome, ordem) {
     ordem,
     status: 'planejada',
     formato: 'liga',
+    modelo: state.modelo || 'liga',
+    scoreType: state.scoreType || 'goals',
     cfg: clone(state.cfg || {}),
     grupos: [],
     matches: [],
@@ -31,6 +33,8 @@ export function ensurePhases(category, state) {
       ordem: 1,
       status: 'planejada',
       formato: state.formato || 'liga',
+      modelo: state.modelo || 'liga',
+      scoreType: state.scoreType || 'goals',
       cfg: clone(state.cfg || {}),
       grupos: [],
       matches: clone(category.matches || []),
@@ -50,6 +54,8 @@ export function ensurePhases(category, state) {
 
 export function loadPhaseIntoRoot(state, phase) {
   state.formato = phase.formato || 'liga';
+  state.modelo = phase.modelo || state.modelo || 'liga';
+  state.scoreType = phase.scoreType || state.scoreType || 'goals';
   state.cfg = clone(phase.cfg || {});
   state.grupos = clone(phase.grupos || []);
   state.matches = clone(phase.matches || []);
@@ -57,14 +63,34 @@ export function loadPhaseIntoRoot(state, phase) {
 }
 
 export function saveRootIntoPhase(state, phase) {
-  if (!phase) return;
+  if (!phase) {return;}
   const keepParticipants = phase.participantTeamIds;
   const keepProgression = phase.progression;
   phase.formato = state.formato || 'liga';
+  phase.modelo = state.modelo || phase.modelo || 'liga';
+  phase.scoreType = state.scoreType || phase.scoreType || 'goals';
   phase.cfg = clone(state.cfg || {});
   phase.grupos = clone(state.grupos || []);
   phase.matches = clone(state.matches || []);
   phase.bracket = state.bracket ? clone(state.bracket) : null;
+  phase.participantTeamIds = keepParticipants || null;
+  phase.progression = keepProgression || null;
+}
+
+// Immer-compatible version
+export function saveRootIntoPhaseImmer(draft, category) {
+  if (!category || !category.phases?.length) {return;}
+  const phase = category.phases.find((p) => p.id === category.activePhaseId) || category.phases[0];
+  if (!phase) {return;}
+  const keepParticipants = phase.participantTeamIds;
+  const keepProgression = phase.progression;
+  phase.formato = draft.formato || 'liga';
+  phase.modelo = draft.modelo || phase.modelo || 'liga';
+  phase.scoreType = draft.scoreType || phase.scoreType || 'goals';
+  phase.cfg = clone(draft.cfg || {});
+  phase.grupos = clone(draft.grupos || []);
+  phase.matches = clone(draft.matches || []);
+  phase.bracket = draft.bracket ? clone(draft.bracket) : null;
   phase.participantTeamIds = keepParticipants || null;
   phase.progression = keepProgression || null;
 }
@@ -84,9 +110,9 @@ export function phaseParticipants(state, phase) {
 }
 
 export function phaseComplete(phase) {
-  if (!phase) return false;
+  if (!phase) {return false;}
   if (phase.formato === 'mata') {
-    if (!phase.bracket) return false;
+    if (!phase.bracket) {return false;}
     const rounds = phase.bracket.rounds || [];
     const last = rounds[rounds.length - 1];
     return !!(last && last[0] && last[0].winner != null);
@@ -107,7 +133,7 @@ export function addPhase(state, category) {
 
 export function renamePhase(category, id, name) {
   const phase = (category.phases || []).find((p) => p.id === id);
-  if (!phase) return { ok: false };
+  if (!phase) {return { ok: false };}
   phase.nome = (name || '').trim() || 'Fase';
   return { ok: true };
 }
@@ -126,9 +152,9 @@ export function removePhase(state, category, id) {
 }
 
 export function switchPhase(state, category, id) {
-  if (category.activePhaseId === id) return category;
+  if (category.activePhaseId === id) {return category;}
   const phase = (category.phases || []).find((p) => p.id === id);
-  if (!phase) return category;
+  if (!phase) {return category;}
   saveRootIntoPhase(state, activePhaseOf(category));
   category.activePhaseId = id;
   loadPhaseIntoRoot(state, phase);
@@ -138,19 +164,19 @@ export function switchPhase(state, category, id) {
 export function setPhaseFormat(state, category, id, fmt) {
   saveRootIntoPhase(state, activePhaseOf(category));
   const phase = (category.phases || []).find((p) => p.id === id);
-  if (!phase) return { ok: false };
+  if (!phase) {return { ok: false };}
   phase.formato = fmt;
   phase.grupos = [];
   phase.matches = [];
   phase.bracket = null;
-  if (fmt !== 'grupos' && phase.progression && phase.progression.mode === 'perGroup') phase.progression.mode = 'overall';
-  if (category.activePhaseId === id) loadPhaseIntoRoot(state, phase);
+  if (fmt !== 'grupos' && phase.progression && phase.progression.mode === 'perGroup') {phase.progression.mode = 'overall';}
+  if (category.activePhaseId === id) {loadPhaseIntoRoot(state, phase);}
   return { ok: true };
 }
 
 export function setProgressTarget(category, srcId, targetId) {
   const phase = (category.phases || []).find((p) => p.id === srcId);
-  if (!phase) return { ok: false };
+  if (!phase) {return { ok: false };}
   phase.progression = phase.progression || {};
   phase.progression.targetPhaseId = targetId || null;
   return { ok: true };
@@ -158,7 +184,7 @@ export function setProgressTarget(category, srcId, targetId) {
 
 export function setProgressMode(category, srcId, mode) {
   const phase = (category.phases || []).find((p) => p.id === srcId);
-  if (!phase) return { ok: false };
+  if (!phase) {return { ok: false };}
   phase.progression = phase.progression || {};
   phase.progression.mode = mode;
   phase.progression.count = phase.progression.count || 2;
@@ -167,15 +193,17 @@ export function setProgressMode(category, srcId, mode) {
 
 export function setProgressCount(category, srcId, count) {
   const phase = (category.phases || []).find((p) => p.id === srcId);
-  if (!phase) return { ok: false };
+  if (!phase) {return { ok: false };}
   phase.progression = phase.progression || {};
   phase.progression.count = Math.max(1, +count || 1);
   return { ok: true };
 }
 
 export function progressionSummary(category, phase) {
-  if (!phase.progression || !phase.progression.targetPhaseId) return 'Progressão não configurada';
+  if (!phase.progression || !phase.progression.targetPhaseId) {return 'Progressão não configurada';}
   const target = (category.phases || []).find((p) => p.id === phase.progression.targetPhaseId);
   const mode = phase.progression.mode === 'perGroup' ? 'por grupo' : 'geral';
   return `${phase.progression.count || 2} classificado(s) ${mode} → ${target ? target.nome : 'fase removida'}`;
 }
+
+

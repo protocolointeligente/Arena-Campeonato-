@@ -1,4 +1,4 @@
-import { navigate } from '../app/router.js';
+import { navigate } from '../app/router-v2.js';
 import { toggleTheme } from '../app/theme.js';
 
 const features = [
@@ -18,3 +18,5 @@ export function renderLanding(root) {
 }
 
 function bind(root) { root.querySelectorAll('[data-route]').forEach(b => b.onclick = () => navigate(b.dataset.route)); root.querySelector('[data-theme]').onclick = toggleTheme; }
+
+

@@ -1,4 +1,4 @@
-import { uid } from './utils.js';
+import { uid } from './utils.ts';
 
 export function championshipJSON(state) {
   const filename = `${(state.nome || 'campeonato').replace(/[^\w-]+/g, '_')}.json`;
@@ -12,7 +12,7 @@ export function parseChampionshipImport(text) {
   } catch {
     return { ok: false, reason: 'invalid' };
   }
-  if (!value || typeof value !== 'object' || !value.formato || typeof value.cfg !== 'object' || !value.cfg) return { ok: false, reason: 'invalid' };
+  if (!value || typeof value !== 'object' || !value.formato || typeof value.cfg !== 'object' || !value.cfg) {return { ok: false, reason: 'invalid' };}
   value.id = uid();
   value.cfg.seedNames = value.cfg.seedNames || [];
   delete value.ownerUid;
@@ -21,3 +21,5 @@ export function parseChampionshipImport(text) {
   delete value.billing;
   return { ok: true, value };
 }
+
+

@@ -174,3 +174,6 @@ describe('removeCategory', () => {
     expect(state.teams).toEqual([{ id: 'from-a' }]);
   });
 });
+
+
+

@@ -1,4 +1,4 @@
-import { esc } from './utils.js';
+import { esc } from './utils.ts';
 
 let toastTimer = null;
 
@@ -14,7 +14,7 @@ export function ensureUiRoot() {
     backdrop.className = 'modal-overlay';
     backdrop.innerHTML = '<div id="modalBox" class="card modal-card"></div>';
     backdrop.addEventListener('click', (event) => {
-      if (event.target.id === 'modalBg') closeModal();
+      if (event.target.id === 'modalBg') {closeModal();}
     });
     document.body.appendChild(backdrop);
   }
@@ -22,7 +22,7 @@ export function ensureUiRoot() {
 
 export function toast(message) {
   const el = document.getElementById('toast');
-  if (!el) return;
+  if (!el) {return;}
   el.textContent = message;
   el.classList.add('show');
   clearTimeout(toastTimer);
@@ -41,3 +41,5 @@ export function closeModal() {
 export function loadingHTML(text) {
   return `<div class="center" style="padding:70px 0"><div class="spin"></div><p class="muted" style="margin-top:14px">${esc(text || 'Carregando...')}</p></div>`;
 }
+
+

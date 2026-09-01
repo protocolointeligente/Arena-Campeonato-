@@ -343,3 +343,5 @@ exports.listTaskTags = function listTaskTags(dcOrVars, varsOrOptions, options) {
   return executeQuery(listTaskTagsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
+
+

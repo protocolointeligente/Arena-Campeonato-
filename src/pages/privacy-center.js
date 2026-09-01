@@ -1,5 +1,5 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
 import { auth } from '../services/firebase.js';
 import { listAudit } from '../services/audit.js';
 
@@ -49,3 +49,5 @@ export async function renderPrivacyCenter(root) {
 export function privacyNoticeHTML() {
   return `<div style="font-size:14px;line-height:1.6;color:var(--text-muted)"><p><strong>ARENA Campeonatos</strong> respeita sua privacidade. Este aviso explica como coletamos, usamos e protegemos seus dados.</p><h4>1. Dados coletados</p><ul><li>Identificação: nome, email, UID Firebase.</li><li>Campeonatos: times, atletas, jogos, resultados, súmulas.</li><li>Logs de auditoria: ações realizadas na plataforma (IP, timestamp, ação).</li></ul><h4>2. Finalidade</h4><ul><li>Operar campeonatos esportivos.</li><li>Gerar relatórios, classificações, artilharia.</li><li>Segurança e auditoria (LGPD Art. 10).</li></ul><h4>3. Compartilhamento</h4><p>Não vendemos dados. Compartilhamos apenas com provedores de infraestrutura (Firebase/Google Cloud) sob contrato de processamento.</p><h4>4. Seus direitos (LGPD Art. 18)</h4><ul><li>Confirmação e acesso.</li><li>Correção de dados incompletos/inexatos.</li><li>Anonimização, bloqueio ou eliminação de dados desnecessários.</li><li>Portabilidade.</li><li>Eliminação (com exceções legais).</li><li>Revogação do consentimento.</li></ul><h4>5. Retenção</h4><p>Dados de campeonato: enquanto a conta existir + 5 anos para fins legais. Logs de auditoria: 2 anos.</p><h4>6. Contato</h4><p>DPO: privacidade@arena.example | Encarregado LGPD.</p></div>`;
 }
+
+

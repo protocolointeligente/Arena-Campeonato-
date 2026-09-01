@@ -1,5 +1,5 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
 import { listAudit } from '../services/audit.js';
 
 export async function renderAuditCenter(root) {
@@ -33,3 +33,5 @@ export async function renderAuditCenter(root) {
 
   await load();
 }
+
+

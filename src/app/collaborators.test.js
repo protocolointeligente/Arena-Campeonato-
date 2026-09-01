@@ -1,11 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import {
   COLLAB_ROLES, ensureCollaborators, isOwner, myCollaborator, myRole, can,
-  roleLabel, inviteManager, removeManager, changeManagerRole,
+  roleLabel, inviteManager, removeManager, changeManagerRole, mutationPermission,
 } from './collaborators.js';
 
 const OWNER = { uid: 'owner-1', email: 'owner@example.com' };
 const OTHER = { uid: 'other-1', email: 'other@example.com' };
+
+describe('mutation permissions', () => {
+  it('maps operational tabs to narrow permissions', () => {
+    expect(mutationPermission('jogos')).toBe('results');
+    expect(mutationPermission('chave')).toBe('results');
+    expect(mutationPermission('inscricoes')).toBe('registrations');
+    expect(mutationPermission('equipes')).toBe('admin');
+  });
+});
 
 function championship(overrides = {}) {
   return { ownerUid: OWNER.uid, ownerEmail: OWNER.email, collaborators: [], ...overrides };
@@ -182,3 +191,6 @@ describe('removeManager', () => {
     expect(result).toEqual({ ok: false, reason: 'Colaborador não encontrado.' });
   });
 });
+
+
+

@@ -1,7 +1,7 @@
 export function resizeImage(file, maxW, maxH, quality = 0.78) {
   return new Promise((resolve, reject) => {
-    if (!file) return resolve('');
-    if (file.size > 8 * 1024 * 1024) return reject(new Error('Imagem maior que 8 MB'));
+    if (!file) {return resolve('');}
+    if (file.size > 8 * 1024 * 1024) {return reject(new Error('Imagem maior que 8 MB'));}
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -22,3 +22,5 @@ export function resizeImage(file, maxW, maxH, quality = 0.78) {
     reader.readAsDataURL(file);
   });
 }
+
+

@@ -1,8 +1,8 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
 import { toast } from '../app/ui.js';
 import { auth } from '../services/firebase.js';
-import { planCardsHTML, planLimitText, currentPlan, choosePlan, confirmPlanRequest } from '../app/plans.js';
+import { PLAN_DEFINITIONS, planCardsHTML, planLimitText, currentPlan, choosePlan, confirmPlanRequest } from '../app/plans.js';
+import { requestPlan } from '../services/billing.js';
 
 export async function renderPlans(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section"><div data-body><div class="card">Carregando planos...</div></div></main></div>`;
@@ -25,13 +25,14 @@ export async function renderPlans(root) {
     body.querySelectorAll('[data-choose-plan]').forEach((button) => {
       button.onclick = async () => {
         const planId = button.dataset.choosePlan;
-        if (planId === currentPlan(user)) return;
+        if (planId === currentPlan(user)) {return;}
         const result = choosePlan(user, planId);
-        if (!result.ok) return toast(result.reason);
+        if (!result.ok) {return toast(result.reason);}
         if (result.pending) {
           const confirmed = confirmPlanRequest(user, planId);
-          if (!confirmed.ok) return toast(confirmed.reason);
-          toast('Solicitação de upgrade enviada! Aguarde aprovação do superadmin.');
+          if (!confirmed.ok) {return toast(confirmed.reason);}
+          const billingResult = await requestPlan(planId);
+          toast(billingResult.idempotent ? 'Esta solicitação já está pendente.' : 'Solicitação de upgrade enviada! Aguarde aprovação do superadmin.');
         } else {
           toast(`Plano ${PLAN_DEFINITIONS[planId].name} ativado!`);
         }
@@ -42,3 +43,5 @@ export async function renderPlans(root) {
 
   await load();
 }
+
+

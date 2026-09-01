@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  roundRobin, buildFixtures, buildGxg, generateActivePhase,
+  roundRobin, buildFixtures, buildGxg, buildSwissRound, generateActivePhase,
   tieObj, nextPow2, makeBracketFromOrdered, resolveTie, winnerOf, loserOf, advanceBracket, findTie,
 } from './engine.js';
 import { ensureCategories, activeCategory } from './categories.js';
@@ -53,6 +53,20 @@ describe('buildGxg', () => {
   });
 });
 
+describe('buildSwissRound', () => {
+  it('pairs a first round and records a bye for an odd field', () => {
+    const result = buildSwissRound([0, 1, 2, 3, 4], [], 1);
+    expect(result.matches).toHaveLength(2);
+    expect(result.byes).toEqual([4]);
+    expect(new Set(result.matches.flatMap((m) => [m.home, m.away])).size).toBe(4);
+  });
+
+  it('avoids a previous pairing when another opponent is available', () => {
+    const result = buildSwissRound([0, 1, 2, 3], [{ home: 0, away: 1 }], 2);
+    expect(result.matches.some((m) => [m.home, m.away].sort().join('-') === '0-1')).toBe(false);
+  });
+});
+
 describe('generateActivePhase', () => {
   function championship() {
     return {
@@ -77,6 +91,18 @@ describe('generateActivePhase', () => {
     expect(result).toEqual({ ok: true });
     expect(state.matches).toHaveLength(6);
     expect(state.categories[0].phases[0].status).toBe('andamento');
+  });
+
+  it('generates Swiss rounds incrementally without deleting earlier rounds', () => {
+    const state = championship();
+    state.modelo = 'swiss';
+    state.categories[0].phases[0].modelo = 'swiss';
+    expect(generateActivePhase(state)).toEqual({ ok: true });
+    expect(state.matches).toHaveLength(2);
+    expect(state.cfg.swissRound).toBe(2);
+    expect(generateActivePhase(state)).toEqual({ ok: true });
+    expect(state.matches).toHaveLength(4);
+    expect(state.matches.map((m) => m.rodada)).toEqual([1, 1, 2, 2]);
   });
 
   it('generates a grupos phase split into cfg.nGrupos groups', () => {
@@ -399,3 +425,6 @@ describe('cross-module round trip', () => {
     expect(activeCategory(state).phases[0].matches).toHaveLength(6);
   });
 });
+
+
+

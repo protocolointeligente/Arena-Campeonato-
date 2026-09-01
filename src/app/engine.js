@@ -1,18 +1,18 @@
-import { uid } from './utils.js';
+import { uid } from './utils.ts';
 import { activeCategory, saveRootIntoActive } from './categories.js';
 import { ensurePhases, activePhaseOf, phaseParticipants, loadPhaseIntoRoot } from './phases.js';
 
 export function roundRobin(teams) {
-  let t = teams.slice();
+  const t = teams.slice();
   const bye = t.length % 2 !== 0;
-  if (bye) t.push(-1);
+  if (bye) {t.push(-1);}
   const n = t.length, rounds = [];
   for (let r = 0; r < n - 1; r++) {
     const g = [];
     for (let i = 0; i < n / 2; i++) {
       let h = t[i], a = t[n - 1 - i];
       if (h !== -1 && a !== -1) {
-        if (r % 2 === 1 && i === 0) [h, a] = [a, h];
+        if (r % 2 === 1 && i === 0) {[h, a] = [a, h];}
         g.push([h, a]);
       }
     }
@@ -24,7 +24,7 @@ export function roundRobin(teams) {
 
 export function buildFixtures(idxs, turnos) {
   let rounds = roundRobin(idxs);
-  if (turnos >= 2) rounds = rounds.concat(rounds.map((g) => g.map(([h, a]) => [a, h])));
+  if (turnos >= 2) {rounds = rounds.concat(rounds.map((g) => g.map(([h, a]) => [a, h])));}
   const matches = [];
   rounds.forEach((g, ri) => g.forEach(([h, a]) => matches.push({ id: uid(), rodada: ri + 1, home: h, away: a, hg: null, ag: null, info: '', scorers: [] })));
   return matches;
@@ -33,8 +33,30 @@ export function buildFixtures(idxs, turnos) {
 export function buildGxg(idxsA, idxsB, turnos) {
   const matches = [];
   idxsA.forEach((a, ai) => idxsB.forEach((b) => matches.push({ id: uid(), rodada: ai + 1, home: a, away: b, hg: null, ag: null, info: '', scorers: [] })));
-  if (turnos >= 2) idxsA.forEach((a, ai) => idxsB.forEach((b) => matches.push({ id: uid(), rodada: idxsA.length + ai + 1, home: b, away: a, hg: null, ag: null, info: '', scorers: [] })));
+  if (turnos >= 2) {idxsA.forEach((a, ai) => idxsB.forEach((b) => matches.push({ id: uid(), rodada: idxsA.length + ai + 1, home: b, away: a, hg: null, ag: null, info: '', scorers: [] })));}
   return matches;
+}
+
+// Generates one Swiss round from participant indexes. The caller controls the
+// ordering (normally the current classification order); this helper only
+// guarantees that already-played pairs are avoided when possible.
+export function buildSwissRound(participants, previousMatches = [], round = 1) {
+  const played = new Set(previousMatches.map((m) => {
+    const a = Number(m.home), b = Number(m.away);
+    return Number.isInteger(a) && Number.isInteger(b) ? `${Math.min(a, b)}:${Math.max(a, b)}` : null;
+  }).filter(Boolean));
+  const remaining = participants.slice();
+  const matches = [];
+  const byes = [];
+  while (remaining.length > 1) {
+    const home = remaining.shift();
+    let opponentAt = remaining.findIndex((away) => !played.has(`${Math.min(home, away)}:${Math.max(home, away)}`));
+    if (opponentAt < 0) {opponentAt = 0;}
+    const [away] = remaining.splice(opponentAt, 1);
+    matches.push({ id: uid(), rodada: round, home, away, hg: null, ag: null, info: '', scorers: [] });
+  }
+  if (remaining.length) {byes.push(remaining[0]);}
+  return { matches, byes };
 }
 
 export function tieObj(a, b) {
@@ -43,26 +65,26 @@ export function tieObj(a, b) {
 
 export function nextPow2(n) {
   let p = 1;
-  while (p < n) p *= 2;
+  while (p < n) {p *= 2;}
   return p;
 }
 
 export function makeBracketFromOrdered(ids, cfg) {
   const list = ids.slice();
   const size = nextPow2(list.length);
-  while (list.length < size) list.push(null);
+  while (list.length < size) {list.push(null);}
   const rounds = [];
   let cur = [];
-  for (let i = 0; i < list.length; i += 2) cur.push(tieObj(list[i], list[i + 1]));
+  for (let i = 0; i < list.length; i += 2) {cur.push(tieObj(list[i], list[i + 1]));}
   rounds.push(cur);
   while (cur.length > 1) {
     const next = [];
-    for (let i = 0; i < cur.length; i += 2) next.push(tieObj(null, null));
+    for (let i = 0; i < cur.length; i += 2) {next.push(tieObj(null, null));}
     rounds.push(next);
     cur = next;
   }
   const bracket = { rounds };
-  if (size >= 4 && ids.length > size * 3 / 4 && (!cfg || cfg.terceiro !== false)) bracket.third = tieObj(null, null);
+  if (size >= 4 && ids.length > size * 3 / 4 && (!cfg || cfg.terceiro !== false)) {bracket.third = tieObj(null, null);}
   return bracket;
 }
 
@@ -74,10 +96,10 @@ export function resolveTie(tie, single, allowBye = true) {
   else { ag = (tie.ag1 || 0) + (tie.ag2 || 0); bg = (tie.bg1 || 0) + (tie.bg2 || 0); }
   const filled = single ? (tie.ag1 != null && tie.bg1 != null) : (tie.ag1 != null && tie.bg1 != null && tie.ag2 != null && tie.bg2 != null);
   if (!filled) { tie.winner = null; return; }
-  if (ag > bg) tie.winner = tie.a;
-  else if (bg > ag) tie.winner = tie.b;
-  else if (tie.apen != null && tie.bpen != null && tie.apen !== tie.bpen) tie.winner = tie.apen > tie.bpen ? tie.a : tie.b;
-  else tie.winner = null;
+  if (ag > bg) {tie.winner = tie.a;}
+  else if (bg > ag) {tie.winner = tie.b;}
+  else if (tie.apen != null && tie.bpen != null && tie.apen !== tie.bpen) {tie.winner = tie.apen > tie.bpen ? tie.a : tie.b;}
+  else {tie.winner = null;}
 }
 
 export function winnerOf(tie) {
@@ -85,7 +107,7 @@ export function winnerOf(tie) {
 }
 
 export function loserOf(tie) {
-  if (tie.winner == null) return null;
+  if (tie.winner == null) {return null;}
   return tie.winner === tie.a ? tie.b : tie.a;
 }
 
@@ -123,16 +145,16 @@ export function advanceBracket(bracket, cfg) {
       bracket.third.b = loserOf(semis[1]);
     }
   }
-  if (bracket.third) resolveTie(bracket.third, single, false);
+  if (bracket.third) {resolveTie(bracket.third, single, false);}
 }
 
 export function findTie(bracket, id) {
-  if (!bracket) return null;
+  if (!bracket) {return null;}
   for (const round of bracket.rounds) {
     const tie = round.find((t) => t.id === id);
-    if (tie) return tie;
+    if (tie) {return tie;}
   }
-  if (bracket.third && bracket.third.id === id) return bracket.third;
+  if (bracket.third && bracket.third.id === id) {return bracket.third;}
   return null;
 }
 
@@ -144,13 +166,20 @@ export function generateActivePhase(state) {
   ensurePhases(category, state);
   const phase = activePhaseOf(category);
   const participants = phaseParticipants(state, phase);
-  if (participants.length < 2) return { ok: false, reason: 'A fase precisa ter pelo menos 2 equipes participantes.' };
+  if (participants.length < 2) {return { ok: false, reason: 'A fase precisa ter pelo menos 2 equipes participantes.' };}
   const teams = state.teams || [];
   const turnos = (phase.cfg && phase.cfg.turnos) || 1;
+  const isSwiss = state.modelo === 'swiss' || phase.modelo === 'swiss';
+  const previousMatches = isSwiss ? (phase.matches || []).slice() : [];
   phase.grupos = [];
-  phase.matches = [];
+  if (!isSwiss) {phase.matches = [];}
   phase.bracket = null;
-  if (phase.formato === 'liga') {
+  if (isSwiss) {
+    const round = (phase.cfg && phase.cfg.swissRound) || 1;
+    const result = buildSwissRound(participants, previousMatches, round);
+    phase.matches = previousMatches.concat(result.matches);
+    phase.cfg = { ...(phase.cfg || {}), swissRound: round + 1, swissByes: [...((phase.cfg && phase.cfg.swissByes) || []), ...result.byes] };
+  } else if (phase.formato === 'liga') {
     phase.matches = buildFixtures(participants, turnos);
   } else if (phase.formato === 'grupos') {
     const ng = Math.max(1, Math.min((phase.cfg && phase.cfg.nGrupos) || 2, participants.length));
@@ -161,7 +190,7 @@ export function generateActivePhase(state) {
       buildFixtures(idxs, turnos).forEach((match) => { match.grupo = gi; phase.matches.push(match); });
     });
   } else if (phase.formato === 'gxg') {
-    if (participants.length < 4) return { ok: false, reason: 'Interzonas precisa de pelo menos 4 equipes.' };
+    if (participants.length < 4) {return { ok: false, reason: 'Interzonas precisa de pelo menos 4 equipes.' };}
     const groups = [[], []];
     participants.forEach((ti, i) => groups[i % 2].push(teams[ti].id));
     phase.grupos = groups;
@@ -178,3 +207,5 @@ export function generateActivePhase(state) {
   loadPhaseIntoRoot(state, phase);
   return { ok: true };
 }
+
+

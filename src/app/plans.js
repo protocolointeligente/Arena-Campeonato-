@@ -47,14 +47,14 @@ export function planCardsHTML(currentPlanId) {
 
 export function planLimitText(planId) {
   const plan = PLAN_DEFINITIONS[planId];
-  if (!plan) return 'Plano desconhecido';
+  if (!plan) {return 'Plano desconhecido';}
   const { maxChampionships, maxTeams, maxAthletes, maxStorageMB } = plan.limits;
-  return `Até ${maxChampionships === 999 ? 'ilimitados' : maxChampionships} campeonatos · até ${maxTeams === 999 ? 'ilimitados' : maxTeams} times · até ${maxAthletes === 9999 ? 'ilimitados' : maxAthletes} atletas · ${maxStorageMB === 5000 ? '5 GB' : maxStorageMB + ' MB'} de armazenamento`;
+  return `Até ${maxChampionships === 999 ? 'ilimitados' : maxChampionships} campeonatos · até ${maxTeams === 999 ? 'ilimitados' : maxTeams} times · até ${maxAthletes === 9999 ? 'ilimitados' : maxAthletes} atletas · ${maxStorageMB === 5000 ? '5 GB' : `${maxStorageMB  } MB`} de armazenamento`;
 }
 
 export function canCreateChampionship(state, planId) {
   const plan = PLAN_DEFINITIONS[planId];
-  if (!plan) return { ok: false, reason: 'Plano inválido' };
+  if (!plan) {return { ok: false, reason: 'Plano inválido' };}
   const currentCount = (state.championships || []).length;
   if (currentCount >= plan.limits.maxChampionships) {
     return { ok: false, reason: `Limite de ${plan.limits.maxChampionships} campeonatos atingido para o plano ${plan.name}` };
@@ -64,7 +64,7 @@ export function canCreateChampionship(state, planId) {
 
 export function choosePlan(user, planId) {
   const plan = PLAN_DEFINITIONS[planId];
-  if (!plan) return { ok: false, reason: 'Plano inválido' };
+  if (!plan) {return { ok: false, reason: 'Plano inválido' };}
   if (plan.price === 0) {
     return { ok: true, pending: false };
   }
@@ -72,15 +72,16 @@ export function choosePlan(user, planId) {
 }
 
 export function currentPlan(user) {
-  if (!user?.billing?.planId) return 'free';
+  if (!user?.billing?.planId) {return 'free';}
   return user.billing.planId;
 }
 
 export function confirmPlanRequest(user, planId) {
   const plan = PLAN_DEFINITIONS[planId];
-  if (!plan) return { ok: false, reason: 'Plano inválido' };
+  if (!plan) {return { ok: false, reason: 'Plano inválido' };}
   if (plan.price === 0) {
     return { ok: true };
   }
   return { ok: true, pending: true };
 }
+

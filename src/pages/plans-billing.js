@@ -1,9 +1,9 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
-import { db } from '../services/firebase.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
+import { db, auth } from '../services/firebase.js';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { PLAN_DEFINITIONS } from '../app/plans.js';
-import { approvePayment } from '../services/superadmin.js';
+import { toast } from '../app/ui.js';
 
 export async function renderPlansBilling(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Superadmin</button></header><main class="section"><div class="hero" style="padding-top:10px;min-height:0"><h1>PLANOS E <em>COBRANÇA</em></h1><p class="muted">Gerencie assinaturas de todos os usuários.</p></div><div data-body><div class="card">Carregando cobrança...</div></div></main></div>`;
@@ -28,7 +28,7 @@ export async function renderPlansBilling(root) {
         const userId = button.dataset.approvePlan;
         const planId = button.dataset.plan;
         try {
-          await updateDoc(doc(db, 'users', userId), { 'billing.status': 'active', 'billing.activatedAt': Date.now(), 'billing.activatedBy': (await import('../services/firebase.js')).auth.currentUser?.uid });
+          await updateDoc(doc(db, 'users', userId), { 'billing.status': 'active', 'billing.activatedAt': Date.now(), 'billing.activatedBy': auth.currentUser?.uid });
           toast(`Plano ${planId} ativado para ${userId}`);
           load();
         } catch { toast('Erro ao aprovar'); }
@@ -37,7 +37,7 @@ export async function renderPlansBilling(root) {
     body.querySelectorAll('[data-deny-plan]').forEach((button) => {
       button.onclick = async () => {
         const userId = button.dataset.denyPlan;
-        if (!confirm('Negar esta solicitação?')) return;
+        if (!confirm('Negar esta solicitação?')) {return;}
         try {
           await updateDoc(doc(db, 'users', userId), { 'billing.status': 'denied', 'billing.deniedAt': Date.now() });
           toast('Solicitação negada');
@@ -61,3 +61,5 @@ export async function renderPlansBilling(root) {
 
   await load();
 }
+
+

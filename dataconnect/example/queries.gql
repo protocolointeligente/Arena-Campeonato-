@@ -1,0 +1,91 @@
+mutation CreateUser($displayName: String, $email: String!) @auth(level: USER) {
+  user_insert(data: { id_expr: "auth.uid", displayName: $displayName, email: $email, createdAt_expr: "request.time" })
+}
+
+mutation UpdateUser($displayName: String) @auth(level: USER) {
+  user_update(key: { id_expr: "auth.uid" }, data: { displayName: $displayName })
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: { id_expr: "auth.uid" })
+}
+
+query GetUser @auth(level: USER) {
+  user(key: { id_expr: "auth.uid" }) { id email displayName createdAt }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Publicly accessible list of users for directory") {
+  users { id displayName }
+}
+
+mutation CreateCategory($name: String!) @auth(level: USER) {
+  category_insert(data: { name: $name, userId_expr: "auth.uid" })
+}
+
+mutation UpdateCategory($id: UUID!, $name: String) @auth(level: USER) {
+  category_update(key: { id: $id }, data: { name: $name })
+}
+
+mutation DeleteCategory($id: UUID!) @auth(level: USER) {
+  category_delete(key: { id: $id })
+}
+
+query GetCategory($id: UUID!) @auth(level: USER) {
+  category(key: { id: $id }) { id name }
+}
+
+query ListMyCategories @auth(level: USER) {
+  categories(where: { userId: { eq_expr: "auth.uid" } }) { id name }
+}
+
+mutation CreateTask($title: String!, $isCompleted: Boolean!, $dueDate: Date, $description: String, $categoryId: UUID!) @auth(level: USER) {
+  task_insert(data: { title: $title, isCompleted: $isCompleted, dueDate: $dueDate, description: $description, categoryId: $categoryId })
+}
+
+mutation UpdateTask($id: UUID!, $isCompleted: Boolean, $title: String) @auth(level: USER) {
+  task_update(key: { id: $id }, data: { isCompleted: $isCompleted, title: $title })
+}
+
+mutation DeleteTask($id: UUID!) @auth(level: USER) {
+  task_delete(key: { id: $id })
+}
+
+query GetTask($id: UUID!) @auth(level: USER) {
+  task(key: { id: $id }) { id title isCompleted dueDate description category { id name } }
+}
+
+query ListTasks @auth(level: USER) {
+  tasks(where: { category: { userId: { eq_expr: "auth.uid" } } }) { id title isCompleted }
+}
+
+mutation CreateTag($name: String!) @auth(level: USER) {
+  tag_insert(data: { name: $name, userId_expr: "auth.uid" })
+}
+
+mutation UpdateTag($id: UUID!, $name: String) @auth(level: USER) {
+  tag_update(key: { id: $id }, data: { name: $name })
+}
+
+mutation DeleteTag($id: UUID!) @auth(level: USER) {
+  tag_delete(key: { id: $id })
+}
+
+query GetTag($id: UUID!) @auth(level: USER) {
+  tag(key: { id: $id }) { id name }
+}
+
+query ListMyTags @auth(level: USER) {
+  tags(where: { userId: { eq_expr: "auth.uid" } }) { id name }
+}
+
+mutation AddTaskTag($taskId: UUID!, $tagId: UUID!) @auth(level: USER) {
+  taskTag_insert(data: { taskId: $taskId, tagId: $tagId })
+}
+
+mutation RemoveTaskTag($taskId: UUID!, $tagId: UUID!) @auth(level: USER) {
+  taskTag_delete(key: { taskId: $taskId, tagId: $tagId })
+}
+
+query ListTaskTags($taskId: UUID!) @auth(level: USER) {
+  taskTags(where: { taskId: { eq: $taskId } }) { tag { id name } }
+}

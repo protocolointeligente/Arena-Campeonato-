@@ -1,0 +1,64 @@
+mutation SeedData @transaction {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      email: "alice@example.com",
+      createdAt: "2023-01-01T00:00:00Z",
+      displayName: "Alice"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      email: "bob@example.com",
+      createdAt: "2023-01-02T00:00:00Z",
+      displayName: "Bob"
+    }
+  ])
+  category_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      name: "Work",
+      userId: "550e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      id: "660e8400-e29b-41d4-a716-446655440002",
+      name: "Personal",
+      userId: "550e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+  tag_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      name: "Urgent",
+      userId: "550e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      id: "770e8400-e29b-41d4-a716-446655440002",
+      name: "Review",
+      userId: "550e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+  task_insertMany(data: [
+    {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      title: "Finish Report",
+      isCompleted: false,
+      categoryId: "660e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440002",
+      title: "Grocery Shopping",
+      isCompleted: true,
+      categoryId: "660e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+  taskTag_insertMany(data: [
+    {
+      taskId: "880e8400-e29b-41d4-a716-446655440001",
+      tagId: "770e8400-e29b-41d4-a716-446655440001"
+    },
+    {
+      taskId: "880e8400-e29b-41d4-a716-446655440002",
+      tagId: "770e8400-e29b-41d4-a716-446655440002"
+    }
+  ])
+}

@@ -10,5 +10,9 @@
   "theme_color": "#169c4b",
   "icons": [
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Novo campeonato", "short_name": "Novo", "url": "/campeonatos/novo", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] },
+    { "name": "Meus campeonatos", "short_name": "Meus", "url": "/", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] }
   ]
 }

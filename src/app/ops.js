@@ -1,4 +1,4 @@
-import { uid } from './utils.js';
+import { uid } from './utils.ts';
 
 export const STAFF_ROLES = [
   ['tecnico', 'Técnico'],
@@ -23,7 +23,7 @@ export function officialById(state, id) {
 
 export function addVenue(state, { name, address }) {
   const trimmed = (name || '').trim();
-  if (!trimmed) return { ok: false, reason: 'Informe o nome do local.' };
+  if (!trimmed) {return { ok: false, reason: 'Informe o nome do local.' };}
   state.venues = state.venues || [];
   const venue = { id: uid(), name: trimmed, address: (address || '').trim() };
   state.venues.push(venue);
@@ -38,7 +38,7 @@ export function removeVenue(state, id) {
 
 export function addOfficial(state, { name, role, phone }) {
   const trimmed = (name || '').trim();
-  if (!trimmed) return { ok: false, reason: 'Informe o nome do oficial.' };
+  if (!trimmed) {return { ok: false, reason: 'Informe o nome do oficial.' };}
   state.officials = state.officials || [];
   const official = { id: uid(), name: trimmed, role: (role || '').trim(), phone: (phone || '').trim() };
   state.officials.push(official);
@@ -52,8 +52,10 @@ export function removeOfficial(state, id) {
 }
 
 export function setTeamStaff(team, key, value) {
-  if (!team) return { ok: false };
+  if (!team) {return { ok: false };}
   team.staff = team.staff || {};
   team.staff[key] = (value || '').trim();
   return { ok: true };
 }
+
+

@@ -1,5 +1,5 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
 import { db } from '../services/firebase.js';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 
@@ -43,3 +43,5 @@ export async function renderBetaHardening(root) {
 
   await load();
 }
+
+

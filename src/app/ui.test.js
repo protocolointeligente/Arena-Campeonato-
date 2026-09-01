@@ -66,3 +66,6 @@ describe('loadingHTML', () => {
     expect(loadingHTML()).toContain('Carregando...');
   });
 });
+
+
+

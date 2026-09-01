@@ -290,3 +290,6 @@ describe('progressionSummary', () => {
     expect(progressionSummary(category, phase)).toBe('1 classificado(s) geral → fase removida');
   });
 });
+
+
+

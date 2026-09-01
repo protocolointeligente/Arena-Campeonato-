@@ -1,5 +1,5 @@
-import { navigate } from '../app/router.js';
-import { esc } from '../app/utils.js';
+import { navigate } from '../app/router-v2.js';
+import { esc } from '../app/utils.ts';
 import { platformOverview, approvePayment } from '../services/superadmin.js';
 
 export async function renderSuperadmin(root) {
@@ -25,3 +25,5 @@ export async function renderSuperadmin(root) {
 
   await load();
 }
+
+

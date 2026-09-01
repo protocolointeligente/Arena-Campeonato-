@@ -25,3 +25,5 @@ test('throws listing incomplete phases', () => {
 `;
   expect(() => checkPhaseStatus(table)).toThrow(/4 \(Reports & exports\), 5 \(Public portal & registration\), 6 \(Administration\)/);
 });
+
+

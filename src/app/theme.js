@@ -1,11 +1,11 @@
-import { appState } from './state.js';
+import { getAppState, setTheme as storeSetTheme } from './store.js';
 
-export function applyTheme(theme = appState.theme) {
-  appState.theme = theme;
-  localStorage.setItem('arena_theme', theme);
-  document.documentElement.dataset.theme = theme;
+export function applyTheme(theme = getAppState().theme) {
+  storeSetTheme(theme);
 }
 
 export function toggleTheme() {
-  applyTheme(appState.theme === 'light' ? 'dark' : 'light');
+  applyTheme(getAppState().theme === 'light' ? 'dark' : 'light');
 }
+
+

@@ -1,8 +1,8 @@
-import { clone, uid } from './utils.js';
+import { clone, uid } from './utils.ts';
 import { ensurePhases, loadPhaseIntoRoot, saveRootIntoPhase, activePhaseOf } from './phases.js';
 
 export function ensureCategories(state) {
-  if (!state) return state;
+  if (!state) {return state;}
   if (!Array.isArray(state.categories) || !state.categories.length) {
     const category = {
       id: uid(),
@@ -18,7 +18,7 @@ export function ensureCategories(state) {
     state.activeCategoryId = state.categories[0].id;
   }
   state.categories.forEach((category) => {
-    if (!Array.isArray(category.teams)) category.teams = clone(state.teams || []);
+    if (!Array.isArray(category.teams)) {category.teams = clone(state.teams || []);}
     ensurePhases(category, state);
   });
   return state;
@@ -36,16 +36,16 @@ export function loadCategoryIntoRoot(state, category) {
 
 export function saveRootIntoActive(state) {
   const category = activeCategory(state);
-  if (!category) return;
+  if (!category) {return;}
   ensurePhases(category, state);
   category.teams = clone(state.teams || []);
   saveRootIntoPhase(state, activePhaseOf(category));
 }
 
 export function switchCategory(state, id) {
-  if (!state || state.activeCategoryId === id) return state;
+  if (!state || state.activeCategoryId === id) {return state;}
   const category = state.categories.find((item) => item.id === id);
-  if (!category) return state;
+  if (!category) {return state;}
   saveRootIntoActive(state);
   state.activeCategoryId = id;
   loadCategoryIntoRoot(state, category);
@@ -83,7 +83,7 @@ export function addCategory(state) {
 
 export function renameCategory(state, id, name) {
   const category = state.categories.find((item) => item.id === id);
-  if (!category) return state;
+  if (!category) {return state;}
   category.nome = (name || '').trim() || 'Categoria';
   return state;
 }
@@ -100,3 +100,5 @@ export function removeCategory(state, id) {
   }
   return { ok: true };
 }
+
+

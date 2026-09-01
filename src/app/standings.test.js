@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, standsToRows, genCross, suspensionInfo, critMove, critRemove, critAdd } from './standings.js';
+import { computeStandings, standingsForPhase, qualifiedFromPhase, applyProgression, scorerRanking, cardRanking, athleteStats, standsToRows, genCross, suspensionInfo, teamStats, critMove, critRemove, critAdd } from './standings.js';
 
 const teams = [{ id: 'a', nome: 'Alfa' }, { id: 'b', nome: 'Beta' }, { id: 'c', nome: 'Gama' }];
 
@@ -40,6 +40,20 @@ describe('computeStandings', () => {
     const byIdx = Object.fromEntries(st.map((s) => [s.team, s]));
     expect(byIdx[0].DISC).toBe(-1);
     expect(byIdx[1].DISC).toBe(-5);
+  });
+
+  it('respects discipline order after points before goal difference', () => {
+    const teams = [{ id: 'a' }, { id: 'b' }];
+    const matches = [{ home: 0, away: 1, hg: 1, ag: 1, events: [{ type: 'red', teamId: 'b' }] }];
+    const rows = computeStandings(teams, [0, 1], matches, { criterios: ['P', 'DISC', 'SG'], discYellow: 1, discRed: 2 });
+    expect(rows.map((row) => row.team)).toEqual([0, 1]);
+    expect(rows[1].DISC).toBe(-2);
+  });
+
+  it('uses fair-play defaults of one point per yellow and two per red', () => {
+    const teams = [{ id: 'a' }];
+    const matches = [{ home: 0, away: 0, hg: 0, ag: 0, events: [{ type: 'yellow', teamId: 'a' }, { type: 'red', teamId: 'a' }] }];
+    expect(computeStandings(teams, [0], matches, { criterios: ['DISC'] })[0].DISC).toBe(-3);
   });
 
   it('returns an empty array for empty idxs', () => {
@@ -159,6 +173,13 @@ describe('scorerRanking', () => {
   });
 });
 
+describe('athleteStats', () => {
+  it('aggregates appearances and disciplinary events per athlete', () => {
+    const state = { matches: [{ id: 'm1', events: [{ type: 'goal', athleteId: 'a1' }, { type: 'yellow', athleteId: 'a1' }] }, { id: 'm2', events: [{ type: 'red', athleteId: 'a1' }] }] };
+    expect(athleteStats(state, 'a1')).toEqual({ athleteId: 'a1', matches: 2, goals: 1, yellow: 1, red: 1, discipline: -3 });
+  });
+});
+
 describe('cardRanking', () => {
   it('counts yellow/red cards per athlete, sorted by a red-weighted score', () => {
     const state = {
@@ -240,6 +261,14 @@ describe('suspensionInfo', () => {
   });
 });
 
+describe('teamStats', () => {
+  it('aggregates results and cards for one team', () => {
+    const state = { teams: [{ id: 'a', nome: 'A', roster: [] }, { id: 'b', nome: 'B', roster: [] }], matches: [{ home: 0, away: 1, hg: 3, ag: 1, events: [{ teamId: 'a', type: 'yellow' }, { teamId: 'a', type: 'red' }] }] };
+    expect(teamStats(state, 'a')).toMatchObject({ played: 1, wins: 1, goalsFor: 3, goalsAgainst: 1, setsFor: 3, setsAgainst: 1, yellow: 1, red: 1, goalDifference: 2, setsDifference: 2 });
+    expect(teamStats(state, 'missing')).toBeNull();
+  });
+});
+
 describe('critMove/critRemove/critAdd', () => {
   it('critMove swaps two tail entries by index, keeping P fixed first', () => {
     expect(critMove(['P', 'V', 'SG', 'GP'], 0, 1)).toEqual(['P', 'SG', 'V', 'GP']);
@@ -266,3 +295,6 @@ describe('critMove/critRemove/critAdd', () => {
     expect(critAdd([], 'V')).toEqual(['P', 'V']);
   });
 });
+
+
+

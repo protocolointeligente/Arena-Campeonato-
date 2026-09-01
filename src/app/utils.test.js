@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { esc, clone, uid } from './utils.js';
+import { esc, clone, uid } from './utils.ts';
 
 describe('esc', () => {
   it('escapes html-significant characters', () => {
@@ -43,3 +43,6 @@ describe('uid', () => {
     expect(ids.size).toBe(50);
   });
 });
+
+
+

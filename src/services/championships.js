@@ -1,6 +1,6 @@
-import { collection, doc, getDoc, getDocs, query, where, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
-import { clone } from '../app/utils.js';
+import { clone } from '../app/utils.ts';
 
 const privateCollection = collection(db, 'championships');
 const publicCollection = collection(db, 'publicChampionships');
@@ -22,17 +22,19 @@ function publicState(value) {
 
 function payload(value) {
   const user = auth.currentUser;
-  if (!user) throw new Error('Faça login');
+  if (!user) {throw new Error('Faça login');}
   const ownerUid = value.ownerUid || user.uid;
   const ownerEmail = (value.ownerEmail || user.email || '').toLowerCase();
   const collaborators = Array.isArray(value.collaborators) ? value.collaborators.filter((item) => item.status !== 'revoked') : [];
   const byRole = (role) => collaborators.filter((item) => item.role === role).map((item) => (item.email || '').toLowerCase()).filter(Boolean);
-  return { ownerUid, ownerEmail, collaboratorEmails: collaborators.map((item) => (item.email || '').toLowerCase()).filter(Boolean), adminEmails: byRole('admin'), resultsEmails: byRole('results'), registrationEmails: byRole('registrations'), viewerEmails: byRole('viewer'), public: true, nome: value.nome || 'Campeonato', formato: value.formato, status: value.status || 'rascunho', updated: Date.now(), data: JSON.stringify({ ...value, ownerUid, ownerEmail, _catLoaded: undefined }) };
+  const teams = value.teams || [];
+  const athletes = teams.reduce((total, team) => total + (team.roster || []).length, 0);
+  return { ownerUid, ownerEmail, collaboratorEmails: collaborators.map((item) => (item.email || '').toLowerCase()).filter(Boolean), adminEmails: byRole('admin'), resultsEmails: byRole('results'), registrationEmails: byRole('registrations'), viewerEmails: byRole('viewer'), public: true, nome: value.nome || 'Campeonato', formato: value.formato, status: value.status || 'rascunho', teamCount: teams.length, athleteCount: athletes, updated: Date.now(), data: JSON.stringify({ ...value, ownerUid, ownerEmail, _catLoaded: undefined }) };
 }
 
 export async function listMine() {
   const user = auth.currentUser;
-  if (!user) return [];
+  if (!user) {return [];}
   const [owned, shared] = await Promise.all([
     getDocs(query(privateCollection, where('ownerUid', '==', user.uid))),
     getDocs(query(privateCollection, where('collaboratorEmails', 'array-contains', (user.email || '').toLowerCase()))),
@@ -52,3 +54,5 @@ export async function saveChampionship(value) {
 }
 
 export async function removeChampionship(id) { const batch = writeBatch(db); batch.delete(doc(privateCollection, id)); batch.delete(doc(publicCollection, id)); await batch.commit(); }
+
+
