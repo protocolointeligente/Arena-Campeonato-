@@ -4,7 +4,8 @@ const routes = [];
 
 export function route(pattern, handler) {
   const keys = [];
-  const regex = pathToRegexp(pattern, keys);
+  const compiled = pathToRegexp(pattern, keys);
+  const regex = compiled.regexp || compiled;
   routes.push({ pattern, regex, keys, handler });
 }
 
