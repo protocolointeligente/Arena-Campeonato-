@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import { clone } from '../app/utils.ts';
 
@@ -45,6 +45,12 @@ export async function listMine() {
 }
 
 export async function getChampionship(id) { const snapshot = await getDoc(doc(privateCollection, id)); return snapshot.exists() ? parseSnapshot(snapshot) : null; }
+
+export function subscribeChampionship(id, cb) {
+  return onSnapshot(doc(privateCollection, id), (snapshot) => {
+    cb(snapshot.exists() ? parseSnapshot(snapshot) : null);
+  }, () => cb(null));
+}
 
 export async function saveChampionship(value) {
   const batch = writeBatch(db);
