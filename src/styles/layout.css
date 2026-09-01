@@ -232,3 +232,12 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .bracket-score-display { text-align: center; padding: 8px; background: var(--surface-muted); border-radius: 8px; font-weight: 600; color: var(--text); }
 .bracket-winner { text-align: center; padding: 8px; margin-top: 8px; background: var(--brand); color: white; border-radius: 8px; font-weight: 700; font-size: 13px; }
 .bracket-sumula { width: 100%; margin-top: 12px; }
+
+/* Scoreboard control */
+.scoreboard-control { display: flex; flex-direction: column; gap: 20px; }
+.scoreboard-score-row { display: flex; justify-content: space-around; gap: 16px; flex-wrap: wrap; }
+.scoreboard-score-row > div { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.scoreboard-big { font-size: 48px; font-weight: 800; }
+.scoreboard-clock-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.scoreboard-counter { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.scoreboard-server-row { display: flex; align-items: center; gap: 12px; }
