@@ -615,6 +615,18 @@ export class ChampionshipStore {
     return { ok: true, slug };
   }
 
+  // Valor "atual" configurado pelo organizador — cada aprovação de inscrição congela esse valor
+  // em registration.feeAmount naquele momento (ver championship/index.js), então mudar aqui
+  // depois nunca afeta quem já foi aprovado. 0 = recurso desligado.
+  setRegistrationFee(fee, walletId) {
+    const parsed = Number(fee);
+    const amount = Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0;
+    this.produce((draft) => {
+      draft.registrationFee = amount;
+      draft.asaasWalletId = String(walletId || '').trim();
+    });
+  }
+
   setBrandImage(kind, url) {
     if (url) {
       try {

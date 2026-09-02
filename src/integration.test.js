@@ -312,6 +312,25 @@ describe('Integration Tests - Championship Flows', () => {
       expect(state.sponsors).toHaveLength(1);
     });
 
+    it('should set the registration fee and Asaas wallet id', async () => {
+      const { createChampionshipStore } = await import('./app/championship-store.js');
+      const store = createChampionshipStore({ id: 'test-fee', nome: 'Test', formato: 'liga', cfg: {}, teams: [], matches: [], categories: [] });
+
+      store.setRegistrationFee('49.9', ' wallet-abc ');
+      let state = store.getState();
+      expect(state.registrationFee).toBe(49.9);
+      expect(state.asaasWalletId).toBe('wallet-abc');
+
+      store.setRegistrationFee('', '');
+      state = store.getState();
+      expect(state.registrationFee).toBe(0);
+      expect(state.asaasWalletId).toBe('');
+
+      store.setRegistrationFee('-10', 'wallet-x');
+      state = store.getState();
+      expect(state.registrationFee).toBe(0);
+    });
+
     it('should persist custom discipline weights and criterion order', async () => {
       const { createChampionshipStore } = await import('./app/championship-store.js');
       const store = createChampionshipStore({ id: 'test-scoring', nome: 'Test', formato: 'liga', cfg: { turnos: 1 }, teams: [], matches: [], categories: [], branding: { accent: '#2fcf6b' } });
