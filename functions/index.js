@@ -9,6 +9,7 @@ const {
   normalizeMercadoPagoPreapproval,
   normalizeMercadoPagoPayment,
 } = require('./lib/billing-logic.js');
+const { normalizeAsaasRegistrationEvent } = require('./lib/registration-fee-logic.js');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -251,6 +252,95 @@ exports.checkExpiredSubscriptions = onSchedule('every 24 hours', async () => {
     });
     await batch.commit();
   }
+});
+
+// Cria um checkout Asaas avulso pra taxa de inscrição de UMA equipe já aprovada. Sem
+// autenticação — mesmo nível de confiança do envio de inscrição em si, que também é anônimo.
+// O preço vem sempre de registration.feeAmount, o valor CONGELADO no momento em que o
+// organizador aprovou (ver approve-registration em championship/index.js) — nunca do
+// championship.registrationFee ao vivo, pra uma mudança de taxa depois da aprovação nunca afetar
+// quem já foi aprovado.
+exports.createRegistrationCheckout = onRequest({ secrets: [asaasAccessToken], cors: true }, async (req, res) => {
+  if (req.method !== 'POST') {res.status(405).send('Method not allowed'); return;}
+  const { championshipId, registrationId } = req.body || {};
+  if (!championshipId || !registrationId) {res.status(400).send('championshipId e registrationId são obrigatórios'); return;}
+
+  const regRef = db.collection('championships').doc(String(championshipId)).collection('registrations').doc(String(registrationId));
+  const regSnap = await regRef.get();
+  if (!regSnap.exists) {res.status(404).send('Inscrição não encontrada'); return;}
+  const registration = regSnap.data();
+  if (registration.status !== 'approved') {res.status(409).send('Inscrição ainda não foi aprovada.'); return;}
+  if (registration.feeStatus === 'paid') {res.status(409).send('Esta inscrição já foi paga.'); return;}
+  const amount = Number(registration.feeAmount);
+  if (!(amount > 0)) {res.status(409).send('Esta inscrição não tem taxa de inscrição configurada.'); return;}
+
+  const champSnap = await db.collection('championships').doc(String(championshipId)).get();
+  let champState = {};
+  try { champState = JSON.parse(champSnap.data()?.data || '{}'); } catch { champState = {}; }
+  const walletId = champState.asaasWalletId;
+  if (!walletId) {res.status(409).send('Campeonato sem Wallet ID Asaas configurado.'); return;}
+
+  const reference = JSON.stringify({ championshipId: String(championshipId), registrationId: String(registrationId) });
+  const statusUrl = `https://arena-campeonatos.web.app/inscrever/${championshipId}/status/${registrationId}`;
+
+  let checkoutUrl;
+  try {
+    // chargeTypes DETACHED = cobrança avulsa (não recorrente), diferente do checkout de
+    // assinatura (createCheckout usa RECURRENT) — verificar contra a doc/conta Asaas real antes
+    // do primeiro pagamento de verdade, mesma ressalva já registrada pro billingWebhook do MP.
+    const response = await fetch('https://api.asaas.com/v3/checkouts', {
+      method: 'POST',
+      headers: { access_token: asaasAccessToken.value(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        billingTypes: ['CREDIT_CARD', 'PIX'],
+        chargeTypes: ['DETACHED'],
+        minutesToExpire: 60,
+        callback: { successUrl: statusUrl, cancelUrl: statusUrl, expiredUrl: statusUrl },
+        items: [{ name: `Taxa de inscrição — ${registration.teamName || 'equipe'}`, description: 'Taxa de inscrição no campeonato', quantity: 1, value: amount }],
+        split: [{ walletId: String(walletId), percentualValue: 92 }],
+        externalReference: reference,
+      }),
+    });
+    if (!response.ok) {throw new Error(`Asaas retornou ${response.status}`);}
+    const created = await response.json();
+    if (!created.id) {throw new Error('Resposta inesperada do Asaas.');}
+    checkoutUrl = `https://checkout.asaas.com/${created.id}`;
+  } catch (error) {
+    res.status(502).send(error.message);
+    return;
+  }
+
+  await regRef.set({ feeCheckoutUrl: checkoutUrl }, { merge: true });
+  res.status(200).json({ checkoutUrl });
+});
+
+exports.registrationFeeWebhook = onRequest({ secrets: [asaasWebhookToken], cors: false }, async (req, res) => {
+  if (req.method !== 'POST') {res.status(405).send('Method not allowed'); return;}
+  if (!equal(req.get('asaas-access-token'), asaasWebhookToken.value())) {res.status(401).send('Invalid signature'); return;}
+
+  const normalized = normalizeAsaasRegistrationEvent(req.body || {});
+  if (!normalized.eventId) {res.status(400).send('Event id required'); return;}
+
+  const eventRef = db.collection('registrationFeeWebhookEvents').doc(normalized.eventId);
+  const existing = await eventRef.get();
+  if (existing.exists) {res.status(200).send('Already processed'); return;}
+  if (!normalized.reference || normalized.status !== 'paid') {
+    // Mesma razão do sufixo :ignored em billingWebhook: um pagamento manda notificação mais de
+    // uma vez conforme o status muda, sempre com o MESMO id — gravar o "ignorado" no doc do id
+    // real bloquearia a notificação seguinte (a que de fato importa) via "Already processed".
+    await db.collection('registrationFeeWebhookEvents').doc(`${normalized.eventId}:ignored`).set({ eventId: normalized.eventId, status: 'ignored', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
+    res.status(200).send('Ignored');
+    return;
+  }
+
+  const regRef = db.collection('championships').doc(normalized.reference.championshipId).collection('registrations').doc(normalized.reference.registrationId);
+  await db.runTransaction(async (tx) => {
+    const regSnap = await tx.get(regRef);
+    if (!regSnap.exists) {return;}
+    tx.create(eventRef, { eventId: normalized.eventId, status: 'paid', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
+    tx.set(regRef, { feeStatus: 'paid', feePaidAt: Date.now() }, { merge: true });
+  });
+  res.status(200).send('Processed');
 });
 
 // Read-only public API — third parties (a scoreboard on a projector, a media outlet, a widget
