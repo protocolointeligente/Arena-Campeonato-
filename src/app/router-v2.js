@@ -3,9 +3,13 @@ import { pathToRegexp } from 'path-to-regexp';
 const routes = [];
 
 export function route(pattern, handler) {
-  const keys = [];
-  const compiled = pathToRegexp(pattern, keys);
+  // path-to-regexp v8 returns { regexp, keys } and never mutates an argument — passing a
+  // mutable array as a 2nd arg (the old Express-style API) is silently ignored, so `keys` here
+  // must come from the returned object, never from an outer array. Getting this wrong doesn't
+  // error: dispatch() just always calls the handler with an empty params object.
+  const compiled = pathToRegexp(pattern);
   const regex = compiled.regexp || compiled;
+  const keys = compiled.keys || [];
   routes.push({ pattern, regex, keys, handler });
 }
 
