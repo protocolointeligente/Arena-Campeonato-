@@ -30,16 +30,22 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(uid)).data.billing.status == 'active';
     }
 
+    // Faixas espelham PLAN_DEFINITIONS em src/app/plans.js — mantido em dia à mão porque
+    // regras do Firestore não importam JS.
     function planTeamLimit(uid) {
       return !planStatusActive(uid) ? 16
-        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 999
-        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 64 : 16;
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'profissional' ? 999
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'grandes' ? 90
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'intermediarios' ? 60
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pequenos' ? 40 : 16;
     }
 
     function planAthleteLimit(uid) {
       return !planStatusActive(uid) ? 200
-        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 9999
-        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 1000 : 200;
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'profissional' ? 9999
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'grandes' ? 900
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'intermediarios' ? 600
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pequenos' ? 300 : 200;
     }
 
     function withinPlanLimits() {

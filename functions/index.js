@@ -21,7 +21,12 @@ const mercadoPagoAccessToken = defineSecret('MERCADOPAGO_ACCESS_TOKEN');
 // Mantido em dia à mão com src/app/plans.js — este pacote (functions/) é enviado ao deploy
 // sozinho, sem acesso a src/, então não dá pra importar PLAN_DEFINITIONS direto. Nunca confiar
 // em preço vindo do cliente: createCheckout sempre lê o valor daqui.
-const PLAN_PRICES = { pro: { name: 'Pro', price: 49.9 }, enterprise: { name: 'Enterprise', price: 199.9 } };
+const PLAN_PRICES = {
+  pequenos: { name: 'Pequenos', price: 25 },
+  intermediarios: { name: 'Intermediários', price: 32 },
+  grandes: { name: 'Grandes', price: 40 },
+  profissional: { name: 'Organizador Profissional', price: 55 },
+};
 
 async function requireUser(req, res) {
   const authHeader = req.get('authorization') || '';

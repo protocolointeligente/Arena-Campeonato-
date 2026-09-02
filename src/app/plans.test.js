@@ -4,15 +4,24 @@ import { isSamePendingRequest } from '../services/billing.js';
 
 describe('plans', () => {
   it('recognizes repeated pending requests as idempotent', () => {
-    expect(isSamePendingRequest({ status: 'pending', planId: 'pro' }, 'pro')).toBe(true);
-    expect(isSamePendingRequest({ status: 'pending', planId: 'free' }, 'pro')).toBe(false);
-    expect(isSamePendingRequest({ status: 'active', planId: 'pro' }, 'pro')).toBe(false);
+    expect(isSamePendingRequest({ status: 'pending', planId: 'pequenos' }, 'pequenos')).toBe(true);
+    expect(isSamePendingRequest({ status: 'pending', planId: 'free' }, 'pequenos')).toBe(false);
+    expect(isSamePendingRequest({ status: 'active', planId: 'pequenos' }, 'pequenos')).toBe(false);
   });
   describe('PLAN_DEFINITIONS', () => {
-    it('has free, pro, enterprise plans', () => {
+    it('has free plus all four paid Copa Fácil-matching plans', () => {
       expect(PLAN_DEFINITIONS.free).toBeDefined();
-      expect(PLAN_DEFINITIONS.pro).toBeDefined();
-      expect(PLAN_DEFINITIONS.enterprise).toBeDefined();
+      expect(PLAN_DEFINITIONS.pequenos).toBeDefined();
+      expect(PLAN_DEFINITIONS.intermediarios).toBeDefined();
+      expect(PLAN_DEFINITIONS.grandes).toBeDefined();
+      expect(PLAN_DEFINITIONS.profissional).toBeDefined();
+    });
+
+    it('prices match Copa Fácil exactly', () => {
+      expect(PLAN_DEFINITIONS.pequenos.price).toBe(25);
+      expect(PLAN_DEFINITIONS.intermediarios.price).toBe(32);
+      expect(PLAN_DEFINITIONS.grandes.price).toBe(40);
+      expect(PLAN_DEFINITIONS.profissional.price).toBe(55);
     });
 
     it('each plan has required fields', () => {
@@ -33,12 +42,12 @@ describe('plans', () => {
     it('generates HTML for all plans', () => {
       const html = planCardsHTML('free');
       expect(html).toContain('Grátis');
-      expect(html).toContain('Pro');
-      expect(html).toContain('Enterprise');
+      expect(html).toContain('Pequenos');
+      expect(html).toContain('Organizador Profissional');
     });
 
     it('marks current plan', () => {
-      const html = planCardsHTML('pro');
+      const html = planCardsHTML('pequenos');
       expect(html).toContain('Atual');
       expect(html).toContain('Plano atual');
     });
@@ -49,14 +58,14 @@ describe('plans', () => {
     });
 
     it('shows "Selecionar" for free plan when not current', () => {
-      const html = planCardsHTML('pro');
+      const html = planCardsHTML('pequenos');
       expect(html).toContain('Selecionar');
     });
 
     it('shows price for paid plans', () => {
       const html = planCardsHTML('free');
-      expect(html).toContain('R$ 49,90');
-      expect(html).toContain('R$ 199,90');
+      expect(html).toContain('R$ 25,00');
+      expect(html).toContain('R$ 55,00');
     });
   });
 
@@ -69,8 +78,8 @@ describe('plans', () => {
       expect(text).toContain('10 MB');
     });
 
-    it('shows "ilimitados" for enterprise', () => {
-      const text = planLimitText('enterprise');
+    it('shows "ilimitados" for the top-tier plan', () => {
+      const text = planLimitText('profissional');
       expect(text).toContain('ilimitados');
       expect(text).toContain('5 GB');
     });
@@ -94,9 +103,9 @@ describe('plans', () => {
       expect(result.reason).toContain('Limite');
     });
 
-    it('allows unlimited for enterprise', () => {
+    it('allows unlimited for the top-tier plan', () => {
       const state = { championships: Array(100).fill({}) };
-      const result = canCreateChampionship(state, 'enterprise');
+      const result = canCreateChampionship(state, 'profissional');
       expect(result.ok).toBe(true);
     });
 
@@ -114,14 +123,14 @@ describe('plans', () => {
       expect(result.pending).toBe(false);
     });
 
-    it('returns pending for pro plan', () => {
-      const result = choosePlan({}, 'pro');
+    it('returns pending for a paid plan', () => {
+      const result = choosePlan({}, 'pequenos');
       expect(result.ok).toBe(true);
       expect(result.pending).toBe(true);
     });
 
-    it('returns pending for enterprise plan', () => {
-      const result = choosePlan({}, 'enterprise');
+    it('returns pending for the top-tier plan', () => {
+      const result = choosePlan({}, 'profissional');
       expect(result.ok).toBe(true);
       expect(result.pending).toBe(true);
     });
@@ -141,14 +150,14 @@ describe('plans', () => {
     });
 
     it('returns planId from user.billing when status is active', () => {
-      expect(currentPlan({ billing: { planId: 'pro', status: 'active' } })).toBe('pro');
-      expect(currentPlan({ billing: { planId: 'enterprise', status: 'active' } })).toBe('enterprise');
+      expect(currentPlan({ billing: { planId: 'pequenos', status: 'active' } })).toBe('pequenos');
+      expect(currentPlan({ billing: { planId: 'profissional', status: 'active' } })).toBe('profissional');
     });
 
     it('returns free when billing.status is not active, even with a paid planId already set', () => {
-      expect(currentPlan({ billing: { planId: 'pro', status: 'pending' } })).toBe('free');
-      expect(currentPlan({ billing: { planId: 'enterprise', status: 'cancelled' } })).toBe('free');
-      expect(currentPlan({ billing: { planId: 'pro' } })).toBe('free');
+      expect(currentPlan({ billing: { planId: 'pequenos', status: 'pending' } })).toBe('free');
+      expect(currentPlan({ billing: { planId: 'profissional', status: 'cancelled' } })).toBe('free');
+      expect(currentPlan({ billing: { planId: 'pequenos' } })).toBe('free');
     });
   });
 
@@ -159,8 +168,8 @@ describe('plans', () => {
       expect(result.pending).toBeUndefined();
     });
 
-    it('returns pending for pro plan', () => {
-      const result = confirmPlanRequest({}, 'pro');
+    it('returns pending for a paid plan', () => {
+      const result = confirmPlanRequest({}, 'pequenos');
       expect(result.ok).toBe(true);
       expect(result.pending).toBe(true);
     });
@@ -172,5 +181,3 @@ describe('plans', () => {
     });
   });
 });
-
-

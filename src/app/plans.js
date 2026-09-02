@@ -1,3 +1,6 @@
+// Preços e faixas iguais aos planos pagos do Copa Fácil (copafacil.com/planos, conferido em
+// 02/09/2026: Pequenos R$25, Intermediários R$32, Grandes R$40, Organizador Profissional R$55 —
+// todos com campeonatos ilimitados, diferenciando só pelo limite de atletas por campeonato).
 export const PLAN_DEFINITIONS = {
   free: {
     name: 'Grátis',
@@ -10,26 +13,48 @@ export const PLAN_DEFINITIONS = {
       features: ['Criação de campeonatos', 'Tabela e artilharia', 'Súmula digital', 'Relatórios PDF'],
     },
   },
-  pro: {
-    name: 'Pro',
-    price: 49.9,
+  pequenos: {
+    name: 'Pequenos',
+    price: 25,
     limits: {
-      maxChampionships: 10,
-      maxTeams: 64,
-      maxAthletes: 1000,
-      maxStorageMB: 500,
-      features: ['Tudo do Grátis', 'Campeonatos ilimitados*', 'Branding personalizado', 'Patrocinadores', 'API de integração', 'Suporte prioritário'],
+      maxChampionships: 999,
+      maxTeams: 40,
+      maxAthletes: 300,
+      maxStorageMB: 250,
+      features: ['Tudo do Grátis', 'Campeonatos ilimitados', 'Até 300 atletas por campeonato', 'URL personalizada', 'Sem anúncios'],
     },
   },
-  enterprise: {
-    name: 'Enterprise',
-    price: 199.9,
+  intermediarios: {
+    name: 'Intermediários',
+    price: 32,
+    limits: {
+      maxChampionships: 999,
+      maxTeams: 60,
+      maxAthletes: 600,
+      maxStorageMB: 500,
+      features: ['Tudo do Pequenos', 'Até 600 atletas por campeonato', 'Branding personalizado', 'Patrocinadores'],
+    },
+  },
+  grandes: {
+    name: 'Grandes',
+    price: 40,
+    limits: {
+      maxChampionships: 999,
+      maxTeams: 90,
+      maxAthletes: 900,
+      maxStorageMB: 1000,
+      features: ['Tudo do Intermediários', 'Até 900 atletas por campeonato', 'API de integração'],
+    },
+  },
+  profissional: {
+    name: 'Organizador Profissional',
+    price: 55,
     limits: {
       maxChampionships: 999,
       maxTeams: 999,
       maxAthletes: 9999,
       maxStorageMB: 5000,
-      features: ['Tudo do Pro', 'Múltiplos organizadores', 'SSO/SAML', 'SLA garantido', 'Gerente de conta dedicado', 'Auditoria avançada'],
+      features: ['Tudo do Grandes', 'Atletas ilimitados', 'Embed HTML', 'Suporte prioritário', 'Gerente de conta dedicado'],
     },
   },
 };
