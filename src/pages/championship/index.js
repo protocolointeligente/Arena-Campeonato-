@@ -28,7 +28,7 @@ import { renderScorers } from './tabs/scorers.js';
 import { renderDiscipline } from './tabs/discipline.js';
 import { renderRegistrations, bindRegistrationSearch } from './tabs/registrations.js';
 import { renderPublication } from './tabs/publication.js';
-import { createQrDataUrl } from '../publication.js';
+import { createQrDataUrl, downloadMatchCard } from '../publication.js';
 import { enqueueSync, flushSync, pendingSync } from '../../app/offline-queue.js';
 import { renderHistory } from './tabs/history.js';
 import { renderManagement } from './tabs/management.js';
@@ -507,6 +507,28 @@ function bindEvents(root, store, ctx) {
   root.querySelectorAll('[data-sumula]').forEach((button) => button.onclick = () => {
     const [kind, id] = button.dataset.sumula.split(':');
     sumulaModal(kind, id, store, { persist, addAudit });
+  });
+
+  // Result card (per match/tie, only offered once a result exists)
+  root.querySelectorAll('[data-result-card]').forEach((button) => button.onclick = () => {
+    const [kind, id] = button.dataset.resultCard.split(':');
+    const state = store.getState();
+    let home, away, hg, ag;
+    if (kind === 'tie') {
+      const tie = store.findTie(id);
+      if (!tie) {return;}
+      home = teamById(state, tie.a)?.nome || 'A definir';
+      away = teamById(state, tie.b)?.nome || 'A definir';
+      hg = tie.ag1; ag = tie.bg1;
+    } else {
+      const match = (state.matches || []).find((item) => item.id === id);
+      if (!match) {return;}
+      home = state.teams?.[match.home]?.nome || 'A definir';
+      away = state.teams?.[match.away]?.nome || 'A definir';
+      hg = match.hg; ag = match.ag;
+    }
+    try { downloadMatchCard(state.nome, home, hg, away, ag); }
+    catch { toast('Não foi possível gerar o card.'); }
   });
 
   // Tie scores

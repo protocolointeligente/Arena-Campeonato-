@@ -48,6 +48,36 @@ export function downloadSocialCard(name, url) {
   link.click();
 }
 
+export function downloadMatchCard(championshipName, homeTeam, homeScore, awayTeam, awayScore) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+  const context = canvas.getContext('2d');
+  if (!context) {throw new Error('Canvas indisponível');}
+  context.fillStyle = '#10231a';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#2fcf6b';
+  context.fillRect(0, 0, 22, canvas.height);
+  context.fillStyle = '#ffffff';
+  context.font = 'bold 30px sans-serif';
+  context.fillText(String(championshipName || 'ARENA CAMPEONATOS').toUpperCase().slice(0, 40), 82, 100);
+  context.font = 'bold 46px sans-serif';
+  context.fillText(String(homeTeam || 'Time A').slice(0, 22), 82, 220);
+  context.font = 'bold 120px sans-serif';
+  context.fillStyle = '#2fcf6b';
+  context.fillText(`${homeScore ?? 0} × ${awayScore ?? 0}`, 82, 380);
+  context.fillStyle = '#ffffff';
+  context.font = 'bold 46px sans-serif';
+  context.fillText(String(awayTeam || 'Time B').slice(0, 22), 82, 470);
+  context.font = '26px sans-serif';
+  context.fillStyle = '#b7d7c2';
+  context.fillText('Resultado final', 82, 560);
+  const link = document.createElement('a');
+  link.download = 'arena-resultado.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
 function actionFeedback(button, message) {
   const original = button.textContent;
   button.textContent = message;

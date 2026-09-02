@@ -29,6 +29,7 @@ export function tieRow(tie, state) {
         ` : ''}
         <button class="btn ghost sm" data-sumula="tie:${esc(tie.id)}">📋 Súmula</button>
         <button class="btn ghost sm" data-open-scoreboard="tie:${esc(tie.id)}">🖥️ Placar</button>
+        ${tie.ag1 != null && tie.bg1 != null ? `<button class="btn ghost sm" data-result-card="tie:${esc(tie.id)}">🖼️ Card do resultado</button>` : ''}
       ` : ''}
     </div>
   `;
