@@ -1,6 +1,5 @@
 import { produce } from 'immer';
 import { appState } from './state.js';
-import { applyTheme } from './theme.js';
 
 const listeners = new Set();
 
@@ -20,7 +19,7 @@ export function getAppState() {
 export function setTheme(theme) {
   appState.theme = theme;
   localStorage.setItem('arena_theme', theme);
-  applyTheme(theme);
+  document.documentElement.dataset.theme = theme;
   notify();
 }
 

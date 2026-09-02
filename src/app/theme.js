@@ -1,7 +1,7 @@
-import { getAppState, setTheme as storeSetTheme } from './store.js';
+import { getAppState, setTheme } from './store.js';
 
 export function applyTheme(theme = getAppState().theme) {
-  storeSetTheme(theme);
+  setTheme(theme);
 }
 
 export function toggleTheme() {
