@@ -140,9 +140,15 @@ describe('plans', () => {
       expect(currentPlan(undefined)).toBe('free');
     });
 
-    it('returns planId from user.billing', () => {
-      expect(currentPlan({ billing: { planId: 'pro' } })).toBe('pro');
-      expect(currentPlan({ billing: { planId: 'enterprise' } })).toBe('enterprise');
+    it('returns planId from user.billing when status is active', () => {
+      expect(currentPlan({ billing: { planId: 'pro', status: 'active' } })).toBe('pro');
+      expect(currentPlan({ billing: { planId: 'enterprise', status: 'active' } })).toBe('enterprise');
+    });
+
+    it('returns free when billing.status is not active, even with a paid planId already set', () => {
+      expect(currentPlan({ billing: { planId: 'pro', status: 'pending' } })).toBe('free');
+      expect(currentPlan({ billing: { planId: 'enterprise', status: 'cancelled' } })).toBe('free');
+      expect(currentPlan({ billing: { planId: 'pro' } })).toBe('free');
     });
   });
 

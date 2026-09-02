@@ -57,6 +57,14 @@ exports.createCheckout = onRequest({ secrets: [asaasAccessToken, mercadoPagoAcce
   const plan = PLAN_PRICES[planId];
   if (!plan) {res.status(400).send('Invalid plan'); return;}
   if (!['mercadopago', 'asaas'].includes(provider)) {res.status(400).send('Invalid provider'); return;}
+  const userRef = db.collection('users').doc(decoded.uid);
+  const existingSnap = await userRef.get();
+  const existingBilling = existingSnap.data()?.billing || {};
+  if (existingBilling.status === 'active') {
+    res.status(409).send('Você já tem uma assinatura ativa. Cancele-a antes de assinar outro plano.');
+    return;
+  }
+
   const reference = JSON.stringify({ userId: decoded.uid, planId });
   const returnUrl = 'https://arena-campeonatos.web.app/planos';
 
@@ -76,6 +84,7 @@ exports.createCheckout = onRequest({ secrets: [asaasAccessToken, mercadoPagoAcce
       });
       if (!response.ok) {throw new Error(`Mercado Pago retornou ${response.status}`);}
       const created = await response.json();
+      if (!created.id || !created.init_point) {throw new Error('Resposta inesperada do Mercado Pago.');}
       checkoutUrl = created.init_point;
       subscriptionId = String(created.id);
     } else {
@@ -95,6 +104,7 @@ exports.createCheckout = onRequest({ secrets: [asaasAccessToken, mercadoPagoAcce
       });
       if (!response.ok) {throw new Error(`Asaas retornou ${response.status}`);}
       const created = await response.json();
+      if (!created.id) {throw new Error('Resposta inesperada do Asaas.');}
       checkoutUrl = `https://checkout.asaas.com/${created.id}`;
       subscriptionId = String(created.id);
     }
@@ -103,9 +113,9 @@ exports.createCheckout = onRequest({ secrets: [asaasAccessToken, mercadoPagoAcce
     return;
   }
 
-  await db.collection('users').doc(decoded.uid).set({
+  await userRef.set({
     email: decoded.email || '',
-    billing: { planId, status: 'pending', provider, subscriptionId, checkoutUrl, amount: plan.price, requestedAt: Date.now() },
+    billing: { ...existingBilling, planId, status: 'pending', provider, subscriptionId, checkoutUrl, amount: plan.price, requestedAt: Date.now() },
     updated: Date.now(),
   }, { merge: true });
 
@@ -171,9 +181,20 @@ exports.billingWebhook = onRequest({ secrets: [asaasWebhookToken, mercadoPagoSec
     } else {
       const type = String(req.body?.type || req.query.type || '');
       const dataId = req.body?.data?.id || req.query['data.id'];
-      normalized = type === 'subscription_preapproval'
-        ? normalizeMercadoPagoPreapproval(await fetchMercadoPagoPreapproval(dataId))
-        : normalizeMercadoPagoPayment(await fetchMercadoPagoPayment(dataId));
+      if (type === 'subscription_preapproval') {
+        normalized = normalizeMercadoPagoPreapproval(await fetchMercadoPagoPreapproval(dataId));
+      } else if (type === 'payment' || type === 'subscription_authorized_payment') {
+        // Mercado Pago's per-cycle subscription charges surface as regular Payment objects,
+        // fetchable via /v1/payments/{id} — verify this against a real MP subscription during
+        // the manual end-to-end test; if a subscription_authorized_payment notification's
+        // data.id ever 404s here, it needs its own /authorized_payments/{id} fetch instead.
+        normalized = normalizeMercadoPagoPayment(await fetchMercadoPagoPayment(dataId));
+      } else {
+        // Notification type we don't act on (a topic MP added later, etc.) — acknowledge so
+        // MP doesn't keep retrying, but don't attempt to fetch or process it.
+        res.status(200).send('Ignored');
+        return;
+      }
     }
   } catch (error) {
     res.status(502).send(error.message);
@@ -186,8 +207,12 @@ exports.billingWebhook = onRequest({ secrets: [asaasWebhookToken, mercadoPagoSec
   if (existing.exists) {res.status(200).send('Already processed'); return;}
   if (!normalized.reference || !normalized.status) {
     // Evento reconhecido mas sem ação (ex.: assinatura ainda pending, ou tipo que não tratamos)
-    // — registra como visto pra um retry não reprocessar, mas não escreve billing.
-    await eventRef.set({ provider, eventId: normalized.eventId, status: 'ignored', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
+    // — registra como visto num doc SEPARADO (sufixo :ignored) pra um retry não reprocessar,
+    // mas sem ocupar o id do evento real: um pagamento Mercado Pago manda notificação múltiplas
+    // vezes conforme o status muda (pending → approved, por exemplo) com o MESMO id de pagamento
+    // — se a marca de "ignorado" tivesse gravado no doc com esse id, a notificação seguinte
+    // (a que de fato importa) bateria em "Already processed" e a assinatura nunca ativaria.
+    await db.collection('billingWebhookEvents').doc(`${normalized.eventId}:ignored`).set({ provider, eventId: normalized.eventId, status: 'ignored', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
     res.status(200).send('Ignored');
     return;
   }
@@ -198,7 +223,7 @@ exports.billingWebhook = onRequest({ secrets: [asaasWebhookToken, mercadoPagoSec
     const existingBilling = userSnap.data()?.billing || {};
     const billing = {
       ...existingBilling,
-      planId: normalized.status === 'cancelled' ? 'free' : normalized.reference.planId,
+      planId: normalized.status === 'cancelled' ? (existingBilling.planId || 'free') : normalized.reference.planId,
       status: normalized.status,
       provider,
       subscriptionId: normalized.subscriptionId || existingBilling.subscriptionId || '',
@@ -212,16 +237,18 @@ exports.billingWebhook = onRequest({ secrets: [asaasWebhookToken, mercadoPagoSec
 });
 
 exports.checkExpiredSubscriptions = onSchedule('every 24 hours', async () => {
-  const overdue = await db.collection('users').where('billing.status', 'in', ['active', 'past_due']).get();
+  const overdue = await db.collection('users').where('billing.status', 'in', ['active', 'past_due', 'cancelled']).get();
   const now = Date.now();
-  const batch = db.batch();
-  let count = 0;
+  const toExpire = [];
   overdue.forEach((docSnap) => {
     const billing = docSnap.data().billing;
-    if (isPastGrace(billing?.currentPeriodEnd, now)) {
-      batch.set(docSnap.ref, { billing: { ...billing, status: 'expired', planId: 'free' }, updated: now }, { merge: true });
-      count += 1;
-    }
+    if (isPastGrace(billing?.currentPeriodEnd, now)) {toExpire.push({ ref: docSnap.ref, billing });}
   });
-  if (count > 0) {await batch.commit();}
+  for (let i = 0; i < toExpire.length; i += 500) {
+    const batch = db.batch();
+    toExpire.slice(i, i + 500).forEach(({ ref, billing }) => {
+      batch.set(ref, { billing: { ...billing, status: 'expired', planId: 'free' }, updated: now }, { merge: true });
+    });
+    await batch.commit();
+  }
 });

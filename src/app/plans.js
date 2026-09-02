@@ -72,8 +72,8 @@ export function choosePlan(user, planId) {
 }
 
 export function currentPlan(user) {
-  if (!user?.billing?.planId) {return 'free';}
-  return user.billing.planId;
+  if (user?.billing?.status !== 'active') {return 'free';}
+  return user.billing.planId || 'free';
 }
 
 export function confirmPlanRequest(user, planId) {

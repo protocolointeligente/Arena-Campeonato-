@@ -26,13 +26,19 @@ service cloud.firestore {
       return isPlatformAdmin() || isOwner() || isCollaborator();
     }
 
+    function planStatusActive(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.billing.status == 'active';
+    }
+
     function planTeamLimit(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 999
+      return !planStatusActive(uid) ? 16
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 999
         : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 64 : 16;
     }
 
     function planAthleteLimit(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 9999
+      return !planStatusActive(uid) ? 200
+        : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'enterprise' ? 9999
         : get(/databases/$(database)/documents/users/$(uid)).data.billing.planId == 'pro' ? 1000 : 200;
     }
 
@@ -102,11 +108,7 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
       allow create: if signedIn() && (request.auth.uid == userId || isPlatformAdmin());
       allow update: if isPlatformAdmin()
-        || (signedIn() && request.auth.uid == userId && (
-          request.resource.data.billing == resource.data.billing
-          || (request.resource.data.billing.status == 'pending'
-            && resource.data.billing.status != 'active')
-        ));
+        || (signedIn() && request.auth.uid == userId && request.resource.data.billing == resource.data.billing);
       allow delete: if isPlatformAdmin();
     }
 

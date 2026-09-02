@@ -1,28 +1,30 @@
 import { navigate } from '../app/router-v2.js';
-import { toast } from '../app/ui.js';
+import { toast, modal, closeModal } from '../app/ui.js';
 import { auth } from '../services/firebase.js';
 import { PLAN_DEFINITIONS, planCardsHTML, planLimitText, currentPlan, choosePlan } from '../app/plans.js';
-import { createCheckout, cancelSubscription } from '../services/billing.js';
+import { createCheckout, cancelSubscription, getBilling } from '../services/billing.js';
 
 export async function renderPlans(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section"><div data-body><div class="card">Carregando planos...</div></div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate('/');
   const body = root.querySelector('[data-body]');
   const user = auth.currentUser;
+  let billingDoc = null;
 
   async function load() {
     if (!user) {
       body.innerHTML = `<div class="card"><h2>Faça login</h2><p class="muted">Você precisa estar logado para ver seus planos.</p></div>`;
       return;
     }
+    billingDoc = await getBilling();
     renderBody();
   }
 
   function renderBody() {
-    const planId = currentPlan(user);
+    const planId = currentPlan(billingDoc);
     const plan = PLAN_DEFINITIONS[planId] || PLAN_DEFINITIONS.free;
-    const billing = user.billing || {};
-    const statusLabel = billing.status === 'active' ? '✅ Ativo' : billing.status === 'past_due' ? '⚠️ Pagamento atrasado' : billing.status === 'pending' ? '⏳ Pagamento pendente' : '⚪ Grátis';
+    const billing = billingDoc?.billing || {};
+    const statusLabel = billing.status === 'active' ? '✅ Ativo' : billing.status === 'past_due' ? '⚠️ Pagamento atrasado' : billing.status === 'pending' ? '⏳ Pagamento pendente' : billing.status === 'cancelled' ? '🚫 Cancelada (ativa até o fim do período)' : '⚪ Grátis';
     const pendingResume = billing.status === 'pending' && billing.checkoutUrl
       ? `<p class="muted" style="margin-top:8px"><a href="${billing.checkoutUrl}" target="_blank" rel="noopener">Finalizar pagamento pendente →</a></p>`
       : '';
@@ -34,22 +36,15 @@ export async function renderPlans(root) {
     body.querySelectorAll('[data-choose-plan]').forEach((button) => {
       button.onclick = async () => {
         const chosenId = button.dataset.choosePlan;
-        if (chosenId === currentPlan(user)) {return;}
-        const result = choosePlan(user, chosenId);
+        if (chosenId === currentPlan(billingDoc)) {return;}
+        const result = choosePlan(billingDoc, chosenId);
         if (!result.ok) {return toast(result.reason);}
         if (!result.pending) {
           toast(`Plano ${PLAN_DEFINITIONS[chosenId].name} ativado!`);
+          billingDoc = await getBilling();
           return renderBody();
         }
-        const provider = confirm('OK para pagar com Mercado Pago, Cancelar para pagar com Asaas.') ? 'mercadopago' : 'asaas';
-        button.disabled = true;
-        try {
-          const { checkoutUrl } = await createCheckout(chosenId, provider);
-          window.location.href = checkoutUrl;
-        } catch (error) {
-          toast(error.message || 'Não foi possível iniciar o pagamento.');
-          button.disabled = false;
-        }
+        openProviderModal(chosenId);
       };
     });
 
@@ -58,6 +53,7 @@ export async function renderPlans(root) {
       try {
         await cancelSubscription();
         toast('Assinatura cancelada.');
+        billingDoc = await getBilling();
         renderBody();
       } catch (error) {
         toast(error.message || 'Não foi possível cancelar.');
@@ -65,7 +61,24 @@ export async function renderPlans(root) {
     });
   }
 
+  function openProviderModal(chosenId) {
+    modal(`<h3>Como você quer pagar?</h3><p class="muted">Assinatura mensal do plano ${PLAN_DEFINITIONS[chosenId].name}.</p><div class="row" style="flex-wrap:wrap;margin-top:14px;gap:8px"><button class="btn primary" data-pay="mercadopago">Pagar com Mercado Pago</button><button class="btn primary" data-pay="asaas">Pagar com Asaas</button><button class="btn ghost" data-close-modal>Cancelar</button></div>`);
+    const box = document.getElementById('modalBox');
+    box.querySelector('[data-close-modal]').onclick = () => closeModal();
+    box.querySelectorAll('[data-pay]').forEach((payButton) => {
+      payButton.onclick = async () => {
+        const provider = payButton.dataset.pay;
+        payButton.disabled = true;
+        try {
+          const { checkoutUrl } = await createCheckout(chosenId, provider);
+          window.location.href = checkoutUrl;
+        } catch (error) {
+          closeModal();
+          toast(error.message || 'Não foi possível iniciar o pagamento.');
+        }
+      };
+    });
+  }
+
   await load();
 }
-
-

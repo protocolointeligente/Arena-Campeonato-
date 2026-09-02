@@ -18,10 +18,12 @@ test('parseReference', async (t) => {
   });
 });
 
-test('nextPeriodEnd advances exactly one UTC month', () => {
+test('nextPeriodEnd advances exactly one UTC month, clamping to the target month\'s last day', () => {
   const start = Date.UTC(2026, 0, 31); // 31 Jan
   const end = nextPeriodEnd(start);
-  assert.equal(new Date(end).getUTCMonth(), 1); // rola pra fevereiro
+  const endDate = new Date(end);
+  assert.equal(endDate.getUTCMonth(), 1); // rola pra fevereiro, não março
+  assert.equal(endDate.getUTCDate(), 28); // 2026 não é bissexto — fev tem 28 dias
 });
 
 test('isPastGrace', async (t) => {
@@ -44,6 +46,11 @@ test('normalizeAsaasEvent', async (t) => {
     assert.equal(result.status, 'active');
     assert.equal(result.reference.userId, 'u1');
     assert.equal(result.subscriptionId, 'sub1');
+    assert.ok(result.periodEndMs > Date.now());
+  });
+  await t.test('PAYMENT_CONFIRMED também ativa e define período (mesmo efeito de PAYMENT_RECEIVED)', () => {
+    const result = normalizeAsaasEvent({ id: 'evt1b', event: 'PAYMENT_CONFIRMED', payment: { id: 'pay1b', subscription: 'sub1', externalReference: '{"userId":"u1","planId":"pro"}' } });
+    assert.equal(result.status, 'active');
     assert.ok(result.periodEndMs > Date.now());
   });
   await t.test('PAYMENT_OVERDUE move pra past_due sem período novo', () => {
