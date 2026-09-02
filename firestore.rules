@@ -58,7 +58,12 @@ service cloud.firestore {
       allow delete: if canManageChampionship();
 
       match /registrations/{registrationId} {
-        allow read, update, delete: if canManageChampionship();
+        // get = ler UM documento específico por id (o time já recebeu o protocolo/id no envio,
+        // mesmo modelo de confiança de um link de confirmação por e-mail) — usado pela página
+        // pública de status/pagamento. list continua exigindo ser o organizador, senão dava pra
+        // enumerar todas as inscrições de um campeonato sem autenticar.
+        allow get: if true;
+        allow list, update, delete: if canManageChampionship();
         allow create: if exists(/databases/$(database)/documents/publicChampionships/$(championshipId))
             && get(/databases/$(database)/documents/publicChampionships/$(championshipId)).data.status != 'arquivado'
             && request.resource.data.status == 'pending'
