@@ -261,3 +261,11 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .draw-display .draw-group h3 { color: #2fcf6b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
 .draw-display .draw-group ol, .draw-display .draw-order { list-style: decimal; padding-left: 24px; font-size: clamp(16px, 2vw, 24px); }
 .draw-display .draw-order { text-align: left; }
+
+/* Embed widget (iframe) */
+.embed-widget { background: var(--surface); color: var(--text); font-size: 13px; padding: 12px; }
+.embed-widget .embed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+.embed-widget .embed-header a { color: var(--brand); font-size: 12px; white-space: nowrap; }
+.embed-table { width: 100%; border-collapse: collapse; }
+.embed-table th, .embed-table td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+.embed-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }

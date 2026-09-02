@@ -21,9 +21,18 @@ describe('publication page', () => {
   it('renders public and registration links for the championship', async () => {
     const root = document.querySelector('#app');
     await renderPublication(root, 'cup-1');
-    expect(root.querySelectorAll('[data-copy]')).toHaveLength(2);
+    expect(root.querySelectorAll('[data-copy]')).toHaveLength(3);
     expect(root.querySelector('[data-copy="https://arena.test/publico/cup-1"]')).toBeTruthy();
     expect(root.querySelector('[data-copy="https://arena.test/inscrever/cup-1"]')).toBeTruthy();
+  });
+
+  it('offers a copyable iframe embed snippet for the standings widget', async () => {
+    const root = document.querySelector('#app');
+    await renderPublication(root, 'cup-1');
+    const embedCode = root.querySelector('.card:nth-of-type(3) code')?.textContent || '';
+    expect(embedCode).toContain('<iframe');
+    expect(embedCode).toContain('https://arena.test/embed/cup-1');
+    expect(root.querySelector('[data-open="https://arena.test/embed/cup-1"]')).toBeTruthy();
   });
 
   it('uses the custom /c/<slug> link instead of /publico/<id> once one is configured', async () => {
@@ -66,7 +75,7 @@ describe('publication page', () => {
   it('exposes QR actions for public and registration links', async () => {
     const root = document.querySelector('#app');
     await renderPublication(root, 'cup-1');
-    expect(root.querySelectorAll('[data-qr]')).toHaveLength(2);
+    expect(root.querySelectorAll('[data-qr]')).toHaveLength(2); // embed widget has no QR of its own
     expect(createQrDataUrl).toBeTypeOf('function');
   });
 });

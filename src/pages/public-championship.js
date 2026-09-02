@@ -189,6 +189,35 @@ function publicPanel(category, state) {
   return `<div class="public-board"><div class="public-hero"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:16px"><div><small>${esc(state.modalidade || 'CAMPEONATO').toUpperCase()}</small><h1>${esc(state.nome || category.nome || 'Campeonato')}</h1><p>${esc(state.subtitulo || 'Acompanhe classificação, jogos e resultados em tempo real.')}</p><span class="tag">${esc(state.modelo || state.formato || 'liga')}</span></div><div class="actions"><button class="btn ghost" type="button" data-copy-public-link>Compartilhar</button><button class="btn ghost" type="button" data-enable-notifications>Notificar placares</button></div></div></div><div class="public-stats"><div><strong>${standings.length}</strong><span>equipes</span></div><div><strong>${matches.length}</strong><span>jogos</span></div><div><strong>${results.length}</strong><span>resultados</span></div></div><div class="public-grid"><section class="card"><div class="row"><h2>Classificação</h2><span class="muted">${esc(activePhase(category).nome || 'Fase atual')}</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Equipe</th><th>PTS</th><th>J</th><th>V</th>${setHeaders}<th>DISC</th></tr></thead><tbody>${rows || '<tr><td colspan="7">Nenhuma equipe cadastrada.</td></tr>'}</tbody></table></div></section><section class="card"><h2>Próximos jogos</h2>${games(upcoming) || '<p class="muted">Nenhum jogo programado.</p>'}</section><section class="card"><h2>Últimos resultados</h2>${games(results) || '<p class="muted">Nenhum resultado publicado.</p>'}</section><section class="card"><h2>Artilharia</h2><ul class="public-list">${scorerRows || '<li class="muted">Nenhum gol registrado.</li>'}</ul></section></div></div>`;
 }
 
+function embedStandingsHTML(category, state) {
+  const standings = publicStandings(category, state);
+  const showSets = state.scoreType === 'sets';
+  const setHeaders = showSets ? '<th>SP</th><th>SC</th><th>SS</th>' : '<th>GP</th><th>GC</th><th>SG</th>';
+  const rows = standings.map((row) => `<tr><td>${row.position}</td><td>${esc(row.name)}</td><td>${row.P}</td><td>${row.J}</td><td>${row.V}</td><td>${row.GP}</td><td>${row.GC}</td><td>${row.SG > 0 ? '+' : ''}${row.SG}</td></tr>`).join('');
+  return `<table class="embed-table"><thead><tr><th>#</th><th>Equipe</th><th>PTS</th><th>J</th><th>V</th>${setHeaders}</tr></thead><tbody>${rows || '<tr><td colspan="8">Nenhuma equipe cadastrada.</td></tr>'}</tbody></table>`;
+}
+
+// A chrome-free standings table meant to be dropped into an <iframe> on someone else's site
+// (an organizer's own page, a local news outlet, a sponsor's site) — same live Firestore data
+// as the full public portal, just without the header/hero/nav around it.
+export function renderEmbedWidget(root, id) {
+  root.__publicUnsubscribe?.();
+  root.innerHTML = '<div class="embed-widget"><p>Carregando...</p></div>';
+  root.__publicUnsubscribe = onSnapshot(doc(db, 'publicChampionships', id), (snapshot) => {
+    if (!snapshot.exists()) {
+      root.innerHTML = '<div class="embed-widget"><p>Campeonato não encontrado.</p></div>';
+      return;
+    }
+    const data = snapshot.data();
+    let state = {};
+    try { state = JSON.parse(data.data || '{}'); } catch { state = {}; }
+    const category = activeCategory(state);
+    root.innerHTML = `<div class="embed-widget"><div class="embed-header"><strong>${esc(state.nome || data.nome || 'Campeonato')}</strong><a href="/publico/${esc(id)}" target="_blank" rel="noopener">ver completo →</a></div>${embedStandingsHTML(category, state)}</div>`;
+  }, () => {
+    root.innerHTML = '<div class="embed-widget"><p>Não foi possível carregar.</p></div>';
+  });
+}
+
 export async function renderPublicChampionshipBySlug(root, slug) {
   root.__publicUnsubscribe?.();
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><div class="card">Carregando campeonato...</div></main></div>`;

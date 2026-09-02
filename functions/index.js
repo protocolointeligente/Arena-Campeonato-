@@ -252,3 +252,42 @@ exports.checkExpiredSubscriptions = onSchedule('every 24 hours', async () => {
     await batch.commit();
   }
 });
+
+// Read-only public API — third parties (a scoreboard on a projector, a media outlet, a widget
+// on the organizer's own site) can pull a championship's live data without bundling the
+// Firebase SDK. Backed by the same publicChampionships doc the public portal itself reads, so
+// there's no separate data path to keep in sync. `home`/`away` on each match are indices into
+// `teams`, same as the app's own internal shape — not pre-resolved names, to keep the payload
+// small when there are many matches.
+exports.publicApi = onRequest({ cors: true }, async (req, res) => {
+  if (req.method !== 'GET') {res.status(405).json({ error: 'Method not allowed' }); return;}
+  const id = String(req.query.id || '');
+  const slug = String(req.query.slug || '');
+  if (!id && !slug) {res.status(400).json({ error: 'Informe ?id=<id-do-campeonato> ou ?slug=<url-personalizada>' }); return;}
+
+  let docId = id;
+  if (!docId) {
+    const slugSnap = await db.collection('publicChampionships').where('publicSlug', '==', slug).limit(1).get();
+    if (slugSnap.empty) {res.status(404).json({ error: 'Campeonato não encontrado' }); return;}
+    docId = slugSnap.docs[0].id;
+  }
+
+  const snap = await db.collection('publicChampionships').doc(docId).get();
+  if (!snap.exists) {res.status(404).json({ error: 'Campeonato não encontrado' }); return;}
+  const docData = snap.data();
+  let state = {};
+  try { state = JSON.parse(docData.data || '{}'); } catch { state = {}; }
+
+  res.set('Cache-Control', 'public, max-age=30');
+  res.status(200).json({
+    id: docId,
+    nome: docData.nome || state.nome || '',
+    modalidade: state.modalidade || '',
+    formato: docData.formato || state.formato || '',
+    status: docData.status || state.status || '',
+    updated: docData.updated || 0,
+    teams: (state.teams || []).map((team) => ({ id: team.id, nome: team.nome })),
+    matches: (state.matches || []).map((match) => ({ id: match.id, home: match.home, away: match.away, hg: match.hg, ag: match.ag, rodada: match.rodada || null, meta: match.meta || {} })),
+    grupos: state.grupos || [],
+  });
+});
