@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   findScoreboardObj, currentElapsedMs, formatClock, clockToggle, clockReset, setPeriod,
-  adjustFoul, adjustTimeout, adjustPenalty, toggleServer, scoreboardMode, scoreboardPayload,
+  adjustFoul, adjustTimeout, adjustPenalty, toggleServer, adjustScore, scoreboardMode, scoreboardPayload,
 } from './scoreboard.js';
 
 describe('findScoreboardObj', () => {
@@ -104,6 +104,23 @@ describe('toggleServer', () => {
   });
 });
 
+describe('adjustScore', () => {
+  it('increments a field and clamps at zero', () => {
+    const obj = { hg: 0 };
+    expect(adjustScore(obj, 'hg', 1)).toEqual({ ok: true, value: 1 });
+    expect(obj.hg).toBe(1);
+    expect(adjustScore(obj, 'hg', -5)).toEqual({ ok: true, value: 0 });
+    expect(obj.hg).toBe(0);
+  });
+
+  it('does not reject a tied score or an in-progress set score (unlike setScore)', () => {
+    const obj = { ag1: 0, bg1: 0 };
+    adjustScore(obj, 'ag1', 1);
+    adjustScore(obj, 'bg1', 1);
+    expect(obj).toMatchObject({ ag1: 1, bg1: 1 });
+  });
+});
+
 describe('scoreboardMode', () => {
   it('is goals for team ball sports', () => {
     expect(scoreboardMode({ modalidade: 'futebol', scoreType: 'goals' })).toBe('goals');
@@ -138,10 +155,10 @@ describe('scoreboardPayload', () => {
     expect(payload).toMatchObject({ homeName: 'Alfa', awayName: 'Beta', hg: 3, ag: 1, homeField: 'ag1', awayField: 'bg1', leg: 1 });
   });
 
-  it('moves a two-leg tie to leg 2 once leg 1 is complete', () => {
+  it('always targets leg 1 of a tie, even once both leg-1 fields are filled (leg 2 is manual-only, via Chaveamento)', () => {
     const state = { ...baseState, cfg: { maoUnica: false }, teams: [{ id: 'a', nome: 'Alfa' }, { id: 'b', nome: 'Beta' }], bracket: { rounds: [[{ id: 't1', a: 'a', b: 'b', ag1: 2, bg1: 0, ag2: null, bg2: null }]], third: null } };
     const payload = scoreboardPayload(state, 't1', 'tie');
-    expect(payload).toMatchObject({ homeField: 'ag2', awayField: 'bg2', leg: 2, hg: null, ag: null });
+    expect(payload).toMatchObject({ homeField: 'ag1', awayField: 'bg1', leg: 1, hg: 2, ag: 0 });
   });
 
   it('returns null for an unknown id', () => {

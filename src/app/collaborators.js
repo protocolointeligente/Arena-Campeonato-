@@ -45,7 +45,7 @@ export function can(state, user, permission) {
 }
 
 export function mutationPermission(tab) {
-  if (['jogos', 'chave'].includes(tab)) {return 'results';}
+  if (['jogos', 'chave', 'placar'].includes(tab)) {return 'results';}
   if (tab === 'inscricoes') {return 'registrations';}
   return 'admin';
 }

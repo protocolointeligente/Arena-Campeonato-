@@ -80,6 +80,12 @@ export function toggleServer(obj) {
   return { ok: true };
 }
 
+export function adjustScore(obj, field, delta) {
+  const next = Math.max(0, (obj[field] || 0) + delta);
+  obj[field] = next;
+  return { ok: true, value: next };
+}
+
 export function scoreboardMode(state) {
   const category = MODALITIES[state.modalidade]?.category;
   if (state.scoreType === 'sets') {return 'sets';}
@@ -94,14 +100,14 @@ export function scoreboardPayload(state, id, kind) {
   const fouls = obj.fouls || { home: 0, away: 0 };
   const timeouts = obj.timeouts || { home: 0, away: 0 };
   const penalties = obj.penalties || { home: 0, away: 0 };
-  const singleLeg = kind !== 'tie' || !!state.cfg?.maoUnica;
-  const leg = kind === 'tie' && !singleLeg && obj.ag1 != null && obj.bg1 != null ? 2 : 1;
-  const homeField = kind === 'tie' ? `ag${leg}` : 'hg';
-  const awayField = kind === 'tie' ? `bg${leg}` : 'ag';
+  // The live scoreboard only ever operates leg 1 of a bracket tie — leg 2 of a two-leg
+  // tie is entered manually via the Chaveamento tab, never through this live control.
+  const homeField = kind === 'tie' ? 'ag1' : 'hg';
+  const awayField = kind === 'tie' ? 'bg1' : 'ag';
   const homeName = kind === 'tie' ? (teamNameById(state, obj.a) || 'A definir') : (state.teams?.[obj.home]?.nome || 'A definir');
   const awayName = kind === 'tie' ? (teamNameById(state, obj.b) || 'A definir') : (state.teams?.[obj.away]?.nome || 'A definir');
   return {
-    id, kind, leg: kind === 'tie' ? leg : null,
+    id, kind, leg: kind === 'tie' ? 1 : null,
     homeField, awayField, homeName, awayName,
     hg: obj[homeField] ?? null, ag: obj[awayField] ?? null,
     mode: scoreboardMode(state),

@@ -7,7 +7,7 @@ export function scoreboardFrameHTML(payload, championshipName) {
   if (!payload) {
     return `<div class="scoreboard-display"><p>Partida não encontrada.</p></div>`;
   }
-  const periodLabel = payload.mode === 'sets' ? `Set ${payload.clock.period}` : payload.leg ? `${payload.leg}ª perna` : `Período ${payload.clock.period}`;
+  const periodLabel = `${payload.mode === 'sets' ? 'Set' : 'Período'} ${payload.clock.period}${payload.leg ? ` · ${payload.leg}ª perna` : ''}`;
   const extra = payload.mode === 'goals'
     ? `<div class="meta-row"><span>Faltas ${payload.fouls.home} × ${payload.fouls.away}</span><span>Tempos técnicos ${payload.timeouts.home} × ${payload.timeouts.away}</span></div>`
     : payload.mode === 'combat'
@@ -48,6 +48,7 @@ export function renderScoreboardDisplay(root, championshipId, matchId, kind = 'm
 
   const unsubscribe = subscribeChampionship(championshipId, (state) => {
     if (!state) {
+      latestState = null;
       root.innerHTML = `<div class="scoreboard-display"><p>Faça login para ver este placar.</p><button class="btn" data-scoreboard-login type="button">Entrar</button></div>`;
       root.querySelector('[data-scoreboard-login]')?.addEventListener('click', () => navigate('/login'));
       return;

@@ -10,6 +10,7 @@ const OTHER = { uid: 'other-1', email: 'other@example.com' };
 describe('mutation permissions', () => {
   it('maps operational tabs to narrow permissions', () => {
     expect(mutationPermission('jogos')).toBe('results');
+    expect(mutationPermission('placar')).toBe('results');
     expect(mutationPermission('chave')).toBe('results');
     expect(mutationPermission('inscricoes')).toBe('registrations');
     expect(mutationPermission('equipes')).toBe('admin');

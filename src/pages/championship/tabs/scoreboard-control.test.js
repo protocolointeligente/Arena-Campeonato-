@@ -36,4 +36,11 @@ describe('renderScoreboardControl', () => {
     expect(html).toContain('Penalidades');
     expect(html).not.toContain('Saque');
   });
+
+  it('renders period controls for a tie target too, not just a static leg number', () => {
+    const tieState = { modalidade: 'judô', scoreType: 'points', teams: [{ id: 'a', nome: 'A' }, { id: 'b', nome: 'B' }], bracket: { rounds: [[{ id: 't1', a: 'a', b: 'b', ag1: null, bg1: null }]], third: null } };
+    const html = renderScoreboardControl({ getState: () => tieState }, { placarTarget: { id: 't1', kind: 'tie' } });
+    expect(html).toContain('data-scoreboard-period="tie:t1:1"');
+    expect(html).toContain('1ª perna');
+  });
 });

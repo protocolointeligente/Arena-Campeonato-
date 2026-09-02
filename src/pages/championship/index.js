@@ -520,22 +520,14 @@ function bindEvents(root, store, ctx) {
     await addAudit(store.getState().id, 'tie_score_updated', 'Placar do chaveamento atualizado');
   });
 
-  // Scoreboard: score +/- (store.setScore/setTieScore call store.produce() internally, which
-  // triggers store.subscribe()'s notify -> re-render — no explicit render() needed here, same
-  // as the plain [data-score] handler above)
+  // Scoreboard: score +/- (live increments — bounds-only, no final-result validation like
+  // setScore/setTieScore have: does not reject tied/in-progress scores, does not touch
+  // match.meta.status, does not call advanceBracket. store.adjustScore() calls store.produce()
+  // internally, which triggers store.subscribe()'s notify -> re-render — no explicit render()
+  // needed here, same as every other scoreboard handler.)
   root.querySelectorAll('[data-scoreboard-score]').forEach((button) => button.onclick = async () => {
     const [kind, id, field, deltaStr] = button.dataset.scoreboardScore.split(':');
-    const delta = Number(deltaStr);
-    if (kind === 'tie') {
-      const tie = store.findTie(id);
-      if (!tie) {return;}
-      store.setTieScore(id, field, Math.max(0, (tie[field] || 0) + delta));
-    } else {
-      const match = (store.getState().matches || []).find((item) => item.id === id);
-      if (!match) {return;}
-      const result = store.setScore(id, field, Math.max(0, (match[field] || 0) + delta));
-      if (!result.ok) {toast(result.reason || 'Não foi possível atualizar o placar.'); return;}
-    }
+    store.adjustScore(id, kind, field, Number(deltaStr));
     await persist();
   });
 

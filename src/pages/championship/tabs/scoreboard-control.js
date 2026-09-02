@@ -10,7 +10,7 @@ export function renderScoreboardControl(store, ctx) {
   if (!payload) {
     return `<div class="card"><p class="muted">Partida não encontrada.</p></div>`;
   }
-  const ref = (...parts) => [target.kind, target.id, ...parts].join(':');
+  const ref = (...parts) => [target.kind, esc(target.id), ...parts].join(':');
   const counterRow = (label, key, attr) => `
     <div class="scoreboard-counter">
       <span class="muted">${label}</span>
@@ -45,12 +45,11 @@ export function renderScoreboardControl(store, ctx) {
         <strong>${formatClock(payload.clock.elapsedMs)}</strong>
         <button class="btn" data-scoreboard-clock="${ref('toggle')}">${payload.clock.running ? 'Pausar' : 'Iniciar'}</button>
         <button class="btn ghost" data-scoreboard-clock="${ref('reset')}">Zerar</button>
-        <span class="muted">${payload.mode === 'sets' ? 'Set' : payload.leg ? 'Perna' : 'Período'}</span>
-        ${payload.leg ? `<strong>${payload.leg}</strong>` : `
-          <button class="btn ghost sm" data-scoreboard-period="${ref('-1')}">-</button>
-          <strong>${payload.clock.period}</strong>
-          <button class="btn ghost sm" data-scoreboard-period="${ref('1')}">+</button>
-        `}
+        <span class="muted">${payload.mode === 'sets' ? 'Set' : 'Período'}</span>
+        <button class="btn ghost sm" data-scoreboard-period="${ref('-1')}">-</button>
+        <strong>${payload.clock.period}</strong>
+        <button class="btn ghost sm" data-scoreboard-period="${ref('1')}">+</button>
+        ${payload.leg ? '<span class="muted">· 1ª perna</span>' : ''}
       </div>
       ${payload.mode === 'goals' ? `${counterRow('Faltas', 'fouls', 'scoreboard-foul')}${counterRow('Tempos técnicos', 'timeouts', 'scoreboard-timeout')}` : ''}
       ${payload.mode === 'combat' ? counterRow('Penalidades', 'penalties', 'scoreboard-penalty') : ''}

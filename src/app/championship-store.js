@@ -6,7 +6,7 @@ import { setScore, saveMatchOps, clearResults, addMatchEvent, removeMatchEvent }
 import { generateActivePhase, advanceBracket, findTie } from './engine.js';
 import { computeStandings, applyProgression, genCross } from './standings.js';
 import { addAthlete, updateAthlete, removeAthlete, setAthletePhoto, setTeamLogo } from './roster.js';
-import { findScoreboardObj, clockToggle as scoreboardClockToggle, clockReset as scoreboardClockReset, setPeriod as scoreboardSetPeriod, adjustFoul as scoreboardAdjustFoul, adjustTimeout as scoreboardAdjustTimeout, adjustPenalty as scoreboardAdjustPenalty, toggleServer as scoreboardToggleServer } from './scoreboard.js';
+import { findScoreboardObj, clockToggle as scoreboardClockToggle, clockReset as scoreboardClockReset, setPeriod as scoreboardSetPeriod, adjustFoul as scoreboardAdjustFoul, adjustTimeout as scoreboardAdjustTimeout, adjustPenalty as scoreboardAdjustPenalty, toggleServer as scoreboardToggleServer, adjustScore as scoreboardAdjustScore } from './scoreboard.js';
 import { addVenue, removeVenue, addOfficial, removeOfficial, setTeamStaff, ensureOps } from './ops.js';
 import { ensureCollaborators, inviteManager, removeManager, changeManagerRole } from './collaborators.js';
 import { ensureBranding, setAccent, setBrandImage, clearBrandImage, addSponsor, removeSponsor } from './branding.js';
@@ -329,6 +329,13 @@ export class ChampionshipStore {
     this.produce((draft) => {
       const obj = findScoreboardObj(draft, id, kind);
       if (obj) {scoreboardToggleServer(obj);}
+    });
+  }
+
+  adjustScore(id, kind, field, delta) {
+    this.produce((draft) => {
+      const obj = findScoreboardObj(draft, id, kind);
+      if (obj) {scoreboardAdjustScore(obj, field, delta);}
     });
   }
 
