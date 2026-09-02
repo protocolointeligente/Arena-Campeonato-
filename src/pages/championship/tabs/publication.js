@@ -3,6 +3,7 @@ import { esc } from '../../../app/utils.ts';
 export function renderPublication(store) {
   const state = store.getState();
   const announcements = state.announcements || [];
+  const teamMessages = state.teamMessages || [];
   const championshipId = encodeURIComponent(state.id || '');
   const teamInvites = (state.teams || []).map((team) => {
     const url = `${location.origin}/equipe/${championshipId}/${encodeURIComponent(team.id)}`;
@@ -30,6 +31,15 @@ export function renderPublication(store) {
       </div>
       <button class="btn primary" data-add-announcement style="margin-top:8px">Publicar comunicado</button>
       <div style="margin-top:16px">${announcements.map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong>${item.mediaType === 'photo' ? ' 📷' : item.mediaType === 'video' ? ' 🎬' : ''}<br><span class="muted">${esc(item.body)}</span></span><span class="tag">${item.status === 'published' ? 'Publicado' : 'Rascunho'}</span><button class="btn ghost sm" data-toggle-announcement="${esc(item.id)}">${item.status === 'published' ? 'Retirar' : 'Publicar'}</button></div>`).join('') || '<p class="muted">Nenhum comunicado criado.</p>'}</div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Mensagem direta pra uma equipe</h2>
+      <p class="muted">Aparece só no portal daquela equipe — não sai no portal público geral.</p>
+      <select data-team-message-team style="width:100%">${(state.teams || []).map((team) => `<option value="${esc(team.id)}">${esc(team.nome)}</option>`).join('') || '<option value="">Cadastre uma equipe primeiro</option>'}</select>
+      <input data-team-message-title maxlength="120" placeholder="Título" style="margin-top:8px">
+      <textarea data-team-message-body maxlength="1000" placeholder="Mensagem" rows="3" style="width:100%;margin-top:8px"></textarea>
+      <button class="btn primary" data-add-team-message style="margin-top:8px">Enviar pra equipe</button>
+      <div style="margin-top:16px">${teamMessages.slice(0, 10).map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong> <span class="muted">· ${esc((state.teams || []).find((team) => team.id === item.teamId)?.nome || 'Equipe removida')}</span><br><span class="muted">${esc(item.body)}</span></span></div>`).join('') || '<p class="muted">Nenhuma mensagem enviada ainda.</p>'}</div>
     </div>
     <div class="card" style="margin-top:16px">
       <h2>Enquetes</h2>

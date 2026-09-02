@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ensureCommunications, addAnnouncement, publishAnnouncement, publicAnnouncements, addPoll, publishPoll, votePoll, publicPolls, videoEmbedUrl } from './communications.js';
+import { ensureCommunications, addAnnouncement, publishAnnouncement, publicAnnouncements, addPoll, publishPoll, votePoll, publicPolls, videoEmbedUrl, addTeamMessage, teamMessagesFor } from './communications.js';
 
 describe('communications', () => {
   it('initializes communication collections', () => {
@@ -49,6 +49,32 @@ describe('communications', () => {
     expect(votePoll(state, result.poll.id, option.id, 'device-1').ok).toBe(true);
     expect(votePoll(state, result.poll.id, option.id, 'device-1').ok).toBe(false);
     expect(publicPolls(state)[0].options[0].votes).toBe(1);
+  });
+});
+
+describe('team messages', () => {
+  it('rejects a message with no team, or missing title/body', () => {
+    const state = {};
+    expect(addTeamMessage(state, { title: 'x', body: 'y' }).ok).toBe(false);
+    expect(addTeamMessage(state, { teamId: 't1', title: '', body: 'y' }).ok).toBe(false);
+    expect(addTeamMessage(state, { teamId: 't1', title: 'x', body: '' }).ok).toBe(false);
+  });
+
+  it('addresses a message to one specific team, invisible to others', () => {
+    const state = {};
+    addTeamMessage(state, { teamId: 't1', title: 'Horário alterado', body: 'Jogo de sábado às 15h.' });
+    addTeamMessage(state, { teamId: 't2', title: 'Outro assunto', body: 'Só pro time 2.' });
+    expect(teamMessagesFor(state, 't1')).toHaveLength(1);
+    expect(teamMessagesFor(state, 't1')[0].title).toBe('Horário alterado');
+    expect(teamMessagesFor(state, 't2')).toHaveLength(1);
+    expect(teamMessagesFor(state, 't3')).toEqual([]);
+  });
+
+  it('lists a team\'s messages newest first', () => {
+    const state = {};
+    addTeamMessage(state, { teamId: 't1', title: 'Primeira', body: 'a' });
+    addTeamMessage(state, { teamId: 't1', title: 'Segunda', body: 'b' });
+    expect(teamMessagesFor(state, 't1').map((m) => m.title)).toEqual(['Segunda', 'Primeira']);
   });
 });
 

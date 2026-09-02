@@ -12,7 +12,7 @@ import { ensureCollaborators, inviteManager, removeManager, changeManagerRole } 
 import { ensureBranding, setAccent, setBrandImage, clearBrandImage, addSponsor, removeSponsor } from './branding.js';
 import { validate, schemas } from './schemas.js';
 import { toastError } from '../components/Toast.js';
-import { ensureCommunications, addAnnouncement, publishAnnouncement, addPoll, publishPoll, votePoll } from './communications.js';
+import { ensureCommunications, addAnnouncement, publishAnnouncement, addPoll, publishPoll, votePoll, ensureTeamMessages, addTeamMessage } from './communications.js';
 import { slugify, isValidSlug } from './format.js';
 
 // Local validated helper to avoid circular dependency
@@ -36,6 +36,7 @@ export class ChampionshipStore {
       ensureCategories(draft);
       ensureOps(draft);
       ensureCommunications(draft);
+      ensureTeamMessages(draft);
     });
     this.listeners = new Set();
   }
@@ -66,6 +67,12 @@ export class ChampionshipStore {
   addAnnouncement(data) {
     let result;
     this.produce((draft) => { result = addAnnouncement(draft, data); });
+    return result;
+  }
+
+  addTeamMessage(data) {
+    let result;
+    this.produce((draft) => { result = addTeamMessage(draft, data); });
     return result;
   }
 

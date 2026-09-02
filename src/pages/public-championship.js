@@ -3,7 +3,7 @@ import { db } from '../services/firebase.js';
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
 import { computeStandings, scorerRanking, cardRanking, athleteStats } from '../app/standings.js';
-import { publicAnnouncements, publicPolls, videoEmbedUrl } from '../app/communications.js';
+import { publicAnnouncements, publicPolls, videoEmbedUrl, teamMessagesFor } from '../app/communications.js';
 import { getChampionshipIdBySlug } from '../services/championships.js';
 
 function activeCategory(state) {
@@ -297,7 +297,11 @@ export async function renderTeamPortal(root, championshipId, teamId) {
     const matchText = view.matches.map((match) => `<li>${esc(match.homeName)} <strong>${match.hg != null && match.ag != null ? `${match.hg} x ${match.ag}` : 'vs'}</strong> ${esc(match.awayName)} <span class="muted">${esc(match.meta?.date || '')}</span></li>`).join('');
     const scorerText = view.goals.map((row) => `<li>${esc(row.name)} <strong>${row.goals}</strong></li>`).join('');
     const athleteText = (view.team.roster || []).map((athlete) => { const stats = athleteStats(state, athlete.id) || { matches: 0, goals: 0, yellow: 0, red: 0, discipline: 0 }; return `<li><strong>${esc(athlete.nome)}</strong><span class="muted">${stats.matches} jogos · ${stats.goals} gols · ${stats.yellow} amarelos · ${stats.red} vermelhos</span></li>`; }).join('');
-    root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Campeonato</button></header><main class="section"><div class="public-hero"><small>EQUIPE</small><h1>${esc(view.team.nome)}</h1><p class="muted">${esc(state.nome || 'Campeonato')}</p></div><div class="public-stats"><div><strong>${view.standing?.P || 0}</strong><span>pontos</span></div><div><strong>${view.standing?.J || 0}</strong><span>jogos</span></div><div><strong>${view.standing?.DISC || 0}</strong><span>disciplina</span></div></div><div class="public-grid"><section class="card"><h2>Jogos da equipe</h2><ul class="public-list">${matchText || '<li class="muted">Nenhum jogo registrado.</li>'}</ul></section><section class="card"><h2>Estatísticas dos atletas</h2><ul class="public-list">${athleteText || '<li class="muted">Elenco não publicado.</li>'}</ul></section><section class="card"><h2>Goleadores</h2><ul class="public-list">${scorerText || '<li class="muted">Nenhum gol registrado.</li>'}</ul></section></div></main></div>`;
+    const messages = teamMessagesFor(state, teamId);
+    const messagesPanel = messages.length
+      ? `<section class="card"><h2>Mensagens da organização</h2><ul class="public-list">${messages.map((item) => `<li><strong>${esc(item.title)}</strong><br><span class="muted">${esc(item.body)}</span></li>`).join('')}</ul></section>`
+      : '';
+    root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Campeonato</button></header><main class="section"><div class="public-hero"><small>EQUIPE</small><h1>${esc(view.team.nome)}</h1><p class="muted">${esc(state.nome || 'Campeonato')}</p></div><div class="public-stats"><div><strong>${view.standing?.P || 0}</strong><span>pontos</span></div><div><strong>${view.standing?.J || 0}</strong><span>jogos</span></div><div><strong>${view.standing?.DISC || 0}</strong><span>disciplina</span></div></div><div class="public-grid">${messagesPanel}<section class="card"><h2>Jogos da equipe</h2><ul class="public-list">${matchText || '<li class="muted">Nenhum jogo registrado.</li>'}</ul></section><section class="card"><h2>Estatísticas dos atletas</h2><ul class="public-list">${athleteText || '<li class="muted">Elenco não publicado.</li>'}</ul></section><section class="card"><h2>Goleadores</h2><ul class="public-list">${scorerText || '<li class="muted">Nenhum gol registrado.</li>'}</ul></section></div></main></div>`;
     root.querySelector('[data-back]').onclick = () => navigate(`/publico/${championshipId}`);
   } catch (error) {
     root.innerHTML = `<div class="shell"><main class="section"><div class="card"><h2>Não foi possível carregar</h2><p class="muted">${esc(error.message || 'Tente novamente.')}</p></div></main></div>`;

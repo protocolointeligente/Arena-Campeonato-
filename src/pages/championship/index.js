@@ -252,6 +252,15 @@ function bindEvents(root, store, ctx) {
     await persist();
     await addAudit(store.getState().id, 'announcement_created', `Comunicado criado: ${title}`);
   });
+  root.querySelector('[data-add-team-message]')?.addEventListener('click', async () => {
+    const teamId = root.querySelector('[data-team-message-team]')?.value;
+    const title = root.querySelector('[data-team-message-title]')?.value;
+    const body = root.querySelector('[data-team-message-body]')?.value;
+    const result = store.addTeamMessage({ teamId, title, body });
+    if (!result.ok) {return toast(result.reason);}
+    await persist();
+    await addAudit(store.getState().id, 'team_message_sent', `Mensagem enviada para equipe: ${title}`);
+  });
   root.querySelectorAll('[data-toggle-announcement]').forEach((button) => button.onclick = async () => {
     const item = store.getState().announcements.find((announcement) => announcement.id === button.dataset.toggleAnnouncement);
     if (!item) {return;}

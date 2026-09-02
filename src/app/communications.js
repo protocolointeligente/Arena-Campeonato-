@@ -19,6 +19,27 @@ export function addAnnouncement(state, { title, body, mediaUrl, mediaType } = {}
   return { ok: true, announcement };
 }
 
+export function ensureTeamMessages(state) {
+  state.teamMessages = Array.isArray(state.teamMessages) ? state.teamMessages : [];
+  return state;
+}
+
+// A direct message to one team's own portal — unlike addAnnouncement, never shown on the
+// public championship-wide portal, only on that team's /equipe/... page.
+export function addTeamMessage(state, { teamId, title, body } = {}) {
+  ensureTeamMessages(state);
+  if (!teamId) {return { ok: false, reason: 'Selecione a equipe.' };}
+  if (!String(title || '').trim() || !String(body || '').trim()) {return { ok: false, reason: 'Título e conteúdo são obrigatórios.' };}
+  const message = { id: uid(), teamId, title: String(title).trim(), body: String(body).trim(), created: Date.now() };
+  state.teamMessages.unshift(message);
+  return { ok: true, message };
+}
+
+export function teamMessagesFor(state, teamId) {
+  ensureTeamMessages(state);
+  return state.teamMessages.filter((item) => item.teamId === teamId).slice().sort((a, b) => b.created - a.created);
+}
+
 const YOUTUBE_RE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/;
 const VIMEO_RE = /vimeo\.com\/(\d+)/;
 
