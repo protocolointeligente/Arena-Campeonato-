@@ -38,6 +38,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run functions tests
+        run: cd functions && node --test
+
       - name: Build production bundle
         run: npm run build
 
