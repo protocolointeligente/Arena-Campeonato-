@@ -9,6 +9,21 @@ describe('registration operations', () => {
     expect(registrationStatusLabel('rejected')).toBe('Recusada');
   });
 
+  it('shows a payment badge for approved registrations with a fee', () => {
+    const dom = new JSDOM('<div id="root"></div>');
+    const root = dom.window.document.querySelector('#root');
+    root.innerHTML = renderRegistrations({}, { registrations: [
+      { id: 'p1', teamName: 'Paga', status: 'approved', feeStatus: 'paid', feeAmount: 50, athletes: [] },
+      { id: 'p2', teamName: 'Pendente', status: 'approved', feeStatus: 'pending', feeAmount: 50, athletes: [] },
+      { id: 'p3', teamName: 'Sem taxa', status: 'approved', athletes: [] },
+    ] });
+    const rows = root.querySelectorAll('[data-registration-row]');
+    expect(rows[0].textContent).toMatch(/pago/i);
+    expect(rows[0].textContent).toMatch(/50/);
+    expect(rows[1].textContent).toMatch(/aguardando/i);
+    expect(rows[2].textContent).not.toMatch(/pago|aguardando/i);
+  });
+
   it('filters registrations by team, responsible or protocol', () => {
     const dom = new JSDOM('<div id="root"></div>');
     const root = dom.window.document.querySelector('#root');

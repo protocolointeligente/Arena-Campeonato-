@@ -16,6 +16,7 @@ export function renderRegistrations(store, { registrations }) {
             <p class="muted">${esc(item.responsible || '')} · ${esc(item.phone || '')} · ${(item.athletes || []).length} atleta(s) · protocolo ${esc(item.id || '')}</p>
           </div>
           <span class="tag">${registrationStatusLabel(item.status)}</span>
+          ${item.status === 'approved' && item.feeStatus ? `<span class="tag" style="color:var(--${item.feeStatus === 'paid' ? 'success' : 'warning'})">${item.feeStatus === 'paid' ? `Pago · R$ ${Number(item.feeAmount || 0).toFixed(2)}` : `Aguardando pagamento · R$ ${Number(item.feeAmount || 0).toFixed(2)}`}</span>` : ''}
           ${item.status === 'pending' ? `
             <button class="btn primary" data-approve-registration="${item.id}">Aprovar</button>
             <button class="btn ghost" data-reject-registration="${item.id}">Recusar</button>

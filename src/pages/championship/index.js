@@ -199,9 +199,11 @@ function bindEvents(root, store, ctx) {
     if (!superadmin && !can(store.getState(), auth.currentUser, 'registrations')) {return toast('Seu perfil não pode analisar inscrições.');}
     button.disabled = true;
     try {
-      await updateRegistration(store.getState().id, button.dataset.approveRegistration, { status: 'approved', reviewedAt: Date.now(), reviewedBy: auth.currentUser?.uid || null });
+      const fee = Number(store.getState().registrationFee) || 0;
+      const feeFields = fee > 0 ? { feeStatus: 'pending', feeAmount: fee } : {};
+      await updateRegistration(store.getState().id, button.dataset.approveRegistration, { status: 'approved', reviewedAt: Date.now(), reviewedBy: auth.currentUser?.uid || null, ...feeFields });
       const item = registrations.find((entry) => entry.id === button.dataset.approveRegistration);
-      if (item) {item.status = 'approved';}
+      if (item) {item.status = 'approved'; Object.assign(item, feeFields);}
       await addAudit(store.getState().id, 'registration_approved', `Inscrição aprovada: ${item?.teamName || button.dataset.approveRegistration}`);
       render();
     } catch (error) {button.disabled = false; toast(error.message || 'Não foi possível aprovar a inscrição.');}
