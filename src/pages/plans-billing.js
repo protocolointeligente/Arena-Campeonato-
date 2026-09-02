@@ -1,6 +1,6 @@
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
-import { db, auth } from '../services/firebase.js';
+import { db } from '../services/firebase.js';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { PLAN_DEFINITIONS } from '../app/plans.js';
 import { toast } from '../app/ui.js';
