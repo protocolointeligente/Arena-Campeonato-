@@ -33,6 +33,33 @@ describe('matchMeta', () => {
     const match = { meta: { venueId: 'v1' } };
     expect(matchMeta(match).venueId).toBe('v1');
   });
+
+  // Regression: a real ChampionshipStore returns Immer's frozen finalized state (Immer
+  // freezes deeply by default, unconditionally, not just in dev). Every existing test above
+  // calls matchMeta on a plain object, which never exercises that path — matchMeta's direct
+  // `match.meta = match.meta || {}` throws on a frozen match the moment any read-only caller
+  // (renderGames, scheduleConflicts, the PDF reports) touches a match that hasn't been
+  // migrated yet.
+  describe('on a frozen match (real store output)', () => {
+    it('does not throw, and returns the already-set meta unchanged', () => {
+      const match = Object.freeze({ id: 'm1', meta: Object.freeze({ venueId: 'v1' }) });
+      expect(() => matchMeta(match)).not.toThrow();
+      expect(matchMeta(match).venueId).toBe('v1');
+    });
+
+    it('derives the same fields a mutable match would, without writing back', () => {
+      const info = '12/08/2026 · 19:00 · Ginásio Central';
+      const frozen = Object.freeze({ id: 'm1', info });
+      const meta = matchMeta(frozen);
+      expect(meta).toMatchObject({ date: '2026-08-12', time: '19:00', venueText: 'Ginásio Central' });
+      expect(frozen.meta).toBeUndefined();
+    });
+
+    it('returns an empty object when there is nothing to derive', () => {
+      const frozen = Object.freeze({ id: 'm1' });
+      expect(matchMeta(frozen)).toEqual({});
+    });
+  });
 });
 
 describe('toISODate', () => {

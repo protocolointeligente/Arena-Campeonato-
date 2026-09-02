@@ -33,6 +33,17 @@ describe('ensureCollaborators', () => {
     ensureCollaborators(state);
     expect(state.collaborators).toHaveLength(1);
   });
+
+  // Regression: a real ChampionshipStore returns Immer's frozen finalized state. persist()
+  // and every permission check in championship/index.js call can()/myRole() directly on
+  // store.getState() — never inside store.produce() — so ensureCollaborators must not try to
+  // write `state.collaborators = []` there; every existing test above uses a plain object,
+  // which never exercised the frozen path.
+  it('does not throw on frozen state, and still returns a usable array', () => {
+    const state = Object.freeze({ ownerUid: OWNER.uid });
+    expect(() => ensureCollaborators(state)).not.toThrow();
+    expect(ensureCollaborators(state)).toEqual([]);
+  });
 });
 
 describe('isOwner', () => {
@@ -82,6 +93,12 @@ describe('myCollaborator / myRole / can', () => {
   it('email match is case-insensitive', () => {
     const state = championship({ collaborators: [{ id: 'c1', email: 'OTHER@EXAMPLE.COM', role: 'viewer', status: 'active' }] });
     expect(myRole(state, OTHER)).toBe('viewer');
+  });
+
+  it('does not throw when checking a non-owner on frozen state with no collaborators array (the real persist() crash path)', () => {
+    const state = Object.freeze({ ownerUid: OWNER.uid, ownerEmail: OWNER.email });
+    expect(() => can(state, OTHER, 'results')).not.toThrow();
+    expect(can(state, OTHER, 'results')).toBe(false);
   });
 
   it('viewer can only view; registrations role covers view+registrations', () => {

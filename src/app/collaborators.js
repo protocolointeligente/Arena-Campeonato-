@@ -10,8 +10,18 @@ export const COLLAB_ROLES = {
   viewer: { name: 'Leitura interna', desc: 'Pode acessar o painel sem editar dados.' },
 };
 
+// A real ChampionshipStore's state is Immer's finalized, deeply frozen output. persist() and
+// every permission check in championship/index.js call can()/myRole() straight on
+// store.getState() — never inside store.produce() — so this must not try to write
+// `state.collaborators = []` there. It always returns a usable array either way; only when
+// `state` isn't frozen (a produce() draft, or a plain object in a test) does it also attach
+// that array back onto state, which the mutating callers below (inviteManager and friends,
+// always called inside store.produce()) rely on.
 export function ensureCollaborators(state) {
-  state.collaborators = Array.isArray(state.collaborators) ? state.collaborators : [];
+  if (Array.isArray(state.collaborators)) {return state.collaborators;}
+  const collaborators = [];
+  if (!Object.isFrozen(state)) {state.collaborators = collaborators;}
+  return collaborators;
 }
 
 // NOTE: legacy also OR's in isPlatformSuperadmin() here so platform superadmins can
@@ -23,10 +33,10 @@ export function isOwner(state, user) {
 }
 
 export function myCollaborator(state, user) {
-  ensureCollaborators(state);
+  const collaborators = ensureCollaborators(state);
   const email = (user?.email || '').toLowerCase();
   if (!email) {return null;}
-  return state.collaborators.find((c) => (c.email || '').toLowerCase() === email && c.status !== 'revoked') || null;
+  return collaborators.find((c) => (c.email || '').toLowerCase() === email && c.status !== 'revoked') || null;
 }
 
 export function myRole(state, user) {
@@ -62,22 +72,22 @@ export function inviteManager(state, user, { email, role }) {
   if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {return { ok: false, reason: 'Informe um e-mail válido.' };}
   if (trimmedEmail === (state.ownerEmail || '').toLowerCase()) {return { ok: false, reason: 'Este e-mail já é o proprietário.' };}
   const chosenRole = COLLAB_ROLES[role] ? role : 'viewer';
-  ensureCollaborators(state);
-  const existing = state.collaborators.find((c) => (c.email || '').toLowerCase() === trimmedEmail);
+  const collaborators = ensureCollaborators(state);
+  const existing = collaborators.find((c) => (c.email || '').toLowerCase() === trimmedEmail);
   if (existing) {
     existing.role = chosenRole;
     existing.status = 'active';
     return { ok: true, collaborator: existing };
   }
   const collaborator = { id: uid(), email: trimmedEmail, role: chosenRole, status: 'active', createdAt: Date.now() };
-  state.collaborators.push(collaborator);
+  collaborators.push(collaborator);
   return { ok: true, collaborator };
 }
 
 export function changeManagerRole(state, user, id, role) {
   if (!isOwner(state, user)) {return { ok: false, reason: 'Sem permissão.' };}
-  ensureCollaborators(state);
-  const collaborator = state.collaborators.find((c) => c.id === id);
+  const collaborators = ensureCollaborators(state);
+  const collaborator = collaborators.find((c) => c.id === id);
   if (!collaborator) {return { ok: false, reason: 'Colaborador não encontrado.' };}
   collaborator.role = COLLAB_ROLES[role] ? role : collaborator.role;
   return { ok: true };
@@ -85,9 +95,9 @@ export function changeManagerRole(state, user, id, role) {
 
 export function removeManager(state, user, id) {
   if (!isOwner(state, user)) {return { ok: false, reason: 'Sem permissão.' };}
-  ensureCollaborators(state);
-  const before = state.collaborators.length;
-  state.collaborators = state.collaborators.filter((c) => c.id !== id);
+  const collaborators = ensureCollaborators(state);
+  const before = collaborators.length;
+  state.collaborators = collaborators.filter((c) => c.id !== id);
   if (state.collaborators.length === before) {return { ok: false, reason: 'Colaborador não encontrado.' };}
   return { ok: true };
 }

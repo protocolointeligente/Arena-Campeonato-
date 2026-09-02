@@ -12,22 +12,37 @@ export function toISODate(value) {
   return '';
 }
 
-export function matchMeta(match) {
-  match.meta = match.meta || {};
-  if (match.info && !match.meta._migrated) {
-    const parts = splitInfo(match.info);
-    match.meta.date = match.meta.date || toISODate(parts.data);
-    match.meta.time = match.meta.time || parts.hora;
-    match.meta.venueText = match.meta.venueText || parts.local;
-    match.meta._migrated = true;
-  }
-  return match.meta;
-}
-
 export function splitInfo(info) {
   if (!info) {return { data: '', hora: '', local: '' };}
   const parts = info.split(/[·|]/).map((s) => s.trim());
   return { data: parts[0] || '', hora: parts[1] || '', local: parts.slice(2).join(' · ') || '' };
+}
+
+function deriveMetaFromInfo(info) {
+  const parts = splitInfo(info);
+  return { date: toISODate(parts.data), time: parts.hora, venueText: parts.local };
+}
+
+// A real ChampionshipStore's state is Immer's finalized, deeply frozen output — never a plain
+// object, never a produce() draft (drafts report Object.isFrozen() === false). Callers that only
+// read match.meta for display (renderGames, scheduleConflicts, PDF reports) hit that frozen state
+// directly via store.getState(); callers that edit it (saveMatchOps) always run inside
+// store.produce(), where `match` is a mutable draft. Object.isFrozen() tells the two apart, so
+// this one function stays safe for both without either caller having to know which one it is.
+export function matchMeta(match) {
+  if (Object.isFrozen(match)) {
+    if (match.meta) {return match.meta;}
+    return match.info ? { ...deriveMetaFromInfo(match.info), _migrated: true } : {};
+  }
+  match.meta = match.meta || {};
+  if (match.info && !match.meta._migrated) {
+    const derived = deriveMetaFromInfo(match.info);
+    match.meta.date = match.meta.date || derived.date;
+    match.meta.time = match.meta.time || derived.time;
+    match.meta.venueText = match.meta.venueText || derived.venueText;
+    match.meta._migrated = true;
+  }
+  return match.meta;
 }
 
 export function metaLine(state, match) {
