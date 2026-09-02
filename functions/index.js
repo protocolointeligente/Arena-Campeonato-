@@ -120,6 +120,39 @@ exports.createCheckout = onRequest({ secrets: [asaasAccessToken, mercadoPagoAcce
   res.status(200).json({ checkoutUrl });
 });
 
+exports.cancelSubscription = onRequest({ secrets: [asaasAccessToken, mercadoPagoAccessToken], cors: true }, async (req, res) => {
+  if (req.method !== 'POST') {res.status(405).send('Method not allowed'); return;}
+  const decoded = await requireUser(req, res);
+  if (!decoded) {return;}
+  const userRef = db.collection('users').doc(decoded.uid);
+  const snap = await userRef.get();
+  const billing = snap.data()?.billing;
+  if (!billing?.subscriptionId || !billing?.provider) {res.status(400).send('Nenhuma assinatura ativa'); return;}
+
+  try {
+    if (billing.provider === 'mercadopago') {
+      const response = await fetch(`https://api.mercadopago.com/preapproval/${billing.subscriptionId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${mercadoPagoAccessToken.value()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (!response.ok) {throw new Error(`Mercado Pago retornou ${response.status}`);}
+    } else {
+      const response = await fetch(`https://api.asaas.com/v3/subscriptions/${billing.subscriptionId}`, {
+        method: 'DELETE',
+        headers: { access_token: asaasAccessToken.value() },
+      });
+      if (!response.ok) {throw new Error(`Asaas retornou ${response.status}`);}
+    }
+  } catch (error) {
+    res.status(502).send(error.message);
+    return;
+  }
+
+  await userRef.set({ billing: { ...billing, status: 'cancelled', cancelledAt: Date.now() }, updated: Date.now() }, { merge: true });
+  res.status(200).json({ ok: true });
+});
+
 exports.billingWebhook = onRequest({ secrets: [asaasWebhookToken, mercadoPagoSecret, mercadoPagoAccessToken], cors: false }, async (req, res) => {
   if (req.method !== 'POST') {res.status(405).send('Method not allowed'); return;}
   const provider = String(req.query.provider || '').toLowerCase();
