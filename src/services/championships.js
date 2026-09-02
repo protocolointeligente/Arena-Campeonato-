@@ -73,6 +73,22 @@ export async function getPublicSlug(id) {
   return snapshot.exists() ? (snapshot.data().publicSlug || '') : '';
 }
 
+// Tallies the low-stakes engagement events public-championship.js writes (portal views,
+// sponsor logo clicks) for the organizer's own engagement panel. Reads every event doc client-
+// side — fine at the scale this app runs at today; ponytail: if a championship ever racks up
+// enough views for this to get slow/expensive, move the tally into a Cloud Function that keeps
+// a running counter instead of re-reading the whole subcollection each time.
+export async function getEngagementStats(id) {
+  const snapshot = await getDocs(collection(db, 'publicChampionships', id, 'events'));
+  const stats = { views: 0, sponsorClicks: {} };
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.type === 'view') {stats.views += 1;}
+    else if (data.type === 'sponsor_click' && data.sponsorId) {stats.sponsorClicks[data.sponsorId] = (stats.sponsorClicks[data.sponsorId] || 0) + 1;}
+  });
+  return stats;
+}
+
 export async function getChampionshipIdBySlug(slug) {
   if (!slug) {return null;}
   const snapshot = await getDocs(query(publicCollection, where('publicSlug', '==', slug)));

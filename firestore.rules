@@ -79,19 +79,6 @@ service cloud.firestore {
             && request.resource.data.created is number;
       }
 
-      match /pollVotes/{voteId} {
-        allow read: if true;
-    allow create: if voteId == request.resource.data.pollId + '_' + request.resource.data.voterKey
-      && request.resource.data.pollId is string
-            && request.resource.data.optionId is string
-      && request.resource.data.voterKey is string
-      && request.resource.data.voterKey.size() > 8
-      && request.resource.data.voterKey.size() < 160
-      && request.resource.data.created is number
-      && request.resource.data.created <= request.time.toMillis();
-        allow update, delete: if false;
-      }
-
       match /auditLogs/{auditId} {
         allow read: if canManageChampionship();
         allow create: if canManageChampionship();
@@ -102,6 +89,36 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      // Moved here from the old (unwritten, dead) rule under /championships — the client
+      // (public-championship.js) has always written to publicChampionships/{id}/pollVotes,
+      // never to the private collection, so voting was previously falling through to the
+      // catch-all deny-all rule at the bottom of this file.
+      match /pollVotes/{voteId} {
+        allow read: if true;
+        allow create: if voteId == request.resource.data.pollId + '_' + request.resource.data.voterKey
+          && request.resource.data.pollId is string
+          && request.resource.data.optionId is string
+          && request.resource.data.voterKey is string
+          && request.resource.data.voterKey.size() > 8
+          && request.resource.data.voterKey.size() < 160
+          && request.resource.data.created is number
+          && request.resource.data.created <= request.time.toMillis();
+        allow update, delete: if false;
+      }
+
+      // Anonymous, low-stakes engagement counters (portal views, sponsor clicks) for the
+      // organizer's own engagement/sponsor-audience panel — no per-visitor dedup like
+      // pollVotes, since repeat views/clicks from the same visitor are meaningful signal here,
+      // not something to prevent.
+      match /events/{eventId} {
+        allow read: if true;
+        allow create: if request.resource.data.type in ['view', 'sponsor_click']
+          && (request.resource.data.type != 'sponsor_click' || (request.resource.data.sponsorId is string && request.resource.data.sponsorId.size() > 0))
+          && request.resource.data.created is number
+          && request.resource.data.created <= request.time.toMillis();
+        allow update, delete: if false;
+      }
     }
 
     match /users/{userId} {

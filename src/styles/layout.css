@@ -269,3 +269,9 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .embed-table { width: 100%; border-collapse: collapse; }
 .embed-table th, .embed-table td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line); }
 .embed-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Public sponsors */
+.public-sponsors-grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.public-sponsors-grid a { display: flex; align-items: center; justify-content: center; height: 56px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-muted); }
+.public-sponsors-grid img { max-height: 40px; max-width: 140px; object-fit: contain; }
+.public-sponsors-grid span { font-size: 13px; color: var(--text); font-weight: 600; }

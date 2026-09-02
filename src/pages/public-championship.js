@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
@@ -126,6 +126,18 @@ function announcementMedia(item) {
   return '';
 }
 
+function sponsorsPanel(state) {
+  const sponsors = state.sponsors || [];
+  if (!sponsors.length) {return '';}
+  return `<section class="card public-sponsors"><h2>Patrocinadores</h2><div class="public-sponsors-grid">${sponsors.map((sponsor) => `<a href="${esc(sponsor.url || '#')}" target="_blank" rel="noopener sponsored" data-sponsor-click="${esc(sponsor.id)}">${sponsor.logo ? `<img src="${esc(sponsor.logo)}" alt="${esc(sponsor.name)}">` : `<span>${esc(sponsor.name)}</span>`}</a>`).join('')}</div></section>`;
+}
+
+// Low-stakes engagement counters — a rejected write here (offline, ad blocker, whatever) never
+// blocks the page, so every call site fires-and-forgets it.
+function trackEvent(championshipId, fields) {
+  addDoc(collection(db, 'publicChampionships', championshipId, 'events'), { ...fields, created: Date.now() }).catch(() => {});
+}
+
 function announcementsPanel(state) {
   const items = publicAnnouncements(state);
   if (!items.length) {return '';}
@@ -238,6 +250,7 @@ export async function renderPublicChampionship(root, id) {
   root.__publicUnsubscribe?.();
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><div class="card">Carregando campeonato...</div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate('/');
+  let viewTracked = false;
   try {
     const ref = doc(db, 'publicChampionships', id);
     root.__publicUnsubscribe = onSnapshot(ref, async (snapshot) => {
@@ -263,6 +276,17 @@ export async function renderPublicChampionship(root, id) {
     if (discipline) {root.querySelector('main').firstElementChild.insertAdjacentHTML('beforeend', discipline);}
     const announcements = announcementsPanel(state);
     if (announcements) {root.querySelector('main').firstElementChild.insertAdjacentHTML('afterbegin', announcements);}
+    const sponsors = sponsorsPanel(state);
+    if (sponsors) {
+      root.querySelector('main').firstElementChild.insertAdjacentHTML('beforeend', sponsors);
+      root.querySelectorAll('[data-sponsor-click]').forEach((link) => link.addEventListener('click', () => {
+        trackEvent(id, { type: 'sponsor_click', sponsorId: link.dataset.sponsorClick });
+      }));
+    }
+    if (!viewTracked) {
+      viewTracked = true;
+      trackEvent(id, { type: 'view' });
+    }
     const polls = pollsPanel(state, id);
     if (polls) {
       root.querySelector('main').firstElementChild.insertAdjacentHTML('afterbegin', polls);

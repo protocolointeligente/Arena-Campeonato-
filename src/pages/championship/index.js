@@ -1,5 +1,5 @@
 import { navigate } from '../../app/router-v2.js';
-import { getChampionship, saveChampionship, checkSlugAvailable } from '../../services/championships.js';
+import { getChampionship, saveChampionship, checkSlugAvailable, getEngagementStats } from '../../services/championships.js';
 import { listRegistrations, updateRegistration } from '../../services/registrations.js';
 import { addAudit, listAudit } from '../../services/audit.js';
 import { downloadChampionshipPDF } from '../../services/pdf.js';
@@ -78,8 +78,10 @@ async function mount(root, initial) {
   let registrations = [];
   let auditRows = [];
   let superadmin = false;
-  
+  let engagement = null;
+
   isSuperadmin().then((v) => { superadmin = v; }).catch(() => {});
+  getEngagementStats(initial.id).then((stats) => { engagement = stats; render(); }).catch(() => {});
   
   const accent = initial.branding?.accent || '#2fcf6b';
   
@@ -158,7 +160,7 @@ async function mount(root, initial) {
       button.tabIndex = isActive ? 0 : -1;
     });
     root.querySelector('[data-categorybar]').innerHTML = renderCategoryBar(store.getState());
-    content.innerHTML = TAB_RENDERERS[tab] ? TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget }) : '';
+    content.innerHTML = TAB_RENDERERS[tab] ? TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement }) : '';
     content.setAttribute('aria-label', tab);
   bindEvents(root, store, { persist, tab, setTab: (t) => { tab = t; }, setPlacarTarget: (id, kind) => { placarTarget = { id, kind }; }, render, registrations, auditRows, superadmin });
   bindRegistrationSearch(root);
@@ -174,7 +176,7 @@ async function mount(root, initial) {
     shell.style.setProperty('--championship-accent', state.branding?.accent || '#2fcf6b');
     root.querySelector('[data-categorybar]').innerHTML = renderCategoryBar(state);
     if (TAB_RENDERERS[tab]) {
-      content.innerHTML = TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget });
+      content.innerHTML = TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement });
       content.setAttribute('aria-label', tab);
     bindEvents(root, store, { persist, tab, setTab: (t) => { tab = t; }, setPlacarTarget: (id, kind) => { placarTarget = { id, kind }; }, render, registrations, auditRows, superadmin });
     bindRegistrationSearch(root);

@@ -1,6 +1,34 @@
 import { esc } from '../../../app/utils.ts';
 
-export function renderOverview(store) {
+function mostVotedPoll(state) {
+  let best = null;
+  (state.polls || []).filter((poll) => poll.status === 'published').forEach((poll) => {
+    (poll.options || []).forEach((option) => {
+      if (!best || (option.votes || 0) > best.votes) {best = { question: poll.question, label: option.label, votes: option.votes || 0 };}
+    });
+  });
+  return best;
+}
+
+function engagementCardHTML(state, engagement) {
+  if (!engagement) {return '';}
+  const sponsors = state.sponsors || [];
+  const topSponsor = Object.entries(engagement.sponsorClicks || {}).sort((a, b) => b[1] - a[1])[0];
+  const topSponsorName = topSponsor ? sponsors.find((s) => s.id === topSponsor[0])?.name : null;
+  const poll = mostVotedPoll(state);
+  return `
+    <div class="card" style="margin-top:16px">
+      <h2>📈 Engajamento do portal público</h2>
+      <div class="grid" style="margin-top:12px">
+        <div><small>VISUALIZAÇÕES</small><h2>${engagement.views}</h2><p class="muted">acessos ao portal público</p></div>
+        <div><small>PATROCINADOR MAIS CLICADO</small><h2>${topSponsorName ? esc(topSponsorName) : '—'}</h2><p class="muted">${topSponsor ? `${topSponsor[1]} clique(s)` : sponsors.length ? 'ainda sem cliques' : 'nenhum patrocinador cadastrado'}</p></div>
+        <div><small>ENQUETE MAIS VOTADA</small><h2>${poll ? esc(poll.label) : '—'}</h2><p class="muted">${poll ? `${poll.votes} voto(s) em "${esc(poll.question)}"` : 'nenhuma enquete publicada'}</p></div>
+      </div>
+    </div>
+  `;
+}
+
+export function renderOverview(store, ctx = {}) {
   const state = store.getState();
   const matches = state.matches || [];
   const finished = matches.filter((m) => m.hg != null && m.ag != null).length;
@@ -18,6 +46,7 @@ export function renderOverview(store) {
         <button class="btn" data-jump="jogos">Ver jogos</button>
       </div>
     </div>
+    ${engagementCardHTML(state, ctx.engagement)}
   `;
 }
 
