@@ -23,6 +23,7 @@ import { renderPlansBilling } from '../pages/plans-billing.js';
 import { renderPublication } from '../pages/publication.js';
 import { renderScoreboardDisplay } from '../pages/scoreboard-display.js';
 import { renderDrawDisplay } from '../pages/draw-display.js';
+import { renderRegistrationStatus } from '../pages/registration-status.js';
 import { setUser } from './store.js';
 import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoundary.js';
 import { getErrorLogger } from '../services/error-logger.js';
@@ -89,6 +90,7 @@ route('/placar/:id/:matchId', safeRoute((params) => {
   renderScoreboardDisplay(mainContent, params.id, params.matchId, kind);
 }));
 route('/sorteio/:id', safeRoute((params) => renderDrawDisplay(mainContent, params.id)));
+route('/inscrever/:championshipId/status/:registrationId', safeRoute((params) => renderRegistrationStatus(mainContent, params.championshipId, params.registrationId)));
 
 start();
 

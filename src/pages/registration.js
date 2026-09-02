@@ -161,10 +161,12 @@ export async function renderRegistration(root, id) {
           <h2>Inscrição enviada</h2>
           <p class="muted">O organizador analisará os dados antes de confirmar a participação.</p>
           <p>Protocolo: <strong data-protocol>${esc(registration.id)}</strong> <button class="btn ghost sm" type="button" data-copy-protocol>Copiar</button></p>
-          <button class="btn ghost" style="margin-top:16px" data-back>← Voltar ao campeonato</button>
+          <button class="btn primary" style="margin-top:16px" data-track-registration>Acompanhar inscrição e pagamento →</button>
+          <button class="btn ghost" style="margin-top:8px" data-back>← Voltar ao campeonato</button>
         </div>
       `;
       root.querySelector('[data-back]').onclick = () => navigate(`/publico/${id}`);
+      root.querySelector('[data-track-registration]').onclick = () => navigate(`/inscrever/${id}/status/${registration.id}`);
       root.querySelector('[data-copy-protocol]').onclick = async (event) => {
         try { await copyRegistrationProtocol(registration.id); event.currentTarget.textContent = 'Copiado'; }
         catch { event.currentTarget.textContent = 'Falha ao copiar'; }
