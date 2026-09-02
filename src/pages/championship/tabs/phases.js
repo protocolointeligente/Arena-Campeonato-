@@ -1,11 +1,47 @@
 import { PHASE_FORMATS, progressionSummary } from '../../../app/phases.js';
 import { esc } from '../../../app/utils.ts';
 
+function teamName(state, id) {
+  return (state.teams || []).find((team) => team.id === id)?.nome || '—';
+}
+
+function drawProgressHTML(state) {
+  const draw = state.draw;
+  if (draw.formato === 'grupos') {
+    return `<div class="row" style="flex-wrap:wrap;gap:16px">${draw.groups.map((group, gi) => `<div style="flex:1;min-width:160px"><strong>Grupo ${String.fromCharCode(65 + gi)}</strong><ul class="public-list">${group.map((id) => `<li>${esc(teamName(state, id))}</li>`).join('') || '<li class="muted">—</li>'}</ul></div>`).join('')}</div>`;
+  }
+  return `<ol class="public-list">${draw.order.map((id) => `<li>${esc(teamName(state, id))}</li>`).join('') || '<li class="muted">—</li>'}</ol>`;
+}
+
+function drawCardHTML(state) {
+  if (state.formato !== 'grupos' && state.formato !== 'mata') {return '';}
+  const draw = state.draw;
+  return `
+    <div class="card" style="margin-top:16px">
+      <h2>🎲 Sorteio ao vivo</h2>
+      <p class="muted">Sorteia a distribuição das equipes ao vivo, com tela de projeção pro telão.</p>
+      ${!draw ? `
+        <button class="btn primary" data-start-draw>Iniciar sorteio</button>
+      ` : `
+        <div class="row" style="justify-content:space-between;flex-wrap:wrap;margin-top:8px">
+          <span class="muted">${draw.pool.length} equipe(s) restante(s)</span>
+          <div class="row" style="gap:8px">
+            <button class="btn ghost" data-open-draw>🖥️ Abrir tela de projeção</button>
+            <button class="btn ghost" data-cancel-draw>Cancelar</button>
+          </div>
+        </div>
+        ${!draw.done ? '<button class="btn primary" style="margin-top:10px" data-reveal-draw>🎲 Revelar próxima equipe</button>' : '<button class="btn primary" style="margin-top:10px" data-apply-draw>✅ Aplicar e gerar fase</button>'}
+        <div style="margin-top:14px">${drawProgressHTML(state)}</div>
+      `}
+    </div>
+  `;
+}
+
 export function renderPhases(store) {
   const state = store.getState();
   const category = state.categories?.find(c => c.id === state.activeCategoryId);
   const phases = category?.phases || [];
-  
+
   return `
     <div class="card">
       <div class="actions" style="justify-content:space-between">
@@ -58,6 +94,7 @@ export function renderPhases(store) {
         }).join('') || '<p class="muted">Nenhuma fase configurada.</p>'}
       </div>
     </div>
+    ${drawCardHTML(state)}
   `;
 }
 

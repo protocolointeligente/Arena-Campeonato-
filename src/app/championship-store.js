@@ -14,6 +14,7 @@ import { validate, schemas } from './schemas.js';
 import { toastError } from '../components/Toast.js';
 import { ensureCommunications, addAnnouncement, publishAnnouncement, addPoll, publishPoll, votePoll, ensureTeamMessages, addTeamMessage } from './communications.js';
 import { slugify, isValidSlug } from './format.js';
+import { startDraw as startDrawPure, revealNext as revealNextDrawPure, applyDraw as applyDrawPure, cancelDraw as cancelDrawPure } from './draw.js';
 
 // Local validated helper to avoid circular dependency
 function validated(schemaKey, data) {
@@ -74,6 +75,29 @@ export class ChampionshipStore {
     let result;
     this.produce((draft) => { result = addTeamMessage(draft, data); });
     return result;
+  }
+
+  // Sorteio ao vivo — see src/app/draw.js
+  startDraw(opts) {
+    let result;
+    this.produce((draft) => { result = startDrawPure(draft, opts); });
+    return result;
+  }
+
+  revealNextDraw() {
+    let result;
+    this.produce((draft) => { result = revealNextDrawPure(draft); });
+    return result;
+  }
+
+  applyDraw() {
+    let result;
+    this.produce((draft) => { result = applyDrawPure(draft); });
+    return result;
+  }
+
+  cancelDraw() {
+    this.produce((draft) => { cancelDrawPure(draft); });
   }
 
   publishAnnouncement(id, published = true) {

@@ -261,6 +261,32 @@ function bindEvents(root, store, ctx) {
     await persist();
     await addAudit(store.getState().id, 'team_message_sent', `Mensagem enviada para equipe: ${title}`);
   });
+  // Sorteio ao vivo
+  root.querySelector('[data-start-draw]')?.addEventListener('click', async () => {
+    const result = store.startDraw();
+    if (!result.ok) {return toast(result.reason);}
+    await persist();
+  });
+  root.querySelector('[data-reveal-draw]')?.addEventListener('click', async () => {
+    const result = store.revealNextDraw();
+    if (!result.ok) {return toast(result.reason);}
+    await persist();
+  });
+  root.querySelector('[data-apply-draw]')?.addEventListener('click', async () => {
+    const result = store.applyDraw();
+    if (!result.ok) {return toast(result.reason);}
+    await persist();
+    await addAudit(store.getState().id, 'draw_applied', 'Sorteio ao vivo aplicado à fase');
+  });
+  root.querySelector('[data-cancel-draw]')?.addEventListener('click', async () => {
+    if (!confirm('Cancelar o sorteio em andamento?')) {return;}
+    store.cancelDraw();
+    await persist();
+  });
+  root.querySelector('[data-open-draw]')?.addEventListener('click', () => {
+    window.open(`/sorteio/${store.getState().id}`, '_blank', 'noopener');
+  });
+
   root.querySelectorAll('[data-toggle-announcement]').forEach((button) => button.onclick = async () => {
     const item = store.getState().announcements.find((announcement) => announcement.id === button.dataset.toggleAnnouncement);
     if (!item) {return;}
