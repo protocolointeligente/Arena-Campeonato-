@@ -6,12 +6,32 @@ export function ensureCommunications(state) {
   return state;
 }
 
-export function addAnnouncement(state, { title, body } = {}) {
+export function addAnnouncement(state, { title, body, mediaUrl, mediaType } = {}) {
   ensureCommunications(state);
   if (!String(title || '').trim() || !String(body || '').trim()) {return { ok: false, reason: 'Título e conteúdo são obrigatórios.' };}
-  const announcement = { id: uid(), title: String(title).trim(), body: String(body).trim(), status: 'draft', created: Date.now(), updated: Date.now() };
+  const validMediaType = mediaType === 'photo' || mediaType === 'video';
+  const announcement = {
+    id: uid(), title: String(title).trim(), body: String(body).trim(), status: 'draft', created: Date.now(), updated: Date.now(),
+    mediaUrl: validMediaType && mediaUrl ? String(mediaUrl).trim() : '',
+    mediaType: validMediaType && mediaUrl ? mediaType : '',
+  };
   state.announcements.unshift(announcement);
   return { ok: true, announcement };
+}
+
+const YOUTUBE_RE = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/;
+const VIMEO_RE = /vimeo\.com\/(\d+)/;
+
+// Turns a pasted YouTube/Vimeo link into an embeddable iframe src, or null if it's neither —
+// the public portal only ever embeds a URL this returns, never the raw pasted link, so an
+// arbitrary/malicious URL can't end up as an iframe src.
+export function videoEmbedUrl(url) {
+  const value = String(url || '');
+  const youtube = YOUTUBE_RE.exec(value);
+  if (youtube) {return `https://www.youtube.com/embed/${youtube[1]}`;}
+  const vimeo = VIMEO_RE.exec(value);
+  if (vimeo) {return `https://player.vimeo.com/video/${vimeo[1]}`;}
+  return null;
 }
 
 export function publishAnnouncement(state, id, published = true) {

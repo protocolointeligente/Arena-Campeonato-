@@ -81,6 +81,15 @@ export async function uploadTeamLogo(championshipId, file, oldUrl = '') {
   return getDownloadURL(fileRef);
 }
 
+export async function uploadAnnouncementPhoto(championshipId, file) {
+  const dataUrl = await resizeImage(file, 1200, 900, 0.78);
+  if (!dataUrl) {return '';}
+  const path = `championships/${championshipId}/announcements/${Date.now()}.jpg`;
+  const fileRef = ref(storage, path);
+  await uploadString(fileRef, dataUrl, 'data_url');
+  return getDownloadURL(fileRef);
+}
+
 export async function deleteImageByUrl(url) {
   if (!url) {return;}
   try {

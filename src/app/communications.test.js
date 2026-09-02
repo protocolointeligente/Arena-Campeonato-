@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ensureCommunications, addAnnouncement, publishAnnouncement, publicAnnouncements, addPoll, publishPoll, votePoll, publicPolls } from './communications.js';
+import { ensureCommunications, addAnnouncement, publishAnnouncement, publicAnnouncements, addPoll, publishPoll, votePoll, publicPolls, videoEmbedUrl } from './communications.js';
 
 describe('communications', () => {
   it('initializes communication collections', () => {
@@ -26,6 +26,20 @@ describe('communications', () => {
     expect(publicAnnouncements(state)).toEqual([]);
   });
 
+  it('stores an optional photo or video on an announcement', () => {
+    const state = {};
+    const withPhoto = addAnnouncement(state, { title: 'Confraternização', body: 'Fotos do encerramento.', mediaUrl: 'https://example.com/foto.jpg', mediaType: 'photo' });
+    expect(withPhoto.announcement).toMatchObject({ mediaUrl: 'https://example.com/foto.jpg', mediaType: 'photo' });
+    const withoutMedia = addAnnouncement(state, { title: 'Aviso', body: 'Sem mídia' });
+    expect(withoutMedia.announcement).toMatchObject({ mediaUrl: '', mediaType: '' });
+  });
+
+  it('rejects an unrecognized mediaType, storing no media', () => {
+    const state = {};
+    const result = addAnnouncement(state, { title: 'Aviso', body: 'x', mediaUrl: 'https://example.com/x', mediaType: 'audio' });
+    expect(result.announcement).toMatchObject({ mediaUrl: '', mediaType: '' });
+  });
+
   it('creates, publishes and prevents duplicate votes in polls', () => {
     const state = {};
     const result = addPoll(state, { question: 'Melhor horário?', options: ['Manhã', 'Noite'] });
@@ -35,5 +49,25 @@ describe('communications', () => {
     expect(votePoll(state, result.poll.id, option.id, 'device-1').ok).toBe(true);
     expect(votePoll(state, result.poll.id, option.id, 'device-1').ok).toBe(false);
     expect(publicPolls(state)[0].options[0].votes).toBe(1);
+  });
+});
+
+describe('videoEmbedUrl', () => {
+  it('recognizes youtube.com/watch links', () => {
+    expect(videoEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('https://www.youtube.com/embed/dQw4w9WgXcQ');
+  });
+
+  it('recognizes youtu.be short links', () => {
+    expect(videoEmbedUrl('https://youtu.be/dQw4w9WgXcQ')).toBe('https://www.youtube.com/embed/dQw4w9WgXcQ');
+  });
+
+  it('recognizes vimeo.com links', () => {
+    expect(videoEmbedUrl('https://vimeo.com/76979871')).toBe('https://player.vimeo.com/video/76979871');
+  });
+
+  it('returns null for an unrecognized or empty link', () => {
+    expect(videoEmbedUrl('https://example.com/video.mp4')).toBeNull();
+    expect(videoEmbedUrl('')).toBeNull();
+    expect(videoEmbedUrl(undefined)).toBeNull();
   });
 });

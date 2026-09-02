@@ -24,8 +24,12 @@ export function renderPublication(store) {
       <p class="muted">Publique avisos para equipes e torcida no portal público.</p>
       <input data-announcement-title maxlength="120" placeholder="Título do comunicado">
       <textarea data-announcement-body maxlength="1000" placeholder="Mensagem" rows="4" style="width:100%;margin-top:8px"></textarea>
+      <div class="row" style="flex-wrap:wrap;margin-top:8px;gap:12px">
+        <label class="muted" style="flex:1;min-width:200px">Foto (opcional)<input type="file" accept="image/*" data-announcement-photo style="display:block;margin-top:4px"></label>
+        <label class="muted" style="flex:1;min-width:200px">Ou link de vídeo (YouTube/Vimeo)<input type="url" data-announcement-video placeholder="https://youtube.com/watch?v=..." style="display:block;margin-top:4px;width:100%"></label>
+      </div>
       <button class="btn primary" data-add-announcement style="margin-top:8px">Publicar comunicado</button>
-      <div style="margin-top:16px">${announcements.map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong><br><span class="muted">${esc(item.body)}</span></span><span class="tag">${item.status === 'published' ? 'Publicado' : 'Rascunho'}</span><button class="btn ghost sm" data-toggle-announcement="${esc(item.id)}">${item.status === 'published' ? 'Retirar' : 'Publicar'}</button></div>`).join('') || '<p class="muted">Nenhum comunicado criado.</p>'}</div>
+      <div style="margin-top:16px">${announcements.map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong>${item.mediaType === 'photo' ? ' 📷' : item.mediaType === 'video' ? ' 🎬' : ''}<br><span class="muted">${esc(item.body)}</span></span><span class="tag">${item.status === 'published' ? 'Publicado' : 'Rascunho'}</span><button class="btn ghost sm" data-toggle-announcement="${esc(item.id)}">${item.status === 'published' ? 'Retirar' : 'Publicar'}</button></div>`).join('') || '<p class="muted">Nenhum comunicado criado.</p>'}</div>
     </div>
     <div class="card" style="margin-top:16px">
       <h2>Enquetes</h2>

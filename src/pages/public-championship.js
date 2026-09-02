@@ -3,7 +3,7 @@ import { db } from '../services/firebase.js';
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
 import { computeStandings, scorerRanking, cardRanking, athleteStats } from '../app/standings.js';
-import { publicAnnouncements, publicPolls } from '../app/communications.js';
+import { publicAnnouncements, publicPolls, videoEmbedUrl } from '../app/communications.js';
 
 function activeCategory(state) {
   return (state.categories || []).find((category) => category.id === state.activeCategoryId)
@@ -112,10 +112,23 @@ function disciplinePanel(category, state) {
   return `<section class="card public-discipline"><h2>Disciplina</h2><ul class="public-list">${rows.map((row, index) => `<li><span>${index + 1}. ${esc(row.name)}</span><strong>${row.y || 0}🟨 ${row.r || 0}🟥</strong></li>`).join('')}</ul></section>`;
 }
 
+function announcementMedia(item) {
+  if (item.mediaType === 'photo' && item.mediaUrl) {
+    return `<img src="${esc(item.mediaUrl)}" alt="" style="max-width:100%;border-radius:8px;margin-top:8px">`;
+  }
+  if (item.mediaType === 'video' && item.mediaUrl) {
+    const embed = videoEmbedUrl(item.mediaUrl);
+    return embed
+      ? `<iframe src="${esc(embed)}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:8px;margin-top:8px" allowfullscreen loading="lazy" title="${esc(item.title)}"></iframe>`
+      : `<p style="margin-top:8px"><a href="${esc(item.mediaUrl)}" target="_blank" rel="noopener">Assistir vídeo →</a></p>`;
+  }
+  return '';
+}
+
 function announcementsPanel(state) {
   const items = publicAnnouncements(state);
   if (!items.length) {return '';}
-  return `<section class="card public-announcements"><h2>Comunicados</h2>${items.slice(0, 5).map((item) => `<article><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p></article>`).join('')}</section>`;
+  return `<section class="card public-announcements"><h2>Comunicados</h2>${items.slice(0, 5).map((item) => `<article><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p>${announcementMedia(item)}</article>`).join('')}</section>`;
 }
 
 function pollsPanel(state, id) {

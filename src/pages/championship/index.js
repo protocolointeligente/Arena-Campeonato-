@@ -7,7 +7,7 @@ import { esc, uid } from '../../app/utils.js';
 import { toast, modal, closeModal } from '../../app/ui.js';
 import { auth } from '../../services/firebase.js';
 import { isSuperadmin } from '../../services/superadmin.js';
-import { uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo } from '../../services/storage.js';
+import { uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, uploadAnnouncementPhoto } from '../../services/storage.js';
 import { championshipJSON, parseChampionshipImport } from '../../app/exports.js';
 import { exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML } from '../../app/reports.js';
 import { createChampionshipStore } from '../../app/championship-store.js';
@@ -231,9 +231,22 @@ function bindEvents(root, store, ctx) {
     try { const dataUrl = await createQrDataUrl(button.dataset.teamInviteQr); const link = document.createElement('a'); link.href = dataUrl; link.download = `arena-equipe-${button.dataset.teamInviteName || 'portal'}-qr.png`; link.click(); } catch { button.textContent = 'Falha'; }
   });
   root.querySelector('[data-add-announcement]')?.addEventListener('click', async () => {
+    const button = root.querySelector('[data-add-announcement]');
     const title = root.querySelector('[data-announcement-title]')?.value;
     const body = root.querySelector('[data-announcement-body]')?.value;
-    const result = store.addAnnouncement({ title, body });
+    const photoFile = root.querySelector('[data-announcement-photo]')?.files?.[0];
+    const videoUrl = root.querySelector('[data-announcement-video]')?.value?.trim();
+    let mediaUrl = '';
+    let mediaType = '';
+    if (photoFile) {
+      button.disabled = true;
+      try { mediaUrl = await uploadAnnouncementPhoto(store.getState().id, photoFile); mediaType = 'photo'; }
+      catch { button.disabled = false; return toast('Não foi possível enviar a foto.'); }
+      button.disabled = false;
+    } else if (videoUrl) {
+      mediaUrl = videoUrl; mediaType = 'video';
+    }
+    const result = store.addAnnouncement({ title, body, mediaUrl, mediaType });
     if (!result.ok) {return toast(result.reason);}
     await persist();
     await addAudit(store.getState().id, 'announcement_created', `Comunicado criado: ${title}`);
