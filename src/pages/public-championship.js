@@ -4,6 +4,7 @@ import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
 import { computeStandings, scorerRanking, cardRanking, athleteStats } from '../app/standings.js';
 import { publicAnnouncements, publicPolls, videoEmbedUrl } from '../app/communications.js';
+import { getChampionshipIdBySlug } from '../services/championships.js';
 
 function activeCategory(state) {
   return (state.categories || []).find((category) => category.id === state.activeCategoryId)
@@ -186,6 +187,22 @@ function publicPanel(category, state) {
   const scorerRows = scorers.map((scorer, index) => `<li><span>${index + 1}. ${esc(scorer.name)}</span><strong>${scorer.goals}</strong></li>`).join('');
   const setHeaders = showSets ? '<th>SP</th><th>SC</th><th>SS</th>' : '<th>GP</th><th>GC</th><th>SG</th>';
   return `<div class="public-board"><div class="public-hero"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:16px"><div><small>${esc(state.modalidade || 'CAMPEONATO').toUpperCase()}</small><h1>${esc(state.nome || category.nome || 'Campeonato')}</h1><p>${esc(state.subtitulo || 'Acompanhe classificação, jogos e resultados em tempo real.')}</p><span class="tag">${esc(state.modelo || state.formato || 'liga')}</span></div><div class="actions"><button class="btn ghost" type="button" data-copy-public-link>Compartilhar</button><button class="btn ghost" type="button" data-enable-notifications>Notificar placares</button></div></div></div><div class="public-stats"><div><strong>${standings.length}</strong><span>equipes</span></div><div><strong>${matches.length}</strong><span>jogos</span></div><div><strong>${results.length}</strong><span>resultados</span></div></div><div class="public-grid"><section class="card"><div class="row"><h2>Classificação</h2><span class="muted">${esc(activePhase(category).nome || 'Fase atual')}</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Equipe</th><th>PTS</th><th>J</th><th>V</th>${setHeaders}<th>DISC</th></tr></thead><tbody>${rows || '<tr><td colspan="7">Nenhuma equipe cadastrada.</td></tr>'}</tbody></table></div></section><section class="card"><h2>Próximos jogos</h2>${games(upcoming) || '<p class="muted">Nenhum jogo programado.</p>'}</section><section class="card"><h2>Últimos resultados</h2>${games(results) || '<p class="muted">Nenhum resultado publicado.</p>'}</section><section class="card"><h2>Artilharia</h2><ul class="public-list">${scorerRows || '<li class="muted">Nenhum gol registrado.</li>'}</ul></section></div></div>`;
+}
+
+export async function renderPublicChampionshipBySlug(root, slug) {
+  root.__publicUnsubscribe?.();
+  root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><div class="card">Carregando campeonato...</div></main></div>`;
+  root.querySelector('[data-back]').onclick = () => navigate('/');
+  try {
+    const id = await getChampionshipIdBySlug(slug);
+    if (!id) {
+      root.querySelector('main').innerHTML = '<div class="card"><h2>Campeonato não encontrado</h2></div>';
+      return;
+    }
+    await renderPublicChampionship(root, id);
+  } catch (error) {
+    root.querySelector('main').innerHTML = `<div class="card"><h2>Não foi possível carregar o campeonato</h2><p class="muted">${esc(error?.message || 'Tente novamente em instantes.')}</p></div>`;
+  }
 }
 
 export async function renderPublicChampionship(root, id) {

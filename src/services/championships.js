@@ -55,8 +55,28 @@ export function subscribeChampionship(id, cb) {
 export async function saveChampionship(value) {
   const batch = writeBatch(db);
   batch.set(doc(privateCollection, value.id), payload(value));
-  batch.set(doc(publicCollection, value.id), { ownerUid: payload(value).ownerUid, nome: value.nome || 'Campeonato', formato: value.formato || 'liga', status: value.status || 'rascunho', updated: Date.now(), data: JSON.stringify(publicState(value)) });
+  batch.set(doc(publicCollection, value.id), { ownerUid: payload(value).ownerUid, nome: value.nome || 'Campeonato', formato: value.formato || 'liga', status: value.status || 'rascunho', publicSlug: value.publicSlug || '', updated: Date.now(), data: JSON.stringify(publicState(value)) });
   await batch.commit();
+}
+
+// A custom /c/<slug> URL must resolve to exactly one championship. publicSlug is a top-level
+// field (not buried in the JSON blob) so it's queryable — excludeId lets the owning
+// championship keep re-saving its own slug without tripping over itself.
+export async function checkSlugAvailable(slug, excludeId) {
+  if (!slug) {return true;}
+  const snapshot = await getDocs(query(publicCollection, where('publicSlug', '==', slug)));
+  return snapshot.docs.every((item) => item.id === excludeId);
+}
+
+export async function getPublicSlug(id) {
+  const snapshot = await getDoc(doc(publicCollection, id));
+  return snapshot.exists() ? (snapshot.data().publicSlug || '') : '';
+}
+
+export async function getChampionshipIdBySlug(slug) {
+  if (!slug) {return null;}
+  const snapshot = await getDocs(query(publicCollection, where('publicSlug', '==', slug)));
+  return snapshot.empty ? null : snapshot.docs[0].id;
 }
 
 export async function removeChampionship(id) { const batch = writeBatch(db); batch.delete(doc(privateCollection, id)); batch.delete(doc(publicCollection, id)); await batch.commit(); }

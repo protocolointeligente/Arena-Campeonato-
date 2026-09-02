@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JSDOM } from 'jsdom';
-import { renderPublication, shareLink, createQrDataUrl } from './publication.js';
+
+const { getPublicSlug } = vi.hoisted(() => ({ getPublicSlug: vi.fn().mockResolvedValue('') }));
+vi.mock('../services/championships.js', () => ({ getPublicSlug }));
+
+const { renderPublication, shareLink, createQrDataUrl } = await import('./publication.js');
 
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', { url: 'https://arena.test' });
 global.window = dom.window;
@@ -11,19 +15,35 @@ describe('publication page', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="app"></div>';
     vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    getPublicSlug.mockReset().mockResolvedValue('');
   });
 
-  it('renders public and registration links for the championship', () => {
+  it('renders public and registration links for the championship', async () => {
     const root = document.querySelector('#app');
-    renderPublication(root, 'cup-1');
+    await renderPublication(root, 'cup-1');
     expect(root.querySelectorAll('[data-copy]')).toHaveLength(2);
     expect(root.querySelector('[data-copy="https://arena.test/publico/cup-1"]')).toBeTruthy();
     expect(root.querySelector('[data-copy="https://arena.test/inscrever/cup-1"]')).toBeTruthy();
   });
 
+  it('uses the custom /c/<slug> link instead of /publico/<id> once one is configured', async () => {
+    getPublicSlug.mockResolvedValue('copa-do-bairro-2026');
+    const root = document.querySelector('#app');
+    await renderPublication(root, 'cup-1');
+    expect(root.querySelector('[data-copy="https://arena.test/c/copa-do-bairro-2026"]')).toBeTruthy();
+    expect(root.querySelector('[data-copy="https://arena.test/publico/cup-1"]')).toBeFalsy();
+  });
+
+  it('falls back to the /publico/<id> link if the slug lookup fails', async () => {
+    getPublicSlug.mockRejectedValue(new Error('offline'));
+    const root = document.querySelector('#app');
+    await renderPublication(root, 'cup-1');
+    expect(root.querySelector('[data-copy="https://arena.test/publico/cup-1"]')).toBeTruthy();
+  });
+
   it('copies a link and confirms the action', async () => {
     const root = document.querySelector('#app');
-    renderPublication(root, 'cup-1');
+    await renderPublication(root, 'cup-1');
     const button = root.querySelector('[data-copy]');
     await button.onclick();
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://arena.test/publico/cup-1');
@@ -37,15 +57,15 @@ describe('publication page', () => {
     expect(share).toHaveBeenCalledWith({ title: 'Campeonato ARENA', url: 'https://arena.test/publico/cup-1' });
   });
 
-  it('offers a downloadable social card action', () => {
+  it('offers a downloadable social card action', async () => {
     const root = document.querySelector('#app');
-    renderPublication(root, 'cup-1');
+    await renderPublication(root, 'cup-1');
     expect(root.querySelector('[data-social-card]')).toBeTruthy();
   });
 
-  it('exposes QR actions for public and registration links', () => {
+  it('exposes QR actions for public and registration links', async () => {
     const root = document.querySelector('#app');
-    renderPublication(root, 'cup-1');
+    await renderPublication(root, 'cup-1');
     expect(root.querySelectorAll('[data-qr]')).toHaveLength(2);
     expect(createQrDataUrl).toBeTypeOf('function');
   });

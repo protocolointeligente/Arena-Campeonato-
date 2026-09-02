@@ -13,6 +13,7 @@ import { ensureBranding, setAccent, setBrandImage, clearBrandImage, addSponsor, 
 import { validate, schemas } from './schemas.js';
 import { toastError } from '../components/Toast.js';
 import { ensureCommunications, addAnnouncement, publishAnnouncement, addPoll, publishPoll, votePoll } from './communications.js';
+import { slugify, isValidSlug } from './format.js';
 
 // Local validated helper to avoid circular dependency
 function validated(schemaKey, data) {
@@ -567,6 +568,20 @@ export class ChampionshipStore {
       setAccent(draft, value);
     });
     return { ok: true };
+  }
+
+  // Availability against other championships must be checked by the caller first
+  // (services/championships.js's checkSlugAvailable) — this only validates format and writes.
+  setPublicSlug(value) {
+    const slug = slugify(value);
+    if (slug && !isValidSlug(slug)) {
+      toastError('URL personalizada inválida — use letras, números e hífen, 3 a 60 caracteres.');
+      return { ok: false };
+    }
+    this.produce((draft) => {
+      draft.publicSlug = slug;
+    });
+    return { ok: true, slug };
   }
 
   setBrandImage(kind, url) {

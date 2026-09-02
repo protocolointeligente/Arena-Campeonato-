@@ -1,5 +1,6 @@
 import { navigate } from '../app/router-v2.js';
 import QRCode from 'qrcode';
+import { getPublicSlug } from '../services/championships.js';
 
 export async function shareLink(url, title = 'Campeonato ARENA') {
   if (navigator.share) {
@@ -84,11 +85,14 @@ function actionFeedback(button, message) {
   setTimeout(() => { button.textContent = original; }, 1800);
 }
 
-export function renderPublication(root, id) {
-  const publicUrl = `${location.origin}/publico/${id}`;
-  const registrationUrl = `${location.origin}/inscrever/${id}`;
-  root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><small>PUBLICAÇÃO</small><h1>Compartilhe seu campeonato</h1><div class="grid"><div class="card"><h2>Portal público</h2><p class="muted">Envie este link para a torcida acompanhar resultados e equipes.</p><code class="pix-key">${publicUrl}</code><div class="actions"><button class="btn primary" data-copy="${publicUrl}">Copiar link</button><button class="btn" data-share="${publicUrl}">Compartilhar</button><button class="btn ghost" data-open="${publicUrl}">Abrir portal</button><button class="btn ghost" data-social-card>Baixar card</button><button class="btn ghost" data-qr="${publicUrl}" data-qr-name="portal">Baixar QR</button></div></div><div class="card"><h2>Inscrições</h2><p class="muted">Use este link para receber equipes e atletas.</p><code class="pix-key">${registrationUrl}</code><div class="actions"><button class="btn primary" data-copy="${registrationUrl}">Copiar link</button><button class="btn" data-share="${registrationUrl}">Compartilhar</button><button class="btn ghost" data-open="${registrationUrl}">Abrir formulário</button><button class="btn ghost" data-qr="${registrationUrl}" data-qr-name="inscricoes">Baixar QR</button></div></div></div></main></div>`;
+export async function renderPublication(root, id) {
+  root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><div class="card">Carregando...</div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate(`/campeonatos/${id}`);
+  let slug = '';
+  try { slug = await getPublicSlug(id); } catch { /* mantém o link padrão baseado no id */ }
+  const publicUrl = slug ? `${location.origin}/c/${slug}` : `${location.origin}/publico/${id}`;
+  const registrationUrl = `${location.origin}/inscrever/${id}`;
+  root.querySelector('main').innerHTML = `<small>PUBLICAÇÃO</small><h1>Compartilhe seu campeonato</h1><div class="grid"><div class="card"><h2>Portal público</h2><p class="muted">Envie este link para a torcida acompanhar resultados e equipes.${slug ? ' URL personalizada configurada em Configurações.' : ''}</p><code class="pix-key">${publicUrl}</code><div class="actions"><button class="btn primary" data-copy="${publicUrl}">Copiar link</button><button class="btn" data-share="${publicUrl}">Compartilhar</button><button class="btn ghost" data-open="${publicUrl}">Abrir portal</button><button class="btn ghost" data-social-card>Baixar card</button><button class="btn ghost" data-qr="${publicUrl}" data-qr-name="portal">Baixar QR</button></div></div><div class="card"><h2>Inscrições</h2><p class="muted">Use este link para receber equipes e atletas.</p><code class="pix-key">${registrationUrl}</code><div class="actions"><button class="btn primary" data-copy="${registrationUrl}">Copiar link</button><button class="btn" data-share="${registrationUrl}">Compartilhar</button><button class="btn ghost" data-open="${registrationUrl}">Abrir formulário</button><button class="btn ghost" data-qr="${registrationUrl}" data-qr-name="inscricoes">Baixar QR</button></div></div></div>`;
   root.querySelectorAll('[data-copy]').forEach((button) => button.onclick = async () => {
     try { await shareLink(button.dataset.copy); actionFeedback(button, 'Link copiado'); }
     catch { actionFeedback(button, 'Falha ao copiar'); }

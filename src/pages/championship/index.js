@@ -1,9 +1,10 @@
 import { navigate } from '../../app/router-v2.js';
-import { getChampionship, saveChampionship } from '../../services/championships.js';
+import { getChampionship, saveChampionship, checkSlugAvailable } from '../../services/championships.js';
 import { listRegistrations, updateRegistration } from '../../services/registrations.js';
 import { addAudit, listAudit } from '../../services/audit.js';
 import { downloadChampionshipPDF } from '../../services/pdf.js';
 import { esc, uid } from '../../app/utils.js';
+import { slugify } from '../../app/format.js';
 import { toast, modal, closeModal } from '../../app/ui.js';
 import { auth } from '../../services/firebase.js';
 import { isSuperadmin } from '../../services/superadmin.js';
@@ -290,6 +291,16 @@ function bindEvents(root, store, ctx) {
     if (statusEl) {store.updateStatus(statusEl.value);}
     const accentEl = root.querySelector('[data-accent]');
     if (accentEl) {store.setAccent(accentEl.value);}
+    const slugEl = root.querySelector('[data-public-slug]');
+    if (slugEl) {
+      const desired = slugify(slugEl.value);
+      if (desired && desired !== store.getState().publicSlug) {
+        const available = await checkSlugAvailable(desired, store.getState().id);
+        if (!available) {return toast('Essa URL já está em uso por outro campeonato. Escolha outra.');}
+      }
+      const slugResult = store.setPublicSlug(slugEl.value);
+      if (!slugResult.ok) {return;}
+    }
     await persist();
     await addAudit(store.getState().id, 'config_updated', 'Configurações atualizadas');
   };}

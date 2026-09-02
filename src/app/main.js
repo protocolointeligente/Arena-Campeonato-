@@ -12,7 +12,7 @@ import { renderHome } from '../pages/home.js';
 import { renderNewChampionship } from '../pages/new-championship.js';
 import { renderChampionship } from '../pages/championship/index.js';
 import { renderPlans } from '../pages/plans.js';
-import { renderPublicChampionship, renderTeamPortal } from '../pages/public-championship.js';
+import { renderPublicChampionship, renderTeamPortal, renderPublicChampionshipBySlug } from '../pages/public-championship.js';
 import { renderRegistration } from '../pages/registration.js';
 import { renderSuperadmin } from '../pages/superadmin.js';
 import { renderAuditCenter } from '../pages/audit-center.js';
@@ -79,6 +79,7 @@ route('/superadmin/planos', safeRoute(() => renderPlansBilling(mainContent)));
 route('/publicacao/:id', safeRoute((params) => renderPublication(mainContent, params.id)));
 route('/inscrever/:id', safeRoute((params) => renderRegistration(mainContent, params.id)));
 route('/publico/:id', safeRoute((params) => renderPublicChampionship(mainContent, params.id)));
+route('/c/:slug', safeRoute((params) => renderPublicChampionshipBySlug(mainContent, params.slug)));
 route('/equipe/:id/:teamId', safeRoute((params) => renderTeamPortal(mainContent, params.id, params.teamId)));
 route('/campeonatos/:id', safeRoute((params) => renderChampionship(mainContent, params.id)));
 route('/placar/:id/:matchId', safeRoute((params) => {
