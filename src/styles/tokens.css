@@ -39,7 +39,15 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); }
+/* viewport-fit=cover (index.html) estica o conteúdo até embaixo do notch/Dynamic Island —
+   sem esse padding, o topo da página fica na área que o iOS reserva pro próprio status bar,
+   e toques ali nunca chegam na página (é o SO que intercepta, não um bug de clique em si). */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 button { font: inherit; }
 
 /* Skip link */
