@@ -616,15 +616,22 @@ export class ChampionshipStore {
   }
 
   // Valor "atual" configurado pelo organizador — cada aprovação de inscrição congela esse valor
-  // em registration.feeAmount naquele momento (ver championship/index.js), então mudar aqui
-  // depois nunca afeta quem já foi aprovado. 0 = recurso desligado.
+  // (e o wallet vigente) em registration.feeAmount/feeWalletId naquele momento (ver
+  // championship/index.js), então mudar aqui depois nunca afeta quem já foi aprovado.
+  // 0 = recurso desligado.
   setRegistrationFee(fee, walletId) {
     const parsed = Number(fee);
     const amount = Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0;
+    const wallet = String(walletId || '').trim();
+    if (amount > 0 && !wallet) {
+      toastError('Informe o Wallet ID Asaas para cobrar taxa de inscrição.');
+      return { ok: false };
+    }
     this.produce((draft) => {
       draft.registrationFee = amount;
-      draft.asaasWalletId = String(walletId || '').trim();
+      draft.asaasWalletId = wallet;
     });
+    return { ok: true };
   }
 
   setBrandImage(kind, url) {

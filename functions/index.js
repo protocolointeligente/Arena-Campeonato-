@@ -277,11 +277,19 @@ exports.createRegistrationCheckout = onRequest({ secrets: [asaasAccessToken], co
   const champSnap = await db.collection('championships').doc(String(championshipId)).get();
   let champState = {};
   try { champState = JSON.parse(champSnap.data()?.data || '{}'); } catch { champState = {}; }
-  const walletId = champState.asaasWalletId;
+  // registration.feeWalletId é o wallet CONGELADO no momento da aprovação (mesma razão do
+  // feeAmount congelado) — só cai pro valor ao vivo do campeonato pra inscrições aprovadas
+  // antes desse campo existir.
+  const walletId = registration.feeWalletId || champState.asaasWalletId;
   if (!walletId) {res.status(409).send('Campeonato sem Wallet ID Asaas configurado.'); return;}
 
   const reference = JSON.stringify({ championshipId: String(championshipId), registrationId: String(registrationId) });
   const statusUrl = `https://arena-campeonatos.web.app/inscrever/${championshipId}/status/${registrationId}`;
+  // successUrl leva um marcador (?pago=1) só pra dizer à página de status "acabei de voltar de
+  // um checkout bem-sucedido" — o feeStatus real só vira 'paid' quando o webhook confirma, o
+  // que pode demorar alguns segundos/minutos. Sem o marcador, a página mostraria o botão de
+  // pagar de novo nesse intervalo e o time podia pagar duas vezes.
+  const successUrl = `${statusUrl}?pago=1`;
 
   let checkoutUrl;
   try {
@@ -295,7 +303,7 @@ exports.createRegistrationCheckout = onRequest({ secrets: [asaasAccessToken], co
         billingTypes: ['CREDIT_CARD', 'PIX'],
         chargeTypes: ['DETACHED'],
         minutesToExpire: 60,
-        callback: { successUrl: statusUrl, cancelUrl: statusUrl, expiredUrl: statusUrl },
+        callback: { successUrl, cancelUrl: statusUrl, expiredUrl: statusUrl },
         items: [{ name: `Taxa de inscrição — ${registration.teamName || 'equipe'}`, description: 'Taxa de inscrição no campeonato', quantity: 1, value: amount }],
         split: [{ walletId: String(walletId), percentualValue: 92 }],
         externalReference: reference,

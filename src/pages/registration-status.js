@@ -6,9 +6,11 @@ import { toastError } from '../components/Toast.js';
 import { createRegistrationCheckout } from '../services/billing.js';
 import { registrationStatusLabel } from './championship/tabs/registrations.js';
 
-export function registrationStatusHTML({ championshipName, registration }) {
+export function registrationStatusHTML({ championshipName, registration, justPaid = false }) {
   const feeAmount = Number(registration.feeAmount || 0);
-  const showPay = registration.status === 'approved' && registration.feeStatus === 'pending' && feeAmount > 0;
+  const feePending = registration.status === 'approved' && registration.feeStatus === 'pending' && feeAmount > 0;
+  const showPay = feePending && !justPaid;
+  const processing = feePending && justPaid;
   const paid = registration.status === 'approved' && registration.feeStatus === 'paid';
   return `
     <div class="card" style="max-width:520px;margin:40px auto">
@@ -17,6 +19,7 @@ export function registrationStatusHTML({ championshipName, registration }) {
       <p><strong>${esc(registration.teamName || 'Equipe')}</strong></p>
       <p class="muted">Status: <strong>${registrationStatusLabel(registration.status)}</strong></p>
       ${paid ? `<p class="muted">✅ Pagamento confirmado — R$ ${feeAmount.toFixed(2)}</p>` : ''}
+      ${processing ? `<p class="muted">⏳ Pagamento em processamento — pode levar alguns minutos pra confirmar.</p>` : ''}
       ${showPay ? `<button class="btn primary" data-pay-fee style="margin-top:12px">Pagar inscrição (R$ ${feeAmount.toFixed(2)})</button>` : ''}
       <button class="btn ghost" style="margin-top:16px" data-back>← Voltar ao campeonato</button>
     </div>
@@ -36,8 +39,9 @@ export async function renderRegistrationStatus(root, championshipId, registratio
   }
   const championshipName = champSnap.exists() ? (champSnap.data().nome || 'Campeonato') : 'Campeonato';
   const registration = { id: regSnap.id, ...regSnap.data() };
+  const justPaid = new URLSearchParams(window.location.search).get('pago') === '1';
 
-  root.querySelector('main').innerHTML = registrationStatusHTML({ championshipName, registration });
+  root.querySelector('main').innerHTML = registrationStatusHTML({ championshipName, registration, justPaid });
   root.querySelector('[data-back]').onclick = () => navigate(`/publico/${championshipId}`);
   const payBtn = root.querySelector('[data-pay-fee]');
   if (payBtn) {

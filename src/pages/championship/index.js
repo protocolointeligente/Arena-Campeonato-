@@ -200,7 +200,8 @@ function bindEvents(root, store, ctx) {
     button.disabled = true;
     try {
       const fee = Number(store.getState().registrationFee) || 0;
-      const feeFields = fee > 0 ? { feeStatus: 'pending', feeAmount: fee } : {};
+      const wallet = store.getState().asaasWalletId || '';
+      const feeFields = fee > 0 ? { feeStatus: 'pending', feeAmount: fee, feeWalletId: wallet } : {};
       await updateRegistration(store.getState().id, button.dataset.approveRegistration, { status: 'approved', reviewedAt: Date.now(), reviewedBy: auth.currentUser?.uid || null, ...feeFields });
       const item = registrations.find((entry) => entry.id === button.dataset.approveRegistration);
       if (item) {item.status = 'approved'; Object.assign(item, feeFields);}
@@ -342,7 +343,10 @@ function bindEvents(root, store, ctx) {
     }
     const feeEl = root.querySelector('[data-registration-fee]');
     const walletEl = root.querySelector('[data-asaas-wallet-id]');
-    if (feeEl && walletEl) {store.setRegistrationFee(feeEl.value, walletEl.value);}
+    if (feeEl && walletEl) {
+      const feeResult = store.setRegistrationFee(feeEl.value, walletEl.value);
+      if (!feeResult.ok) {return;}
+    }
     await persist();
     await addAudit(store.getState().id, 'config_updated', 'Configurações atualizadas');
   };}

@@ -15,6 +15,7 @@ function parseSnapshot(snapshot) {
 function publicState(value) {
   const state = clone(value);
   delete state.collaborators; delete state.ownerEmail; delete state.ownerUid; delete state.billing; delete state._catLoaded;
+  delete state.asaasWalletId; // é o identificador da conta de pagamento do organizador — nunca deve ir pro doc público
   (state.categories || []).forEach((category) => (category.teams || []).forEach((team) => { delete team.registration; (team.roster || []).forEach((athlete) => delete athlete.foto); }));
   (state.teams || []).forEach((team) => { delete team.registration; (team.roster || []).forEach((athlete) => delete athlete.foto); });
   return state;
