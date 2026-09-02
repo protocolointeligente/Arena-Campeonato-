@@ -21,6 +21,9 @@ export function renderConfig(store) {
       <label class="muted">Cor principal<input type="color" data-accent value="${esc(state.branding.accent || '#2fcf6b')}"></label>
       <label class="muted" style="margin-top:12px;display:block">URL personalizada do portal público<input data-public-slug maxlength="60" placeholder="ex: copa-do-bairro-2026" value="${esc(state.publicSlug || '')}"></label>
       <p class="muted" style="font-size:12px;margin-top:4px">Se preenchido, o portal fica em ${esc(location.origin)}/c/&lt;url&gt; em vez do link padrão. Deixe em branco pra usar o link padrão.</p>
+      <label class="muted" style="margin-top:12px;display:block">Taxa de inscrição (R$)<input type="number" min="0" step="0.01" data-registration-fee value="${state.registrationFee || ''}"></label>
+      <label class="muted" style="margin-top:8px;display:block">Wallet ID Asaas<input data-asaas-wallet-id placeholder="ex: 22e49670-27e4-4e78-a924-000000000000" value="${esc(state.asaasWalletId || '')}"></label>
+      <p class="muted" style="font-size:12px;margin-top:4px">Encontre o Wallet ID no painel Asaas em Minha Conta → Integrações. Preencha os dois campos pra cobrar dos times ao aprovar cada inscrição (Arena fica com 8%); deixe em branco pra não cobrar nada.</p>
       <button class="btn primary" data-save-config>Salvar configurações</button>
       <button class="btn ghost" style="margin-top:8px" data-clear-results>↻ Zerar resultados</button>
       <button class="btn ghost" style="margin-top:8px" data-export-json>⬇ Baixar backup (.json)</button>

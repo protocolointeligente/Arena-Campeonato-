@@ -338,6 +338,9 @@ function bindEvents(root, store, ctx) {
       const slugResult = store.setPublicSlug(slugEl.value);
       if (!slugResult.ok) {return;}
     }
+    const feeEl = root.querySelector('[data-registration-fee]');
+    const walletEl = root.querySelector('[data-asaas-wallet-id]');
+    if (feeEl && walletEl) {store.setRegistrationFee(feeEl.value, walletEl.value);}
     await persist();
     await addAudit(store.getState().id, 'config_updated', 'Configurações atualizadas');
   };}
