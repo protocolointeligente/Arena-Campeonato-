@@ -336,7 +336,23 @@ exports.registrationFeeWebhook = onRequest({ secrets: [asaasWebhookToken], cors:
   const regRef = db.collection('championships').doc(normalized.reference.championshipId).collection('registrations').doc(normalized.reference.registrationId);
   await db.runTransaction(async (tx) => {
     const regSnap = await tx.get(regRef);
-    if (!regSnap.exists) {return;}
+    if (!regSnap.exists) {
+      // Inscrição sumiu entre o checkout e a confirmação do pagamento (ex.: organizador
+      // apagou) — grava o evento mesmo assim, pra não perder o rastro de um pagamento real
+      // recebido, mas não há onde marcar feeStatus.
+      tx.create(eventRef, { eventId: normalized.eventId, status: 'orphaned', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
+      console.warn(`registrationFeeWebhook: pagamento recebido pra inscrição inexistente ${normalized.reference.championshipId}/${normalized.reference.registrationId}`);
+      return;
+    }
+    if (regSnap.data().feeStatus === 'paid') {
+      // Dois pagamentos completados de verdade pra mesma inscrição (ex.: duas abas abertas
+      // gerando checkouts distintos) — cada um tem seu próprio eventId então passa no check de
+      // idempotência acima; este é o segundo gate, específico pra evitar sobrescrever
+      // silenciosamente um pagamento já processado.
+      tx.create(eventRef, { eventId: normalized.eventId, status: 'duplicate_paid', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
+      console.warn(`registrationFeeWebhook: segundo pagamento recebido pra inscrição já paga ${normalized.reference.championshipId}/${normalized.reference.registrationId}`);
+      return;
+    }
     tx.create(eventRef, { eventId: normalized.eventId, status: 'paid', receivedAt: admin.firestore.FieldValue.serverTimestamp() });
     tx.set(regRef, { feeStatus: 'paid', feePaidAt: Date.now() }, { merge: true });
   });
