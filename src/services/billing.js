@@ -32,4 +32,16 @@ export async function cancelSubscription() {
   return callBillingFunction('cancelSubscription', {});
 }
 
+// Sem autenticação — o time pagando a taxa de inscrição nunca fez login, só tem o id da
+// inscrição (recebido no protocolo de envio).
+export async function createRegistrationCheckout(championshipId, registrationId) {
+  const response = await fetch(`${FUNCTIONS_BASE}/createRegistrationCheckout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ championshipId, registrationId }),
+  });
+  if (!response.ok) {throw new Error(await response.text() || 'Não foi possível gerar o pagamento.');}
+  return response.json();
+}
+
 
