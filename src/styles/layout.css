@@ -153,6 +153,16 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; place-items: center; padding: 20px; z-index: 100; }
 .modal-overlay.open { display: grid; }
 
+.onboarding-card { grid-column: 1 / -1; max-width: 640px; margin: 0 auto; text-align: center; }
+.onboarding-card h2 { margin-top: 6px; }
+.onboarding-steps { list-style: none; margin: 20px 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 4px; }
+.onboarding-steps li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.onboarding-steps li:last-child { border-bottom: 0; }
+.onboarding-steps li > div { min-width: 0; }
+.onboarding-num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-alpha, rgba(22,156,75,.15)); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+.onboarding-steps strong { display: block; }
+.onboarding-steps p { margin: 2px 0 0; font-size: 13px; }
+
 .catbar { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding: 10px 0 2px; margin-top: 8px; }
 .catpill { border: 1px solid var(--line); background: var(--surface-muted); color: var(--muted); padding: 8px 12px; border-radius: 999px; white-space: nowrap; font-weight: 700; font-size: 13px; cursor: pointer; }
 .catpill:hover { border-color: var(--brand); color: var(--text); }
