@@ -1,16 +1,12 @@
 .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
 .logo { color: var(--text); text-decoration: none; font-weight: 900; letter-spacing: .12em; }
-.actions { display: flex; gap: 10px; align-items: center; }
-.row { display: flex; gap: 10px; align-items: center; }
-.btn { border: 1px solid var(--line); border-radius: 10px; padding: 11px 16px; background: var(--surface-muted); color: var(--text); cursor: pointer; }
-.btn.primary { background: var(--brand); border-color: var(--brand); color: white; }
-.btn.ghost { background: transparent; }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 50px; align-items: center; min-height: 600px; }
 .hero h1 { font-size: clamp(42px, 7vw, 78px); line-height: .95; letter-spacing: -.05em; margin: 16px 0; }
 .hero h1 em, h2 em { color: var(--brand); font-style: normal; }
 .hero p { color: var(--muted); font-size: 19px; line-height: 1.6; max-width: 600px; }
-.card { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 24px; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .section { padding: 80px 0; }
 .public-hero { padding: 28px 0 20px; }
@@ -51,10 +47,19 @@ footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted)
 .championship-tabs button { border:0; border-bottom:3px solid transparent; background:transparent; color:var(--muted); padding:12px 14px; cursor:pointer; white-space:nowrap; }
 .championship-tabs button.active { color:var(--championship-accent); border-bottom-color:var(--championship-accent); }
 .team-row,.game-row { display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+/* Número variável de itens à direita (tag, selo de pagamento, 0-2 botões) — flex com wrap
+   se encaixa melhor aqui do que o grid de colunas fixas do .team-row/.game-row. */
+.registration-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.registration-row > div:first-child { flex: 1 1 240px; }
+.registration-row > div:first-child p { margin: 2px 0 0; }
 .game-row { grid-template-columns:1fr 70px 24px 70px 1fr; }
 .ath-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
 .team-row input,.game-row input,.ath-row input,.row input,select,input[type=color] { border:1px solid var(--line); background:var(--surface-muted); color:var(--text); border-radius:8px; padding:10px; }
-.table-wrap { overflow:auto; } table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-size:12px; text-transform:uppercase; }
+.table-wrap { overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
+tbody tr:hover { background: var(--surface-muted); }
 label { display:block; margin:16px 0; } label input,label select { display:block; width:100%; margin-top:8px; }
 @media (max-width: 760px) { .hero, .grid { grid-template-columns: 1fr; } .hero { min-height: 0; padding: 50px 0; } }
 
@@ -137,9 +142,9 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .btn:hover:not(:disabled) { border-color: var(--brand); }
 .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--brand); border-color: var(--brand); color: white; }
-.btn-primary:hover:not(:disabled) { background: var(--brand-hover, #148a42); }
-.btn-ghost { background: transparent; }
+.btn-primary, .btn.primary { background: var(--brand); border-color: var(--brand); color: white; }
+.btn-primary:hover:not(:disabled), .btn.primary:hover:not(:disabled) { background: var(--brand-hover, #148a42); }
+.btn-ghost, .btn.ghost { background: transparent; }
 .btn-danger { background: var(--danger, #dc3545); border-color: var(--danger); color: white; }
 .btn-sm { padding: 7px 12px; font-size: 13px; }
 .btn-lg { padding: 14px 24px; font-size: 17px; }
@@ -148,7 +153,7 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Card */
-.card { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; overflow: hidden; }
+.card { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; overflow: hidden; padding: 24px; box-shadow: var(--shadow-sm); }
 .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
 .card-title { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
 .card-subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
