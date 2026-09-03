@@ -1,10 +1,13 @@
-import { COLLAB_ROLES, ensureCollaborators, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole } from '../../../app/collaborators.js';
+import { COLLAB_ROLES, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole } from '../../../app/collaborators.js';
 import { auth } from '../../../services/firebase.js';
 import { esc } from '../../../app/utils.ts';
 
 export function renderManagement(store, { superadmin }) {
+  // collaborators já vem garantido desde a construção do store (championship-store.js) —
+  // chamar ensureCollaborators aqui de novo faria 1 de 2 coisas erradas: mutar o state já
+  // congelado pelo immer direto (throw em dev), ou, se corrigido pra rodar num produce(),
+  // entrar em loop infinito (esse render roda de novo a cada notify() do próprio produce()).
   const state = store.getState();
-  ensureCollaborators(state);
   if (!superadmin && !isOwner(state, auth.currentUser) && !can(state, auth.currentUser, 'admin')) {
     return '<div class="card"><p class="muted">Sem permissão para gerenciar acessos.</p></div>';
   }

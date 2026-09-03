@@ -38,6 +38,8 @@ export class ChampionshipStore {
       ensureOps(draft);
       ensureCommunications(draft);
       ensureTeamMessages(draft);
+      ensureBranding(draft);
+      ensureCollaborators(draft);
     });
     this.listeners = new Set();
   }
@@ -57,6 +59,18 @@ export class ChampionshipStore {
 
   produce(fn) {
     this.state = produce(this.state, fn);
+    // Placar, cartões, bracket etc. são editados na cópia "root" (state.matches/bracket/...)
+    // pra todo o resto do app poder ler `state.matches` direto sem saber de fases — mas essa
+    // cópia só era salva de volta dentro da fase ativa em switchPhase/switchCategory. Qualquer
+    // edição sem trocar de fase/categoria no meio (o caso comum: só marcar placares numa
+    // sessão) nunca sincronizava, e o portal público (matchRows/publicStandings, que leem
+    // `phase.matches ||`) continuava mostrando o snapshot velho da fase — 0 a 0 pra sempre.
+    // 2º produce() separado, depois do `fn` já ter sido aplicado, pra não interferir no valor
+    // de retorno que vários métodos capturam de dentro do produce do chamador.
+    this.state = produce(this.state, (draft) => {
+      const category = this.getActiveCategory(draft);
+      saveRootIntoPhase(draft, activePhaseOf(category));
+    });
     this.notify();
     return this.state;
   }
@@ -635,6 +649,16 @@ export class ChampionshipStore {
     this.produce((draft) => {
       draft.registrationFee = amount;
       draft.asaasWalletId = wallet;
+    });
+    return { ok: true };
+  }
+
+  // cidade/estado alimentam o diretório público de campeonatos (busca por localidade) — estado
+  // fica em UF maiúscula pra casar com o <select> fixo de 27 opções e permitir filtro exato.
+  setLocation(cidade, estado) {
+    this.produce((draft) => {
+      draft.cidade = String(cidade || '').trim();
+      draft.estado = String(estado || '').trim().toUpperCase();
     });
     return { ok: true };
   }

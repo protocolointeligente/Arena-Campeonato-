@@ -1,6 +1,11 @@
 .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
 .logo { color: var(--text); text-decoration: none; font-weight: 900; letter-spacing: .12em; }
+/* Marca do app nas páginas internas (só texto "ARENA" antes) — mesmo ícone quadrado usado no
+   manifest da PWA, então a marca fica consistente entre o app e o ícone instalado. A landing
+   page já renderiza seu próprio <img>, por isso o seletor fica restrito ao .topbar genérico. */
+.topbar .logo { display: inline-flex; align-items: center; gap: 8px; }
+.topbar .logo::before { content: ''; width: 24px; height: 24px; background: url(/icons/icon-192.png) no-repeat center / contain; flex-shrink: 0; }
 .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 50px; align-items: center; min-height: 600px; }

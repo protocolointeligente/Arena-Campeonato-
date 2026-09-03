@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderLanding } from './landing.js';
 import { PLAN_DEFINITIONS } from '../app/plans.js';
 import { MODALITIES } from '../app/templates.js';
+import { icon } from '../app/icons.js';
 
 beforeEach(() => { document.body.innerHTML = '<div id="app"></div>'; });
 
@@ -118,6 +119,25 @@ describe('renderLanding — números e planos', () => {
     renderLanding(root);
     const headerCols = root.querySelectorAll('.plan-compare thead th');
     expect(headerCols.length).toBe(Object.keys(PLAN_DEFINITIONS).length + 1);
+  });
+
+  it('Organizador Profissional herda recursos de planos inferiores na tabela comparativa (sem discrepância)', () => {
+    // Regressão: cada linha checava plan.limits.features direto, que só lista o que o próprio
+    // plano ACRESCENTA (o resto vem resumido como texto "Tudo do X") — então todo recurso das
+    // camadas abaixo aparecia como "não incluso" no Profissional, mesmo sendo herdado.
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const headerCols = [...root.querySelectorAll('.plan-compare thead th')];
+    const profIndex = headerCols.findIndex((th) => th.textContent.includes('Organizador Profissional'));
+    expect(profIndex).toBeGreaterThan(0);
+    const xIconHTML = icon('x', 16);
+    const rows = [...root.querySelectorAll('.plan-compare tbody tr')];
+    const booleanRows = rows.filter((row) => row.querySelector('svg'));
+    expect(booleanRows.length).toBeGreaterThan(0);
+    booleanRows.forEach((row) => {
+      const cell = row.querySelectorAll('td')[profIndex - 1];
+      expect(cell.innerHTML).not.toBe(xIconHTML);
+    });
   });
 });
 

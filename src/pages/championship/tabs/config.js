@@ -1,13 +1,13 @@
-import { ensureBranding } from '../../../app/branding.js';
-import { ensureOps } from '../../../app/ops.js';
 import { CRIT_LABEL } from '../../../app/standings.js';
 import { esc } from '../../../app/utils.ts';
 import { icon } from '../../../app/icons.js';
 
 export function renderConfig(store) {
+  // branding e ops já vêm garantidos desde a construção do store (championship-store.js) —
+  // chamar ensureBranding/ensureOps aqui de novo faria 1 de 2 coisas erradas: mutar o state
+  // já congelado pelo immer direto (throw em dev), ou, se corrigido pra rodar num produce(),
+  // entrar em loop infinito (esse render roda de novo a cada notify() do próprio produce()).
   const state = store.getState();
-  ensureBranding(state);
-  ensureOps(state);
   const criterios = state.cfg?.criterios || ['P', 'V', 'SG', 'GP'];
   
   return `
@@ -20,6 +20,11 @@ export function renderConfig(store) {
         <option value="encerrado">Encerrado</option>
       </select></label>
       <label class="muted">Cor principal<input type="color" data-accent value="${esc(state.branding.accent || '#2fcf6b')}"></label>
+      <div class="row" style="flex-wrap:wrap;margin-top:12px">
+        <label class="muted" style="flex:1;min-width:160px">Cidade<input data-cidade placeholder="ex: Belo Horizonte" value="${esc(state.cidade || '')}"></label>
+        <label class="muted" style="width:120px">Estado${ufSelectHTML(state.estado)}</label>
+      </div>
+      <p class="muted" style="font-size:12px;margin-top:4px">Usados no diretório público de campeonatos (busca por localidade).</p>
       <label class="muted" style="margin-top:12px;display:block">URL personalizada do portal público<input data-public-slug maxlength="60" placeholder="ex: copa-do-bairro-2026" value="${esc(state.publicSlug || '')}"></label>
       <p class="muted" style="font-size:12px;margin-top:4px">Se preenchido, o portal fica em ${esc(location.origin)}/c/&lt;url&gt; em vez do link padrão. Deixe em branco pra usar o link padrão.</p>
       <label class="muted" style="margin-top:12px;display:block">Taxa de inscrição (R$)<input type="number" min="0" step="0.01" data-registration-fee value="${esc(state.registrationFee || '')}"></label>
@@ -83,6 +88,14 @@ export function renderConfig(store) {
       </div>
     </div>
   `;
+}
+
+// Mesma lista de UF usada no filtro do diretório público (src/pages/championships-directory.js)
+// — mantida como <select> em vez de texto livre pra garantir match exato no filtro por estado.
+export const UF_LIST = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+
+function ufSelectHTML(selected) {
+  return `<select data-estado><option value="">—</option>${UF_LIST.map((uf) => `<option value="${uf}" ${selected === uf ? 'selected' : ''}>${uf}</option>`).join('')}</select>`;
 }
 
 function brandingCardHTML(state) {

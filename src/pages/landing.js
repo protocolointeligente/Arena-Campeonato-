@@ -109,6 +109,20 @@ const HOW_IT_WORKS = [
 
 // Cada linha lê o dado real de PLAN_DEFINITIONS — nenhum limite é reescrito à mão aqui, então
 // a tabela nunca diverge do que os planos realmente oferecem.
+//
+// plan.limits.features só lista o que cada plano ACRESCENTA (ex.: Profissional lista só
+// "Embed HTML", "Suporte prioritário" etc., e resume o resto como texto "Tudo do Grandes").
+// Por isso as checagens abaixo usam RESOLVED_FEATURES (a lista acumulada resolvida), e não
+// plan.limits.features direto — senão todo recurso herdado de um plano inferior aparece como
+// "não incluso" nos planos maiores, inclusive no Organizador Profissional.
+const PLAN_ORDER = ['free', 'pequenos', 'intermediarios', 'grandes', 'profissional'];
+const RESOLVED_FEATURES = PLAN_ORDER.reduce((resolved, id, i) => {
+  const ownFeatures = PLAN_DEFINITIONS[id].limits.features.filter((f) => !/^Tudo do/i.test(f));
+  resolved[id] = [...(i > 0 ? resolved[PLAN_ORDER[i - 1]] : []), ...ownFeatures];
+  return resolved;
+}, {});
+const hasFeature = (id, pattern) => RESOLVED_FEATURES[id].some((f) => pattern.test(f));
+
 const COMPARE_ROWS = [
   ['Campeonatos', (p) => (p.limits.maxChampionships >= 999 ? 'Ilimitados' : p.limits.maxChampionships)],
   ['Times por campeonato', (p) => p.limits.maxTeams],
@@ -116,13 +130,13 @@ const COMPARE_ROWS = [
   ['Armazenamento', (p) => (p.limits.maxStorageMB >= 1000 ? `${p.limits.maxStorageMB / 1000} GB` : `${p.limits.maxStorageMB} MB`)],
   ['Súmula digital', () => true],
   ['Relatórios em PDF', () => true],
-  ['URL personalizada', (p) => p.limits.features.some((f) => /url personalizada/i.test(f))],
-  ['Sem anúncios', (p) => p.limits.features.some((f) => /sem anúncios/i.test(f))],
-  ['Branding personalizado', (p) => p.limits.features.some((f) => /branding/i.test(f))],
-  ['Patrocinadores', (p) => p.limits.features.some((f) => /patrocinadores/i.test(f))],
-  ['API de integração', (p) => p.limits.features.some((f) => /api de integração/i.test(f))],
-  ['Embed HTML', (p) => p.limits.features.some((f) => /embed html/i.test(f))],
-  ['Suporte prioritário', (p) => p.limits.features.some((f) => /suporte prioritário/i.test(f))],
+  ['URL personalizada', (p, id) => hasFeature(id, /url personalizada/i)],
+  ['Sem anúncios', (p, id) => hasFeature(id, /sem anúncios/i)],
+  ['Branding personalizado', (p, id) => hasFeature(id, /branding/i)],
+  ['Patrocinadores', (p, id) => hasFeature(id, /patrocinadores/i)],
+  ['API de integração', (p, id) => hasFeature(id, /api de integração/i)],
+  ['Embed HTML', (p, id) => hasFeature(id, /embed html/i)],
+  ['Suporte prioritário', (p, id) => hasFeature(id, /suporte prioritário/i)],
 ];
 
 const FAQ_ITEMS = [
@@ -161,11 +175,11 @@ function planCardHTML(id, plan) {
 }
 
 function compareTableHTML() {
-  const plans = Object.values(PLAN_DEFINITIONS);
-  const head = `<th scope="col">Recurso</th>${plans.map((p) => `<th scope="col">${esc(p.name)}</th>`).join('')}`;
+  const plans = Object.entries(PLAN_DEFINITIONS);
+  const head = `<th scope="col">Recurso</th>${plans.map(([, p]) => `<th scope="col">${esc(p.name)}</th>`).join('')}`;
   const body = COMPARE_ROWS.map(([label, getValue]) => {
-    const cells = plans.map((p) => {
-      const value = getValue(p);
+    const cells = plans.map(([id, p]) => {
+      const value = getValue(p, id);
       const cell = typeof value === 'boolean' ? icon(value ? 'checkCircle' : 'x', 16) : esc(String(value));
       return `<td>${cell}</td>`;
     }).join('');
@@ -191,13 +205,14 @@ export function renderLanding(root) {
   root.innerHTML = `<div class="landing">
     <header class="landing-nav" data-header>
       <div class="shell landing-nav-inner">
-        <a class="logo" href="/" data-link><img src="/brand/arena-icon.png" alt="" width="28" height="28">ARENA</a>
+        <a class="logo" href="/" data-link><img src="/icons/icon-192.png" alt="" width="28" height="28">ARENA</a>
         <nav class="landing-nav-links" aria-label="Seções da página">
           <a href="#recursos">Recursos</a>
           <a href="#modalidades">Modalidades</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#para-quem">Para quem</a>
           <a href="#planos">Planos</a>
+          <a href="/campeonatos" data-link>Campeonatos</a>
         </nav>
         <div class="landing-nav-actions">
           <button class="btn ghost icon-only" data-theme aria-label="Alternar tema">${icon('sun', 18)}</button>
@@ -212,6 +227,7 @@ export function renderLanding(root) {
             <a href="#como-funciona">Como funciona</a>
             <a href="#para-quem">Para quem</a>
             <a href="#planos">Planos</a>
+            <a href="/campeonatos" data-link>Campeonatos</a>
             <button class="btn ghost" data-route="/login">Entrar</button>
             <button class="btn primary" data-route="/register">CRIAR CAMPEONATO GRÁTIS</button>
           </div>

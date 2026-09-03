@@ -347,24 +347,38 @@ function bindEvents(root, store, ctx) {
   
   const saveConfig = root.querySelector('[data-save-config]');
   if (saveConfig) {saveConfig.onclick = async () => {
-    const statusEl = root.querySelector('[data-status]');
-    if (statusEl) {store.updateStatus(statusEl.value);}
-    const accentEl = root.querySelector('[data-accent]');
-    if (accentEl) {store.setAccent(accentEl.value);}
-    const slugEl = root.querySelector('[data-public-slug]');
-    if (slugEl) {
-      const desired = slugify(slugEl.value);
+    // Lê TODOS os campos do formulário antes de mutar qualquer coisa no store. Cada
+    // store.xxx() dispara produce() -> notify() -> o subscribe() lá em cima re-renderiza a
+    // aba inteira na hora — se um campo só fosse lido depois de outro já ter mutado, ele leria
+    // o valor do input recém-recriado (em branco / não editado) em vez do que a pessoa digitou,
+    // perdendo silenciosamente accent/slug/taxa sempre que status também mudasse no mesmo save.
+    const statusValue = root.querySelector('[data-status]')?.value;
+    const accentValue = root.querySelector('[data-accent]')?.value;
+    const cidadeValue = root.querySelector('[data-cidade]')?.value;
+    const estadoValue = root.querySelector('[data-estado]')?.value;
+    const slugValue = root.querySelector('[data-public-slug]')?.value;
+    const feeEl = root.querySelector('[data-registration-fee]');
+    const walletEl = root.querySelector('[data-asaas-wallet-id]');
+    const feeValue = feeEl?.value;
+    const walletValue = walletEl?.value;
+
+    if (slugValue !== undefined) {
+      const desired = slugify(slugValue);
       if (desired && desired !== store.getState().publicSlug) {
         const available = await checkSlugAvailable(desired, store.getState().id);
         if (!available) {return toast('Essa URL já está em uso por outro campeonato. Escolha outra.');}
       }
-      const slugResult = store.setPublicSlug(slugEl.value);
+    }
+
+    if (statusValue !== undefined) {store.updateStatus(statusValue);}
+    if (accentValue !== undefined) {store.setAccent(accentValue);}
+    if (cidadeValue !== undefined || estadoValue !== undefined) {store.setLocation(cidadeValue, estadoValue);}
+    if (slugValue !== undefined) {
+      const slugResult = store.setPublicSlug(slugValue);
       if (!slugResult.ok) {return;}
     }
-    const feeEl = root.querySelector('[data-registration-fee]');
-    const walletEl = root.querySelector('[data-asaas-wallet-id]');
     if (feeEl && walletEl) {
-      const feeResult = store.setRegistrationFee(feeEl.value, walletEl.value);
+      const feeResult = store.setRegistrationFee(feeValue, walletValue);
       if (!feeResult.ok) {return;}
     }
     await persist();

@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit as fsLimit, onSnapshot, orderBy, query, where, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import { clone } from '../app/utils.ts';
 
@@ -56,7 +56,7 @@ export function subscribeChampionship(id, cb) {
 export async function saveChampionship(value) {
   const batch = writeBatch(db);
   batch.set(doc(privateCollection, value.id), payload(value));
-  batch.set(doc(publicCollection, value.id), { ownerUid: payload(value).ownerUid, nome: value.nome || 'Campeonato', formato: value.formato || 'liga', status: value.status || 'rascunho', publicSlug: value.publicSlug || '', updated: Date.now(), data: JSON.stringify(publicState(value)) });
+  batch.set(doc(publicCollection, value.id), { ownerUid: payload(value).ownerUid, nome: value.nome || 'Campeonato', formato: value.formato || 'liga', modalidade: value.modalidade || '', status: value.status || 'rascunho', cidade: value.cidade || '', estado: value.estado || '', publicSlug: value.publicSlug || '', updated: Date.now(), data: JSON.stringify(publicState(value)) });
   await batch.commit();
 }
 
@@ -97,5 +97,18 @@ export async function getChampionshipIdBySlug(slug) {
 }
 
 export async function removeChampionship(id) { const batch = writeBatch(db); batch.delete(doc(privateCollection, id)); batch.delete(doc(publicCollection, id)); await batch.commit(); }
+
+// Diretório público (/campeonatos): busca só por `updated desc` (índice padrão, sem precisar
+// declarar índice composto) e deixa status/estado/cidade/nome/modalidade pro filtro em
+// championships-directory.js — suficiente na escala atual do app.
+// ponytail: se a coleção pública crescer a ponto do limit cortar campeonatos relevantes, troca
+// por paginação (startAfter) ou por um índice composto com where('status','in',...) no servidor.
+export async function listPublicDirectory() {
+  const snapshot = await getDocs(query(publicCollection, orderBy('updated', 'desc'), fsLimit(500)));
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return { id: docSnap.id, nome: data.nome, formato: data.formato, modalidade: data.modalidade || '', status: data.status, cidade: data.cidade || '', estado: data.estado || '', publicSlug: data.publicSlug || '', updated: data.updated || 0 };
+  });
+}
 
 
