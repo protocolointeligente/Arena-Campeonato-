@@ -58,6 +58,11 @@ const TAB_RENDERERS = {
   documentos: renderDocuments,
 };
 
+const TABS = [['overview','Visão geral','dashboard'],['categorias','Categorias','layers'],['fases','Fases','flag'],['jogos','Jogos','calendar'],['chave','Chaveamento','bracket'],['classif','Tabela','table'],['equipes','Equipes','users'],['artilharia','Artilharia','target'],['disciplina','Disciplina','shieldCheck'],['inscricoes','Inscrições','inbox'],['publicacao','Publicação','megaphone'],['historico','Histórico','clock'],['gerenciamento','Gerenciamento','sliders'],['config','Configurações','gear'],['documentos','Documentos','fileText']];
+// No celular a sidebar vira menu inferior fixo — só cabem poucos itens sem virar sopa de
+// ícones, então fixamos os 3 mais usados e o resto entra no "Mais" (abre um modal com a lista).
+const PRIMARY_MOBILE_TABS = ['overview', 'jogos', 'classif'];
+
 export async function renderChampionship(root, id) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section" role="main"><div class="card">Carregando campeonato...</div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate('/');
@@ -103,31 +108,44 @@ async function mount(root, initial) {
       </header>
       <div data-categorybar role="navigation" aria-label="Categorias do campeonato"></div>
       <nav class="championship-tabs" role="tablist" aria-label="Abas do campeonato">
-        ${[['overview','Visão geral','dashboard'],['categorias','Categorias','layers'],['fases','Fases','flag'],['jogos','Jogos','calendar'],['chave','Chaveamento','bracket'],['classif','Tabela','table'],['equipes','Equipes','users'],['artilharia','Artilharia','target'],['disciplina','Disciplina','shieldCheck'],['inscricoes','Inscrições','inbox'],['publicacao','Publicação','megaphone'],['historico','Histórico','clock'],['gerenciamento','Gerenciamento','sliders'],['config','Configurações','gear'],['documentos','Documentos','fileText']]
-          .map(([key,label,iconName]) => `<button role="tab" data-tab="${key}" aria-selected="false" tabindex="-1">${icon(iconName)}<span>${label}</span></button>`).join('')}
+        ${TABS.map(([key,label,iconName]) => `<button role="tab" data-tab="${key}" aria-selected="false" tabindex="-1">${icon(iconName)}<span>${label}</span></button>`).join('')}
+      </nav>
+      <nav class="championship-mobilenav" role="tablist" aria-label="Abas do campeonato">
+        ${TABS.filter(([key]) => PRIMARY_MOBILE_TABS.includes(key)).map(([key,label,iconName]) => `<button role="tab" data-tab="${key}" aria-selected="false" tabindex="-1">${icon(iconName)}<span>${label}</span></button>`).join('')}
+        <button type="button" data-more>${icon('moreHorizontal')}<span>Mais</span></button>
       </nav>
       <section role="tabpanel" data-content aria-live="polite"></section>
     </div>
   `;
-  
+
   const shell = root.querySelector('.championship-shell');
   const content = root.querySelector('[data-content]');
   const saveTag = root.querySelector('[data-save]');
-  
+
   root.querySelector('[data-back]').onclick = () => navigate('/');
-  
+
+  async function switchTab(key) {
+    tab = key;
+    if (tab === 'inscricoes') {
+      try { registrations = await listRegistrations(store.getState().id); } catch { registrations = []; }
+    }
+    if (tab === 'historico') {
+      try { auditRows = await listAudit(store.getState().id); } catch { auditRows = []; }
+    }
+    render();
+  }
+
   root.querySelectorAll('[data-tab]').forEach((button) => {
-    button.onclick = async () => {
-      tab = button.dataset.tab;
-      if (tab === 'inscricoes') {
-        try { registrations = await listRegistrations(store.getState().id); } catch { registrations = []; }
-      }
-      if (tab === 'historico') {
-        try { auditRows = await listAudit(store.getState().id); } catch { auditRows = []; }
-      }
-      render();
-    };
+    button.onclick = () => switchTab(button.dataset.tab);
   });
+
+  root.querySelector('[data-more]').onclick = () => {
+    const rest = TABS.filter(([key]) => !PRIMARY_MOBILE_TABS.includes(key));
+    modal(`<h3>Mais opções</h3><div class="more-menu">${rest.map(([key,label,iconName]) => `<button class="more-menu-item" data-tab="${key}">${icon(iconName)}<span>${label}</span></button>`).join('')}</div><div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn ghost" data-close-modal>Fechar</button></div>`);
+    const box = document.getElementById('modalBox');
+    box.querySelector('[data-close-modal]').onclick = () => closeModal();
+    box.querySelectorAll('[data-tab]').forEach((button) => button.onclick = () => { switchTab(button.dataset.tab); closeModal(); });
+  };
   
   async function persist() {
     if (!superadmin && !can(store.getState(), auth.currentUser, mutationPermission(tab))) {
@@ -136,7 +154,6 @@ async function mount(root, initial) {
     }
     saveTag.textContent = 'Salvando...';
     const state = store.persist();
-    state.updated = Date.now();
     try {
       await saveChampionship(state);
       saveTag.textContent = 'Salvo';
@@ -160,6 +177,7 @@ async function mount(root, initial) {
       button.setAttribute('aria-selected', isActive);
       button.tabIndex = isActive ? 0 : -1;
     });
+    root.querySelector('[data-more]').classList.toggle('active', !PRIMARY_MOBILE_TABS.includes(tab));
     root.querySelector('[data-categorybar]').innerHTML = renderCategoryBar(store.getState());
     content.innerHTML = TAB_RENDERERS[tab] ? TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement }) : '';
     content.setAttribute('aria-label', tab);
@@ -188,8 +206,9 @@ async function mount(root, initial) {
       button.setAttribute('aria-selected', isActive);
       button.tabIndex = isActive ? 0 : -1;
     });
+    root.querySelector('[data-more]').classList.toggle('active', !PRIMARY_MOBILE_TABS.includes(tab));
   });
-  
+
   render();
 }
 

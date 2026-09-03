@@ -62,6 +62,11 @@ export class ChampionshipStore {
   }
 
   persist() {
+    // `updated` tem que ser carimbado dentro de um produce — o state que sai daqui é o
+    // resultado congelado (Object.freeze) do último produce(), e o immer só desliga esse
+    // freeze em build de produção. Mutar direto (como antes) derrubava a página em `npm
+    // run dev` com "Cannot assign to read only property" a cada save.
+    this.produce((draft) => { draft.updated = Date.now(); });
     return this.state;
   }
 
