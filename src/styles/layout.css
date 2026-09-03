@@ -68,11 +68,27 @@ footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted)
 .championship-tabs button:hover { background: var(--surface-muted); color: var(--text); }
 .championship-tabs button.active { color: var(--championship-accent); background: var(--surface-muted); border-left-color: var(--championship-accent); font-weight: 600; }
 .championship-tabs button svg { flex-shrink: 0; }
+/* Menu inferior mobile: 3 abas fixas + "Mais". position:fixed ignora o padding de
+   safe-area do body, então repete o inset embutido no próprio padding-bottom. */
+.championship-mobilenav { display: none; }
+.more-menu { display: grid; gap: 2px; margin-top: 10px; max-height: 60vh; overflow-y: auto; }
+.more-menu-item { display: flex; align-items: center; gap: 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text); padding: 12px 10px; cursor: pointer; text-align: left; font-size: 15px; }
+.more-menu-item:hover { background: var(--surface-muted); }
 @media (max-width: 900px) {
-  .championship-shell { grid-template-columns: 1fr; grid-template-areas: "heading" "catbar" "tabs" "content"; }
-  .championship-tabs { flex-direction: row; overflow-x: auto; position: static; padding-right: 0; padding-bottom: 4px; border-right: 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
-  .championship-tabs button { border-left: 0; border-bottom: 3px solid transparent; border-radius: 0; }
-  .championship-tabs button.active { border-left-color: transparent; border-bottom-color: var(--championship-accent); background: transparent; }
+  .championship-shell { grid-template-columns: 1fr; grid-template-areas: "heading" "catbar" "content"; padding-bottom: 76px; }
+  .championship-tabs { display: none; }
+  .championship-mobilenav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    z-index: 5;
+  }
+  .championship-mobilenav button { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: transparent; color: var(--muted); padding: 6px 2px; cursor: pointer; font-size: 11px; border-radius: 8px; }
+  .championship-mobilenav button.active { color: var(--championship-accent); }
 }
 .team-row,.game-row { display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
 /* Número variável de itens à direita (tag, selo de pagamento, 0-2 botões) — flex com wrap
@@ -126,9 +142,12 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 .landing .cta-banner { background: linear-gradient(135deg, rgba(57, 255, 140, .12), rgba(255, 176, 32, .08)); border-color: rgba(57, 255, 140, .3); text-align: center; padding: 56px 40px; }
 .landing footer { border-top-color: rgba(255, 255, 255, .1); color: #7fa38d; }
 .landing .hero .actions { flex-wrap: wrap; }
-.landing .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.landing .chip { border: 1px solid rgba(255, 255, 255, .14); border-radius: 999px; padding: 7px 14px; font-size: 13px; color: #cdece0; background: rgba(255, 255, 255, .03); }
-.landing .chip-more { border-color: #39ff8c; color: #39ff8c; font-weight: 700; }
+.landing .sport-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 24px; }
+.landing .sport-chip { display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 14px; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #eafff1; background: rgba(255, 255, 255, .03); transition: transform .15s ease, border-color .15s ease; }
+.landing .sport-chip:hover { transform: translateY(-3px); border-color: #39ff8c; }
+.landing .sport-chip-icon { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; color: #39ff8c; background: linear-gradient(135deg, rgba(57, 255, 140, .18), rgba(255, 176, 32, .12)); }
+.landing .sport-chip-more { color: #39ff8c; border-color: rgba(57, 255, 140, .4); }
+.landing .sport-chip-more .sport-chip-icon { color: #ffb020; background: rgba(255, 176, 32, .14); }
 .landing .price-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; }
 .landing .price-card { padding: 20px; display: flex; flex-direction: column; gap: 6px; position: relative; }
 .landing .price-card h3 { margin: 0; font-size: 16px; }
@@ -145,6 +164,113 @@ label { display:block; margin:16px 0; } label input,label select { display:block
 }
 @keyframes landing-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(1.3); } }
 @media (prefers-reduced-motion: reduce) { .landing .live-dot { animation: none; } }
+
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Header sticky — some texto puro até o hero rolar pra trás dele (.is-scrolled, via
+   IntersectionObserver em landing.js), aí ganha fundo sólido pra não sumir sobre o conteúdo. */
+.landing-nav { position: sticky; top: 0; z-index: 20; transition: background .2s ease, border-color .2s ease; border-bottom: 1px solid transparent; }
+.landing-nav.is-scrolled { background: #04120acc; backdrop-filter: blur(10px); border-bottom-color: rgba(255, 255, 255, .1); }
+.landing-nav-inner { display: flex; align-items: center; gap: 28px; padding: 16px 0; }
+.landing-nav .logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.landing-nav .logo img { display: block; }
+.landing-nav-links { display: flex; gap: 24px; flex: 1; }
+.landing-nav-links a { color: #cdece0; text-decoration: none; font-size: 14px; font-weight: 600; }
+.landing-nav-links a:hover { color: #39ff8c; }
+.landing-nav-actions { display: flex; align-items: center; gap: 10px; }
+.landing-nav-mobile { display: none; margin-left: auto; }
+.landing-nav-mobile summary { list-style: none; cursor: pointer; color: #eafff1; padding: 8px; }
+.landing-nav-mobile summary::-webkit-details-marker { display: none; }
+.landing-nav-mobile-menu { position: absolute; inset-inline: 16px; top: 64px; display: flex; flex-direction: column; gap: 4px; background: #071a12; border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; padding: 12px; }
+.landing-nav-mobile-menu a { color: #cdece0; text-decoration: none; padding: 10px 8px; font-weight: 600; }
+.landing-nav-mobile-menu .btn { width: 100%; margin-top: 4px; }
+@media (max-width: 900px) {
+  .landing-nav-links, .landing-nav-actions { display: none; }
+  .landing-nav-mobile { display: block; }
+}
+
+/* Hero — screenshot real dentro de uma moldura de notebook em CSS (sem lib, sem foto de
+   estoque) com o card de placar ao vivo flutuando por cima, mesma composição produto+esporte
+   do spec, feita só com asset real. */
+.hero-sports { margin-top: 8px; font-size: 14px; }
+.hero-visual { position: relative; }
+.device-frame { border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .12); }
+.device-frame-notebook { background: #0c1c14; padding: 10px 10px 22px; }
+.device-frame-notebook::after { content: ''; display: block; width: 70px; height: 5px; margin: 10px auto 0; border-radius: 3px; background: rgba(255, 255, 255, .18); }
+.device-frame img { display: block; width: 100%; border-radius: 6px; }
+.landing .floating-score { position: absolute; right: -24px; bottom: -28px; max-width: 300px; }
+@media (max-width: 900px) { .landing .floating-score { position: static; margin-top: 16px; max-width: none; } }
+
+/* Problema x solução */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.compare-col { border: 1px solid rgba(255, 255, 255, .1); border-radius: 14px; padding: 24px; }
+.compare-col h3 { margin: 0 0 14px; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: #7fa38d; }
+.compare-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.compare-col li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.compare-problem { border-color: rgba(255, 90, 90, .25); }
+.compare-problem svg { color: #ff8080; flex-shrink: 0; }
+.compare-solution { border-color: rgba(57, 255, 140, .3); background: rgba(57, 255, 140, .04); }
+.compare-solution svg { color: #39ff8c; flex-shrink: 0; }
+@media (max-width: 760px) { .compare-grid { grid-template-columns: 1fr; } }
+
+.landing .feature-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; margin-bottom: 14px; display: block; }
+
+/* Formatos de competição — diagrama esquemático em CSS puro, sem imagem */
+.format-card { display: flex; flex-direction: column; gap: 12px; }
+.format-diagram { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.format-diagram-liga span { width: 14px; height: 14px; border-radius: 50%; background: #39ff8c; display: inline-block; }
+.format-diagram-grupos { gap: 6px; }
+.format-diagram-grupos span { flex: 1; text-align: center; padding: 8px 0; border-radius: 8px; background: rgba(57, 255, 140, .12); color: #39ff8c; font-weight: 800; }
+.format-diagram-mata, .format-diagram-ranking { color: #39ff8c; }
+.format-diagram-mata span { color: #cdece0; font-size: 12px; margin-right: 6px; }
+
+/* Como funciona — timeline numerada com linha de progresso; vira coluna no mobile */
+.timeline { list-style: none; margin: 32px 0 0; padding: 0; display: flex; gap: 18px; position: relative; }
+.timeline::before { content: ''; position: absolute; top: 17px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #39ff8c, rgba(57, 255, 140, .15)); }
+.timeline-step { position: relative; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.timeline-number { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #04120a; border: 2px solid #39ff8c; color: #39ff8c; font-weight: 800; font-family: 'Bebas Neue', Inter, sans-serif; z-index: 1; }
+.timeline-step h3 { margin: 0; font-size: 14px; }
+@media (max-width: 760px) {
+  .timeline { flex-direction: column; }
+  .timeline::before { top: 0; bottom: 0; left: 17px; right: auto; width: 2px; height: auto; background: linear-gradient(180deg, #39ff8c, rgba(57, 255, 140, .15)); }
+  .timeline-step { flex-direction: row; align-items: center; }
+}
+
+/* Números verificáveis */
+.stats-grid { grid-template-columns: repeat(4, 1fr); margin-bottom: 40px; }
+.stat-tile { text-align: center; padding: 20px 10px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 14px; }
+.stat-tile strong { display: block; font-family: 'Bebas Neue', Inter, sans-serif; font-size: 40px; color: #39ff8c; }
+.stat-tile span { font-size: 11px; letter-spacing: .06em; color: #7fa38d; }
+@media (max-width: 760px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+
+/* Comparativo de planos */
+.landing .plan-compare { margin-top: 28px; min-width: 640px; }
+.landing .plan-compare th, .landing .plan-compare td { text-align: center; }
+.landing .plan-compare th[scope="row"] { text-align: left; color: #cdece0; font-weight: 600; }
+.landing .plan-compare svg { display: block; margin: 0 auto; }
+
+/* FAQ — <details>/<summary> nativo, sem JS de accordion */
+.faq-list { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; }
+.faq-list details { border: 1px solid rgba(255, 255, 255, .1); border-radius: 12px; padding: 16px 18px; }
+.faq-list summary { cursor: pointer; font-weight: 700; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after { content: '+'; float: right; color: #39ff8c; font-size: 20px; }
+.faq-list details[open] summary::after { content: '–'; }
+.faq-list p { margin: 12px 0 0; }
+
+/* Footer institucional — 4 colunas de link + logo completo (emblema + wordmark) */
+.landing-footer { border-top: 1px solid rgba(255, 255, 255, .1); padding: 48px 0 28px; color: #7fa38d; }
+.landing-footer-top { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 24px; align-items: start; }
+.footer-logo { height: 64px; width: auto; }
+.footer-col h4 { color: #eafff1; font-size: 12px; letter-spacing: .08em; margin: 0 0 12px; }
+.footer-col a, .footer-col .btn-link { display: block; color: #7fa38d; text-decoration: none; font-size: 14px; margin-bottom: 8px; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-family: inherit; }
+.footer-col a:hover, .footer-col .btn-link:hover { color: #39ff8c; }
+.landing-footer-bottom { display: flex; justify-content: space-between; gap: 12px; margin-top: 36px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .08); font-size: 13px; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .landing-footer-top { grid-template-columns: 1fr 1fr; }
+  .footer-logo { grid-column: 1 / -1; }
+}
 
 #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(150%); background: var(--surface-muted); border: 1px solid var(--line); color: var(--text); padding: 12px 20px; border-radius: 10px; z-index: 200; transition: .35s; box-shadow: 0 8px 24px rgba(0,0,0,.18); font-weight: 600; }
 #toast.show { transform: translateX(-50%) translateY(0); }

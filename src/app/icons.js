@@ -52,6 +52,10 @@ const PATHS = {
   user: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',
   download: '<path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 18v1.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V18"/>',
   trash: '<path d="M4 7h16M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7M6 7l1 13a1.5 1.5 0 0 0 1.5 1.4h7a1.5 1.5 0 0 0 1.5-1.4l1-13"/><path d="M10 11v6M14 11v6"/>',
+  moreHorizontal: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+  basketball: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.7 5.7c2.8 2.8 2.8 9.8 0 12.6M18.3 5.7c-2.8 2.8-2.8 9.8 0 12.6"/>',
+  racket: '<circle cx="13.5" cy="9" r="6"/><path d="M13.5 5v8M10 6.3l7 5.4M17 6.3l-7 5.4"/><path d="M9.3 13.3 3 20"/>',
+  medal: '<path d="M8.5 3h7l-2.3 7.5h-2.4L8.5 3Z"/><circle cx="12" cy="15" r="5.5"/><path d="M12 12.3 13 15h-2l1 2.7"/>',
 };
 
 /**
