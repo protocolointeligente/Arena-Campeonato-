@@ -24,7 +24,7 @@ import { renderPublication } from '../pages/publication.js';
 import { renderScoreboardDisplay } from '../pages/scoreboard-display.js';
 import { renderDrawDisplay } from '../pages/draw-display.js';
 import { renderRegistrationStatus } from '../pages/registration-status.js';
-import { setUser } from './store.js';
+import { setUser, getAppState } from './store.js';
 import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoundary.js';
 import { getErrorLogger } from '../services/error-logger.js';
 
@@ -64,7 +64,7 @@ const safeRoute = (handler) => (params) => {
   }
 };
 
-route('/', safeRoute(() => renderLanding(mainContent)));
+route('/', safeRoute(() => (getAppState().user ? renderHome(mainContent) : renderLanding(mainContent))));
 route('/login', safeRoute(() => renderAuth(mainContent, 'login')));
 route('/register', safeRoute(() => renderAuth(mainContent, 'register')));
 route('/tutorial', safeRoute(() => renderTutorial(mainContent)));

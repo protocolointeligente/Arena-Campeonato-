@@ -1,9 +1,10 @@
 import { navigate } from '../app/router-v2.js';
 import { login, register } from '../services/firebase.js';
+import { setUser } from '../app/store.js';
 export function renderAuth(root, mode = 'login') {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><form class="card" style="max-width:520px;margin:auto"><small>ARENA</small><h1>${mode === 'register' ? 'Criar conta' : 'Entrar'}</h1><p class="muted">${mode === 'register' ? 'Crie seu acesso para começar a organizar campeonatos.' : 'Acesse seus campeonatos e continue de onde parou.'}</p><label class="muted">E-mail<input name="email" required style="display:block;width:100%;margin:8px 0 16px;padding:12px" type="email" placeholder="voce@email.com"></label><label class="muted">Senha<input name="password" required minlength="6" style="display:block;width:100%;margin:8px 0 16px;padding:12px" type="password" placeholder="mínimo 6 caracteres"></label><p class="muted" data-error></p><button class="btn primary" style="width:100%" type="submit">${mode === 'register' ? 'Criar conta' : 'Entrar'}</button></form></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate('/');
-  root.querySelector('form').onsubmit = async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); const error = root.querySelector('[data-error]'); try { if (mode === 'register') {await register(form.get('email'), form.get('password'));} else {await login(form.get('email'), form.get('password'));} } catch (cause) { error.textContent = cause?.message || 'Não foi possível concluir. Verifique os dados e tente novamente.'; } };
+  root.querySelector('form').onsubmit = async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); const error = root.querySelector('[data-error]'); try { const credential = mode === 'register' ? await register(form.get('email'), form.get('password')) : await login(form.get('email'), form.get('password')); setUser(credential.user); navigate('/'); } catch (cause) { error.textContent = cause?.message || 'Não foi possível concluir. Verifique os dados e tente novamente.'; } };
 }
 
 
