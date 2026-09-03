@@ -548,3 +548,12 @@ html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 .public-sponsors-grid a { display: flex; align-items: center; justify-content: center; height: 56px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-muted); }
 .public-sponsors-grid img { max-height: 40px; max-width: 140px; object-fit: contain; }
 .public-sponsors-grid span { font-size: 13px; color: var(--text); font-weight: 600; }
+
+/* Página /demo — reaproveita .gallery-grid/.gallery-thumb/.lightbox já definidos pra landing
+   (mesmo padrão de tema claro/escuro do resto do app interno, ao contrário da landing). */
+.demo-live-card { margin: 24px 0; padding: 28px; text-align: center; }
+.demo-live-card h2 { margin-top: 0; }
+.demo-tour-grid { margin-top: 20px; }
+.demo-tour-item p { font-size: 13px; margin-top: 8px; }
+@media (max-width: 760px) { .demo-tour-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .demo-tour-grid { grid-template-columns: 1fr; } }
