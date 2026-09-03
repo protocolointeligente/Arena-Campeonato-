@@ -244,6 +244,50 @@ html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 .stat-tile span { font-size: 11px; letter-spacing: .06em; color: #7fa38d; }
 @media (max-width: 760px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
 
+/* Placar eletrônico — seção premium de fundo mais escuro (dentro do próprio tema já escuro
+   da landing) com screenshot real dentro de uma moldura de "TV". */
+.section-dark { background: rgba(0, 0, 0, .35); border-radius: 24px; padding: 56px 40px; }
+.scoreboard-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; }
+.tag-pill { border: 1px solid rgba(57, 255, 140, .35); color: #39ff8c; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.device-frame-tv { max-width: 720px; margin: 0 auto; }
+.device-frame-tv img { aspect-ratio: 16 / 9; object-fit: cover; }
+
+/* Portal público */
+.portal-layout { display: grid; grid-template-columns: .8fr 1.2fr; gap: 32px; align-items: center; margin: 28px 0; }
+.check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.check-list li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.check-list svg { color: #39ff8c; flex-shrink: 0; }
+@media (max-width: 760px) { .portal-layout { grid-template-columns: 1fr; } }
+
+/* Comunicação */
+.comm-grid { grid-template-columns: repeat(4, 1fr); }
+.comm-card { text-align: center; }
+.comm-card .feature-icon { margin-inline: auto; }
+@media (max-width: 900px) { .comm-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Patrocinadores — mock ilustrativo (retângulos genéricos, nenhuma marca real) */
+.sponsor-mock { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; margin: 28px 0 16px; }
+.sponsor-slot { border: 1px dashed rgba(255, 255, 255, .25); border-radius: 12px; padding: 24px 10px; text-align: center; color: #7fa38d; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.sponsor-slot-master { background: rgba(57, 255, 140, .06); border-color: rgba(57, 255, 140, .3); color: #39ff8c; }
+@media (max-width: 760px) { .sponsor-mock { grid-template-columns: repeat(2, 1fr); } }
+
+/* Para quem é */
+.audience-grid { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .audience-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .audience-grid { grid-template-columns: 1fr; } }
+
+/* Galeria — miniaturas reais + lightbox <dialog> nativo (Esc/backdrop de graça) */
+.gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px; }
+.gallery-thumb { position: relative; padding: 0; border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; overflow: hidden; cursor: pointer; background: none; }
+.gallery-thumb img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; transition: transform .2s ease; }
+.gallery-thumb:hover img { transform: scale(1.04); }
+.gallery-thumb span { position: absolute; inset-inline: 0; bottom: 0; padding: 8px 10px; font-size: 12px; font-weight: 700; color: #eafff1; background: linear-gradient(0deg, rgba(0, 0, 0, .75), transparent); text-align: left; }
+@media (max-width: 760px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+.lightbox { border: 0; background: transparent; max-width: 90vw; max-height: 90vh; padding: 0; }
+.lightbox::backdrop { background: rgba(0, 0, 0, .8); }
+.lightbox img { max-width: 90vw; max-height: 85vh; display: block; border-radius: 8px; }
+.lightbox-close { position: absolute; top: -44px; right: 0; }
+
 /* Comparativo de planos */
 .landing .plan-compare { margin-top: 28px; min-width: 640px; }
 .landing .plan-compare th, .landing .plan-compare td { text-align: center; }

@@ -15,6 +15,7 @@ describe('renderLanding — header', () => {
     expect(nav.some((t) => /modalidades/i.test(t))).toBe(true);
     expect(nav.some((t) => /como funciona/i.test(t))).toBe(true);
     expect(nav.some((t) => /planos/i.test(t))).toBe(true);
+    expect(nav.some((t) => /para quem/i.test(t))).toBe(true);
     expect(root.querySelector('[data-route="/login"]')).not.toBeNull();
     expect(root.querySelector('.landing-nav [data-route="/register"]').textContent).toMatch(/CRIAR CAMPEONATO GRÁTIS/i);
   });
@@ -144,5 +145,69 @@ describe('renderLanding — footer e CTA final', () => {
     renderLanding(root);
     ['PRODUTO', 'CONTA', 'INSTITUCIONAL', 'SUPORTE'].forEach((col) => expect(root.textContent).toMatch(new RegExp(col)));
     expect(root.textContent).toMatch(/Competição ao seu alcance/i);
+  });
+});
+
+describe('renderLanding — placar eletrônico (fase 2)', () => {
+  it('mostra as 6 etiquetas do spec e o screenshot real do placar', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const section = root.querySelector('#placar');
+    expect(section).not.toBeNull();
+    ['AO VIVO', 'CRONÔMETRO', 'PLACAR', 'PERÍODO', 'EQUIPES', 'CONTROLE PELO ORGANIZADOR'].forEach((tag) => expect(section.textContent).toMatch(new RegExp(tag, 'i')));
+    expect(section.querySelector('img').getAttribute('src')).toBe('/landing/scoreboard.png');
+  });
+});
+
+describe('renderLanding — portal público (fase 2)', () => {
+  it('lista o que o portal mostra e tem CTA de demonstração', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const section = root.querySelector('#portal');
+    expect(section).not.toBeNull();
+    ['tabela', 'classificação', 'elenco', 'comunicados', 'patrocinadores', 'enquetes'].forEach((item) => expect(section.textContent.toLowerCase()).toMatch(item));
+    expect(section.querySelector('[data-route="/demo"]').textContent).toMatch(/Veja como o público acompanha/i);
+  });
+});
+
+describe('renderLanding — comunicação (fase 2)', () => {
+  it('tem os 4 cards do spec', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const section = root.querySelector('#comunicacao');
+    const titles = [...section.querySelectorAll('h3')].map((el) => el.textContent);
+    expect(titles).toEqual(['Comunicados', 'Mensagens para equipes', 'Enquetes', 'QR Code e links']);
+  });
+});
+
+describe('renderLanding — patrocinadores (fase 2)', () => {
+  it('explica o recurso sem usar nenhuma marca real como exemplo', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const section = root.querySelector('#patrocinadores');
+    expect(section).not.toBeNull();
+    expect(section.textContent).toMatch(/patrocinador/i);
+    expect(section.textContent).not.toMatch(/Nike|Adidas|Penalty|uhlsport|Gatorade|Kagiva|Coca-Cola/i);
+  });
+});
+
+describe('renderLanding — para quem é (fase 2)', () => {
+  it('tem os 8 públicos do spec', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const section = root.querySelector('#para-quem');
+    const cards = section.querySelectorAll('.audience-card');
+    expect(cards.length).toBe(8);
+  });
+});
+
+describe('renderLanding — galeria de screenshots (fase 2)', () => {
+  it('tem 6 miniaturas reais que abrem um lightbox nativo', () => {
+    const root = document.getElementById('app');
+    renderLanding(root);
+    const thumbs = root.querySelectorAll('[data-gallery-item]');
+    expect(thumbs.length).toBe(6);
+    [...thumbs].forEach((thumb) => expect(thumb.dataset.src).toMatch(/^\/landing\//));
+    expect(root.querySelector('dialog[data-lightbox]')).not.toBeNull();
   });
 });

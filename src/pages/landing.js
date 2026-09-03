@@ -61,6 +61,41 @@ const FORMATS = [
   ['Ranking', 'Classificação individual por pontuação ou tempo.', () => `<div class="format-diagram format-diagram-ranking">${icon('medal', 22)}<span>1º · 2º · 3º</span></div>`],
 ];
 
+const SCOREBOARD_TAGS = ['AO VIVO', 'CRONÔMETRO', 'PLACAR', 'PERÍODO / SET', 'EQUIPES', 'CONTROLE PELO ORGANIZADOR'];
+
+const PORTAL_ITEMS = ['Tabela', 'Classificação', 'Jogos', 'Resultados', 'Elenco/equipes', 'Informações', 'Comunicados', 'Patrocinadores', 'Enquetes'];
+
+const COMMS_CARDS = [
+  ['megaphone', 'Comunicados', 'Publique avisos para equipes e torcida.'],
+  ['inbox', 'Mensagens para equipes', 'Envie informações exclusivas para uma equipe.'],
+  ['clipboard', 'Enquetes', 'Crie perguntas para participantes e público.'],
+  ['link', 'QR Code e links', 'Compartilhe acessos rapidamente.'],
+];
+
+// Sem foto real de cada público (nenhum banco de imagens disponível) e sem depoimento —
+// mesmo ícone SVG usado no resto da página, um por card.
+const AUDIENCES = [
+  ['trophy', 'Organizadores de campeonatos', 'Quem organiza copas e ligas amadoras sem perder tempo com planilha.'],
+  ['layers', 'Ligas esportivas', 'Vários campeonatos, categorias e temporadas numa gestão só.'],
+  ['flag', 'Prefeituras e secretarias de esporte', 'Jogos públicos organizados com transparência pro cidadão.'],
+  ['shield', 'Federações', 'Estrutura profissional pra competições oficiais.'],
+  ['users', 'Escolas e universidades', 'Jogos internos e interclasses sem dor de cabeça.'],
+  ['shieldCheck', 'Clubes e associações', 'Times e categorias de base, tudo num só lugar.'],
+  ['star', 'Empresas e eventos corporativos', 'Campeonatos internos que fortalecem times de verdade.'],
+  ['zap', 'Organizadores independentes', 'Comece sozinho, sem estrutura fixa e sem custo inicial.'],
+];
+
+// As mesmas 6 capturas reais usadas nos cards de funcionalidades, reaproveitadas como galeria
+// em vez de duplicar o pipeline de screenshot.
+const GALLERY = [
+  ['/landing/dashboard.png', 'Painel do organizador'],
+  ['/landing/registrations.png', 'Formulário de inscrição'],
+  ['/landing/standings.png', 'Tabela de classificação'],
+  ['/landing/sumula.png', 'Jogos e súmula digital'],
+  ['/landing/scoreboard.png', 'Placar eletrônico'],
+  ['/landing/public-portal.png', 'Portal público'],
+];
+
 const HOW_IT_WORKS = [
   'Crie sua conta',
   'Escolha a modalidade',
@@ -161,6 +196,7 @@ export function renderLanding(root) {
           <a href="#recursos">Recursos</a>
           <a href="#modalidades">Modalidades</a>
           <a href="#como-funciona">Como funciona</a>
+          <a href="#para-quem">Para quem</a>
           <a href="#planos">Planos</a>
         </nav>
         <div class="landing-nav-actions">
@@ -174,6 +210,7 @@ export function renderLanding(root) {
             <a href="#recursos">Recursos</a>
             <a href="#modalidades">Modalidades</a>
             <a href="#como-funciona">Como funciona</a>
+            <a href="#para-quem">Para quem</a>
             <a href="#planos">Planos</a>
             <button class="btn ghost" data-route="/login">Entrar</button>
             <button class="btn primary" data-route="/register">CRIAR CAMPEONATO GRÁTIS</button>
@@ -248,12 +285,71 @@ export function renderLanding(root) {
       </div>
     </section>
 
+    <section class="section section-dark" id="placar">
+      <small>PLACAR ELETRÔNICO</small>
+      <h2>Da tela do computador <em>direto pro telão.</em></h2>
+      <p class="muted">Controle o placar pelo Arena e projete a partida em uma segunda tela, TV ou telão.</p>
+      <div class="scoreboard-tags">${SCOREBOARD_TAGS.map((tag) => `<span class="tag-pill">${esc(tag)}</span>`).join('')}</div>
+      <div class="device-frame device-frame-tv"><img src="/landing/scoreboard.png" alt="Placar eletrônico ao vivo do Arena Campeonatos projetado em telão" loading="lazy"></div>
+    </section>
+
+    <section class="section" id="portal">
+      <small>PORTAL PÚBLICO</small>
+      <h2>Seu campeonato também ganha <em>uma casa na internet.</em></h2>
+      <div class="portal-layout">
+        <ul class="check-list">${PORTAL_ITEMS.map((item) => `<li>${icon('checkCircle', 16)}<span>${esc(item)}</span></li>`).join('')}</ul>
+        <div class="device-frame device-frame-notebook"><img src="/landing/public-portal.png" alt="Portal público de um campeonato no Arena Campeonatos" loading="lazy"></div>
+      </div>
+      <button class="btn ghost" data-route="/demo">Veja como o público acompanha</button>
+    </section>
+
+    <section class="section" id="comunicacao">
+      <small>COMUNICAÇÃO</small>
+      <h2>Informação certa <em>pra quem precisa.</em></h2>
+      <div class="grid comm-grid">
+        ${COMMS_CARDS.map(([iconName, title, text]) => `<article class="card comm-card"><div class="feature-icon">${icon(iconName, 26)}</div><h3>${esc(title)}</h3><p class="muted">${esc(text)}</p></article>`).join('')}
+      </div>
+    </section>
+
+    <section class="section" id="patrocinadores">
+      <small>PATROCINADORES</small>
+      <h2>Seu patrocinador <em>merece aparecer.</em></h2>
+      <p class="muted">Transforme a plataforma em mais um ativo comercial do campeonato.</p>
+      <div class="sponsor-mock">
+        <div class="sponsor-slot sponsor-slot-master">Patrocinador master</div>
+        <div class="sponsor-slot">Apoio</div>
+        <div class="sponsor-slot">Apoio</div>
+        <div class="sponsor-slot">Apoio</div>
+      </div>
+      <p class="no-card center">Mais valor pra quem apoia. Mais possibilidades de receita pra quem organiza.</p>
+    </section>
+
+    <section class="section" id="para-quem">
+      <small>PARA QUEM É</small>
+      <h2>O Arena é pra <em>quem organiza de verdade.</em></h2>
+      <div class="grid audience-grid">
+        ${AUDIENCES.map(([iconName, title, text]) => `<article class="card audience-card"><div class="feature-icon">${icon(iconName, 24)}</div><h3>${esc(title)}</h3><p class="muted">${esc(text)}</p></article>`).join('')}
+      </div>
+    </section>
+
     <section class="section" id="como-funciona">
       <small>COMO FUNCIONA</small>
       <h2>Seu campeonato online <em>em poucos minutos.</em></h2>
       <ol class="timeline">
         ${HOW_IT_WORKS.map((title, i) => `<li class="timeline-step"><span class="timeline-number">${String(i + 1).padStart(2, '0')}</span><h3>${esc(title)}</h3></li>`).join('')}
       </ol>
+    </section>
+
+    <section class="section" id="galeria">
+      <small>NA PRÁTICA</small>
+      <h2>O Arena funcionando <em>na prática.</em></h2>
+      <div class="gallery-grid">
+        ${GALLERY.map(([src, alt]) => `<button type="button" class="gallery-thumb" data-gallery-item data-src="${src}" data-alt="${esc(alt)}"><img src="${src}" alt="${esc(alt)}" loading="lazy"><span>${esc(alt)}</span></button>`).join('')}
+      </div>
+      <dialog class="lightbox" data-lightbox>
+        <button type="button" class="btn ghost lightbox-close" data-lightbox-close aria-label="Fechar">${icon('x', 18)}</button>
+        <img data-lightbox-img alt="">
+      </dialog>
     </section>
 
     <section class="section" id="planos">
@@ -311,4 +407,18 @@ function bind(root) {
   // isso por padrão.
   const mobileMenu = root.querySelector('.landing-nav-mobile');
   mobileMenu?.querySelectorAll('a, button').forEach((el) => el.addEventListener('click', () => { mobileMenu.open = false; }));
+
+  // Lightbox da galeria — <dialog> nativo (Esc e clique no backdrop já vêm de graça),
+  // um só reaproveitado pras 6 miniaturas em vez de um modal por imagem.
+  const lightbox = root.querySelector('[data-lightbox]');
+  const lightboxImg = root.querySelector('[data-lightbox-img]');
+  root.querySelectorAll('[data-gallery-item]').forEach((thumb) => {
+    thumb.onclick = () => {
+      lightboxImg.src = thumb.dataset.src;
+      lightboxImg.alt = thumb.dataset.alt;
+      lightbox.showModal();
+    };
+  });
+  root.querySelector('[data-lightbox-close]')?.addEventListener('click', () => lightbox.close());
+  lightbox?.addEventListener('click', (event) => { if (event.target === lightbox) {lightbox.close();} });
 }
