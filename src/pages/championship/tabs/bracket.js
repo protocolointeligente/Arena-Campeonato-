@@ -1,11 +1,12 @@
 import { roundLabel, tieRow } from '../../../app/bracket-utils.js';
+import { icon } from '../../../app/icons.js';
 
 export function renderBracket(store) {
   const state = store.getState();
   
   if (state.formato === 'grupos') {
     if (!(state.grupos || []).length) {return `<div class="card"><p class="muted">Gere os jogos da fase primeiro, na aba "Fases".</p></div>`;}
-    if (!state.bracket) {return `<div class="card"><p class="muted" style="margin-bottom:14px">Gere o mata-mata cruzando os classificados de cada grupo.</p><button class="btn primary" data-gen-cross>⚔️ Gerar mata-mata</button></div>`;}
+    if (!state.bracket) {return `<div class="card"><p class="muted" style="margin-bottom:14px">Gere o mata-mata cruzando os classificados de cada grupo.</p><button class="btn primary" data-gen-cross>${icon('bracket', 16)} Gerar mata-mata</button></div>`;}
   } else if (state.formato !== 'mata') {
     return `<div class="card"><p class="muted">Esta fase não usa chaveamento. Troque o formato da fase ativa para "Mata-Mata" na aba Fases.</p></div>`;
   }

@@ -5,6 +5,7 @@ import { esc } from '../app/utils.ts';
 import { computeStandings, scorerRanking, cardRanking, athleteStats } from '../app/standings.js';
 import { publicAnnouncements, publicPolls, videoEmbedUrl, teamMessagesFor } from '../app/communications.js';
 import { getChampionshipIdBySlug } from '../services/championships.js';
+import { cardChip } from '../app/icons.js';
 
 function activeCategory(state) {
   return (state.categories || []).find((category) => category.id === state.activeCategoryId)
@@ -110,7 +111,7 @@ export function disciplineRows(category, state) {
 function disciplinePanel(category, state) {
   const rows = disciplineRows(category, state);
   if (!rows.length) {return '';}
-  return `<section class="card public-discipline"><h2>Disciplina</h2><ul class="public-list">${rows.map((row, index) => `<li><span>${index + 1}. ${esc(row.name)}</span><strong>${row.y || 0}🟨 ${row.r || 0}🟥</strong></li>`).join('')}</ul></section>`;
+  return `<section class="card public-discipline"><h2>Disciplina</h2><ul class="public-list">${rows.map((row, index) => `<li><span>${index + 1}. ${esc(row.name)}</span><strong style="display:flex;align-items:center;gap:4px">${row.y || 0} ${cardChip('var(--warning)')} ${row.r || 0} ${cardChip('var(--danger)')}</strong></li>`).join('')}</ul></section>`;
 }
 
 function announcementMedia(item) {

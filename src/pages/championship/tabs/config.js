@@ -2,6 +2,7 @@ import { ensureBranding } from '../../../app/branding.js';
 import { ensureOps } from '../../../app/ops.js';
 import { CRIT_LABEL } from '../../../app/standings.js';
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 export function renderConfig(store) {
   const state = store.getState();
@@ -55,7 +56,7 @@ export function renderConfig(store) {
       <h2>Locais</h2>
       ${(state.venues || []).map((venue) => `
         <div class="team-row">
-          <span>📍</span>
+          <span>${icon('mapPin')}</span>
           <span>${esc(venue.name)}${venue.address ? ` <span class="muted">· ${esc(venue.address)}</span>` : ''}</span>
           <button class="btn ghost" data-remove-venue="${esc(venue.id)}">Remover</button>
         </div>
@@ -70,7 +71,7 @@ export function renderConfig(store) {
       <h2>Árbitros e mesários</h2>
       ${(state.officials || []).map((official) => `
         <div class="team-row">
-          <span>⚖️</span>
+          <span>${icon('whistle')}</span>
           <span>${esc(official.name)}${official.role ? ` <span class="muted">· ${esc(official.role)}</span>` : ''}</span>
           <button class="btn ghost" data-remove-official="${esc(official.id)}">Remover</button>
         </div>
@@ -110,7 +111,7 @@ function brandingCardHTML(state) {
       <h2>Patrocinadores</h2>
       ${(state.sponsors || []).map((sponsor) => `
         <div class="team-row">
-          ${sponsor.logo ? `<img class="miniphoto" src="${sponsor.logo}" style="width:28px;height:28px;border-radius:5px;object-fit:contain;background:var(--surface-muted)">` : '<span>🖼️</span>'}
+          ${sponsor.logo ? `<img class="miniphoto" src="${sponsor.logo}" style="width:28px;height:28px;border-radius:5px;object-fit:contain;background:var(--surface-muted)">` : `<span>${icon('image')}</span>`}
           <span>${esc(sponsor.name)}${sponsor.url ? ` <span class="muted">· ${esc(sponsor.url)}</span>` : ''}</span>
           <button class="btn ghost" data-remove-sponsor="${esc(sponsor.id)}">Remover</button>
         </div>

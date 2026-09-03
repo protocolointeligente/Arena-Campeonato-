@@ -39,13 +39,41 @@ footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted)
 .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:grid; place-items:center; padding:20px; z-index:10; }
 .modal-card { max-width:520px; width:100%; display:grid; gap:12px; }
 .pix-key { padding:14px; background:var(--surface-muted); border:1px solid var(--line); border-radius:8px; word-break:break-all; }
-.championship-shell { --championship-accent: var(--brand); }
-.championship-heading { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; padding:28px 0 12px; }
+/* Navegação lateral em vez do menu de abas horizontal — grid nomeado: cabeçalho e barra de
+   categoria ocupam a largura toda, sidebar de abas fica ao lado do conteúdo (não em cima). */
+.championship-shell {
+  --championship-accent: var(--brand);
+  display: grid;
+  grid-template-columns: 216px 1fr;
+  grid-template-areas: "heading heading" "catbar catbar" "tabs content";
+  column-gap: 32px;
+}
+.championship-heading { grid-area: heading; display:flex; justify-content:space-between; gap:20px; align-items:flex-start; padding:28px 0 12px; }
 .championship-heading h1 { margin:8px 0 4px; font-size:clamp(32px,5vw,54px); }
 .championship-heading small { display:block; color:var(--championship-accent); letter-spacing:.12em; margin-top:16px; }
-.championship-tabs { display:flex; gap:8px; overflow:auto; border-bottom:1px solid var(--line); margin-bottom:24px; }
-.championship-tabs button { border:0; border-bottom:3px solid transparent; background:transparent; color:var(--muted); padding:12px 14px; cursor:pointer; white-space:nowrap; }
-.championship-tabs button.active { color:var(--championship-accent); border-bottom-color:var(--championship-accent); }
+[data-categorybar] { grid-area: catbar; }
+[data-content] { grid-area: content; min-width: 0; }
+.championship-tabs {
+  grid-area: tabs;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+.championship-tabs button { display: flex; align-items: center; gap: 10px; border: 0; border-left: 3px solid transparent; border-radius: 0 8px 8px 0; background: transparent; color: var(--muted); padding: 10px 12px; cursor: pointer; white-space: nowrap; text-align: left; font-size: 14px; transition: background .15s ease, color .15s ease; }
+.championship-tabs button:hover { background: var(--surface-muted); color: var(--text); }
+.championship-tabs button.active { color: var(--championship-accent); background: var(--surface-muted); border-left-color: var(--championship-accent); font-weight: 600; }
+.championship-tabs button svg { flex-shrink: 0; }
+@media (max-width: 900px) {
+  .championship-shell { grid-template-columns: 1fr; grid-template-areas: "heading" "catbar" "tabs" "content"; }
+  .championship-tabs { flex-direction: row; overflow-x: auto; position: static; padding-right: 0; padding-bottom: 4px; border-right: 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .championship-tabs button { border-left: 0; border-bottom: 3px solid transparent; border-radius: 0; }
+  .championship-tabs button.active { border-left-color: transparent; border-bottom-color: var(--championship-accent); background: transparent; }
+}
 .team-row,.game-row { display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
 /* Número variável de itens à direita (tag, selo de pagamento, 0-2 botões) — flex com wrap
    se encaixa melhor aqui do que o grid de colunas fixas do .team-row/.game-row. */

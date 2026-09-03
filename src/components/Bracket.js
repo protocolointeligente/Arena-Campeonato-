@@ -1,4 +1,5 @@
 import { esc } from '../app/utils.ts';
+import { icon } from '../app/icons.js';
 
 export function Bracket({ rounds = [], thirdPlace = null, teamNames = {}, onScoreChange, onSumula, showPenalties = true, className = '', readOnly = false }) {
   const container = document.createElement('div');
@@ -136,7 +137,7 @@ function createTieElement(tie, teamNames, { onScoreChange, onSumula, showPenalti
   
   // Súmula button
   if (onSumula && canScore) {
-    html += `<button type="button" class="btn btn-ghost btn-sm bracket-sumula" data-sumula="${tie.id}" aria-label="Abrir súmula">📋</button>`;
+    html += `<button type="button" class="btn btn-ghost btn-sm bracket-sumula" data-sumula="${tie.id}" aria-label="Abrir súmula">${icon('clipboard', 16)}</button>`;
   }
   
   tieEl.innerHTML = html;
@@ -173,7 +174,7 @@ export function BracketMatch({ home, away, score, winner, onScoreChange, onSumul
     </div>
     <div class="match-score">
       ${score ? `<span>${esc(score.home)} × ${esc(score.away)}</span>` : '<span class="muted">— × —</span>'}
-      ${onSumula ? `<button type="button" class="btn btn-ghost btn-sm" aria-label="Súmula">📋</button>` : ''}
+      ${onSumula ? `<button type="button" class="btn btn-ghost btn-sm" aria-label="Súmula">${icon('clipboard', 16)}</button>` : ''}
     </div>
   `;
   

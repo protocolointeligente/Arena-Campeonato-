@@ -1,5 +1,6 @@
 import { metaLine, matchMeta, scheduleConflicts } from '../../../app/matches.js';
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 export function renderGames(store) {
   const state = store.getState();
@@ -37,9 +38,9 @@ export function renderGames(store) {
             <div class="row" style="flex-wrap:wrap;padding:2px 0 12px">
               <span class="muted" style="flex:1">${statusText ? `<strong>${statusText}</strong> · ` : ''}${esc(line)}</span>
               <button class="btn ghost sm" data-match-ops="${esc(match.id)}">Dados da partida</button>
-              <button class="btn ghost sm" data-sumula="match:${esc(match.id)}">📋 Súmula</button>
-              <button class="btn ghost sm" data-open-scoreboard="match:${esc(match.id)}">🖥️ Placar</button>
-              ${match.hg != null && match.ag != null ? `<button class="btn ghost sm" data-result-card="match:${esc(match.id)}">🖼️ Card do resultado</button>` : ''}
+              <button class="btn ghost sm" data-sumula="match:${esc(match.id)}">${icon('clipboard', 16)} Súmula</button>
+              <button class="btn ghost sm" data-open-scoreboard="match:${esc(match.id)}">${icon('monitor', 16)} Placar</button>
+              ${match.hg != null && match.ag != null ? `<button class="btn ghost sm" data-result-card="match:${esc(match.id)}">${icon('image', 16)} Card do resultado</button>` : ''}
             </div>
           `;
         }).join('') || '<p class="muted">Nenhum jogo gerado ainda.</p>'}

@@ -5,6 +5,7 @@ import { esc } from '../app/utils.ts';
 import { toastError } from '../components/Toast.js';
 import { createRegistrationCheckout } from '../services/billing.js';
 import { registrationStatusLabel } from './championship/tabs/registrations.js';
+import { icon } from '../app/icons.js';
 
 export function registrationStatusHTML({ championshipName, registration, justPaid = false }) {
   const feeAmount = Number(registration.feeAmount || 0);
@@ -18,8 +19,8 @@ export function registrationStatusHTML({ championshipName, registration, justPai
       <h1>${esc(championshipName)}</h1>
       <p><strong>${esc(registration.teamName || 'Equipe')}</strong></p>
       <p class="muted">Status: <strong>${registrationStatusLabel(registration.status)}</strong></p>
-      ${paid ? `<p class="muted">✅ Pagamento confirmado — R$ ${feeAmount.toFixed(2)}</p>` : ''}
-      ${processing ? `<p class="muted">⏳ Pagamento em processamento — pode levar alguns minutos pra confirmar.</p>` : ''}
+      ${paid ? `<p class="muted" style="display:flex;align-items:center;gap:8px;color:var(--success)">${icon('checkCircle', 18)} Pagamento confirmado — R$ ${feeAmount.toFixed(2)}</p>` : ''}
+      ${processing ? `<p class="muted" style="display:flex;align-items:center;gap:8px">${icon('hourglass', 18)} Pagamento em processamento — pode levar alguns minutos pra confirmar.</p>` : ''}
       ${showPay ? `<button class="btn primary" data-pay-fee style="margin-top:12px">Pagar inscrição (R$ ${feeAmount.toFixed(2)})</button>` : ''}
       <button class="btn ghost" style="margin-top:16px" data-back>← Voltar ao campeonato</button>
     </div>

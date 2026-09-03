@@ -1,4 +1,5 @@
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 function mostVotedPoll(state) {
   let best = null;
@@ -18,7 +19,7 @@ function engagementCardHTML(state, engagement) {
   const poll = mostVotedPoll(state);
   return `
     <div class="card" style="margin-top:16px">
-      <h2>📈 Engajamento do portal público</h2>
+      <h2 style="display:flex;align-items:center;gap:8px">${icon('trendingUp', 22)} Engajamento do portal público</h2>
       <div class="grid" style="margin-top:12px">
         <div><small>VISUALIZAÇÕES</small><h2>${engagement.views}</h2><p class="muted">acessos ao portal público</p></div>
         <div><small>PATROCINADOR MAIS CLICADO</small><h2>${topSponsorName ? esc(topSponsorName) : '—'}</h2><p class="muted">${topSponsor ? `${topSponsor[1]} clique(s)` : sponsors.length ? 'ainda sem cliques' : 'nenhum patrocinador cadastrado'}</p></div>

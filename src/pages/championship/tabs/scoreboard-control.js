@@ -1,10 +1,11 @@
 import { scoreboardPayload, formatClock } from '../../../app/scoreboard.js';
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 export function renderScoreboardControl(store, ctx) {
   const target = ctx.placarTarget;
   if (!target) {
-    return `<div class="card"><p class="muted">Selecione uma partida nas abas "Jogos" ou "Chaveamento" e clique em "🖥️ Placar" para operar o placar eletrônico.</p></div>`;
+    return `<div class="card"><p class="muted">Selecione uma partida nas abas "Jogos" ou "Chaveamento" e clique em "Placar" para operar o placar eletrônico.</p></div>`;
   }
   const payload = scoreboardPayload(store.getState(), target.id, target.kind);
   if (!payload) {
@@ -21,7 +22,7 @@ export function renderScoreboardControl(store, ctx) {
     <div class="card scoreboard-control">
       <div class="actions" style="justify-content:space-between">
         <h2>Placar ao vivo</h2>
-        <button class="btn primary" data-scoreboard-open="${ref()}">🖥️ Abrir tela de projeção</button>
+        <button class="btn primary" data-scoreboard-open="${ref()}">${icon('monitor', 16)} Abrir tela de projeção</button>
       </div>
       <div class="scoreboard-score-row">
         <div>

@@ -1,4 +1,5 @@
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 export function renderPublication(store) {
   const state = store.getState();
@@ -30,7 +31,7 @@ export function renderPublication(store) {
         <label class="muted" style="flex:1;min-width:200px">Ou link de vídeo (YouTube/Vimeo)<input type="url" data-announcement-video placeholder="https://youtube.com/watch?v=..." style="display:block;margin-top:4px;width:100%"></label>
       </div>
       <button class="btn primary" data-add-announcement style="margin-top:8px">Publicar comunicado</button>
-      <div style="margin-top:16px">${announcements.map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong>${item.mediaType === 'photo' ? ' 📷' : item.mediaType === 'video' ? ' 🎬' : ''}<br><span class="muted">${esc(item.body)}</span></span><span class="tag">${item.status === 'published' ? 'Publicado' : 'Rascunho'}</span><button class="btn ghost sm" data-toggle-announcement="${esc(item.id)}">${item.status === 'published' ? 'Retirar' : 'Publicar'}</button></div>`).join('') || '<p class="muted">Nenhum comunicado criado.</p>'}</div>
+      <div style="margin-top:16px">${announcements.map((item) => `<div class="team-row"><span style="flex:1"><strong>${esc(item.title)}</strong>${item.mediaType === 'photo' ? ` ${icon('camera', 14)}` : item.mediaType === 'video' ? ` ${icon('video', 14)}` : ''}<br><span class="muted">${esc(item.body)}</span></span><span class="tag">${item.status === 'published' ? 'Publicado' : 'Rascunho'}</span><button class="btn ghost sm" data-toggle-announcement="${esc(item.id)}">${item.status === 'published' ? 'Retirar' : 'Publicar'}</button></div>`).join('') || '<p class="muted">Nenhum comunicado criado.</p>'}</div>
     </div>
     <div class="card" style="margin-top:16px">
       <h2>Mensagem direta pra uma equipe</h2>

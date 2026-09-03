@@ -1,4 +1,5 @@
 import { esc } from '../app/utils.ts';
+import { icon } from '../app/icons.js';
 
 export class ErrorBoundary {
   constructor({ fallback, onError, logErrors = true } = {}) {
@@ -13,7 +14,7 @@ export class ErrorBoundary {
     return `
       <div class="error-boundary" role="alert">
         <div class="error-content">
-          <div class="error-icon" aria-hidden="true">⚠️</div>
+          <div class="error-icon" aria-hidden="true">${icon('alertTriangle', 40)}</div>
           <h2>Algo deu errado</h2>
           <p class="error-message">${esc(error?.message || 'Erro desconhecido')}</p>
           ${error?.stack ? `<details class="error-stack"><summary>Detalhes técnicos</summary><pre>${esc(error.stack)}</pre></details>` : ''}
@@ -144,7 +145,7 @@ export function ErrorDisplay({ message, type = 'error', dismissible = true, onDi
   
   el.innerHTML = `
     <span class="error-display-icon" aria-hidden="true">
-      ${type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}
+      ${type === 'error' ? icon('xCircle', 20) : type === 'warning' ? icon('alertTriangle', 20) : icon('info', 20)}
     </span>
     <span class="error-display-message">${esc(message)}</span>
     ${dismissible ? '<button type="button" class="error-display-close" aria-label="Fechar">✕</button>' : ''}

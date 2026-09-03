@@ -1,15 +1,16 @@
 import { esc } from './utils.ts';
 import { STAFF_ROLES } from './ops.js';
+import { icon } from './icons.js';
 
 export function rosterModalHTML(team) {
   team.roster = team.roster || [];
   const rosterHTML = team.roster.map((athlete) => `
     <div class="ath-row">
-      <span>${athlete.foto ? `<img class="miniphoto" src="${athlete.foto}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">` : '👤'}</span>
+      <span>${athlete.foto ? `<img class="miniphoto" src="${athlete.foto}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">` : icon('user')}</span>
       <input data-athlete-name="${esc(athlete.id)}" value="${esc(athlete.nome)}" placeholder="Nome" style="flex:1">
       <input type="number" data-athlete-numero="${esc(athlete.id)}" value="${esc(athlete.numero || '')}" placeholder="Nº" style="width:70px">
-      <button class="btn ghost sm" data-athlete-photo="${esc(athlete.id)}">📷</button>
-      <button class="btn ghost sm" data-athlete-remove="${esc(athlete.id)}">🗑️</button>
+      <button class="btn ghost sm" data-athlete-photo="${esc(athlete.id)}">${icon('camera', 16)}</button>
+      <button class="btn ghost sm" data-athlete-remove="${esc(athlete.id)}">${icon('trash', 16)}</button>
     </div>
   `).join('') || '<p class="muted">Nenhum atleta cadastrado.</p>';
   

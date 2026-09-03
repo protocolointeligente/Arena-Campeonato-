@@ -3,14 +3,15 @@ import { toggleTheme } from '../app/theme.js';
 import { esc } from '../app/utils.ts';
 import { PLAN_DEFINITIONS } from '../app/plans.js';
 import { MODALITIES } from '../app/templates.js';
+import { icon } from '../app/icons.js';
 
 const features = [
-  ['🏆', 'Tabelas automáticas', 'Classificação, saldo de gols e desempates sem trabalho manual.'],
-  ['🖥️', 'Placar eletrônico', 'Placar digital ao vivo, projetável em telão — igual estádio de verdade.'],
-  ['📝', 'Inscrições por link', 'Receba equipes e atletas em um formulário simples.'],
-  ['⚽', 'Jogos e súmulas', 'Registre placares, eventos, cartões e resultados.'],
-  ['🌐', 'Portal público', 'Tabela, artilharia e resultados que sua torcida acompanha em tempo real.'],
-  ['🎯', 'Patrocinadores', 'Exponha marcas no portal público e mostre quem apoia o campeonato.'],
+  ['table', 'Tabelas automáticas', 'Classificação, saldo de gols e desempates sem trabalho manual.'],
+  ['monitor', 'Placar eletrônico', 'Placar digital ao vivo, projetável em telão — igual estádio de verdade.'],
+  ['link', 'Inscrições por link', 'Receba equipes e atletas em um formulário simples.'],
+  ['ball', 'Jogos e súmulas', 'Registre placares, eventos, cartões e resultados.'],
+  ['globe', 'Portal público', 'Tabela, artilharia e resultados que sua torcida acompanha em tempo real.'],
+  ['star', 'Patrocinadores', 'Exponha marcas no portal público e mostre quem apoia o campeonato.'],
 ];
 
 const modalityPreview = Object.values(MODALITIES).slice(0, 12).map((m) => m.label);
@@ -45,7 +46,7 @@ export function renderLanding(root) {
 
     <section class="section modalities"><small>PRA QUALQUER MODALIDADE</small><h2>Do campo à quadra.<br><em>Você escolhe o esporte.</em></h2><div class="chip-row">${modalityPreview.map((label) => `<span class="chip">${esc(label)}</span>`).join('')}<span class="chip chip-more">+${modalityTotal - modalityPreview.length} modalidades</span></div></section>
 
-    <section class="section"><small>TUDO QUE VOCÊ PRECISA</small><h2>Menos planilha.<br><em>Mais campeonato.</em></h2><div class="grid feature-grid">${features.map(([icon, title, text]) => `<article class="card feature-card"><div class="feature-icon">${icon}</div><h3>${title}</h3><p class="muted">${text}</p></article>`).join('')}</div></section>
+    <section class="section"><small>TUDO QUE VOCÊ PRECISA</small><h2>Menos planilha.<br><em>Mais campeonato.</em></h2><div class="grid feature-grid">${features.map(([iconName, title, text]) => `<article class="card feature-card"><div class="feature-icon">${icon(iconName, 26)}</div><h3>${title}</h3><p class="muted">${text}</p></article>`).join('')}</div></section>
 
     <section class="section"><small>PREÇOS</small><h2>Um plano <em>pro tamanho do seu campeonato.</em></h2><div class="grid price-grid">${Object.entries(PLAN_DEFINITIONS).map(([id, plan]) => planCardHTML(id, plan)).join('')}</div></section>
 

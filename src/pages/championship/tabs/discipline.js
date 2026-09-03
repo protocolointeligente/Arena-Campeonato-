@@ -1,6 +1,7 @@
 import { cardRanking, suspensionInfo } from '../../../app/standings.js';
 import { teamNameById } from '../../../app/roster.js';
 import { esc } from '../../../app/utils.ts';
+import { icon, cardChip } from '../../../app/icons.js';
 
 export function renderDiscipline(store) {
   const state = store.getState();
@@ -14,10 +15,10 @@ export function renderDiscipline(store) {
   
   const suspHTML = suspended.length ? `
     <div class="card" style="margin-bottom:16px;border-color:var(--accent)">
-      <h2>⛔ Suspensos para o próximo jogo</h2>
+      <h2 style="display:flex;align-items:center;gap:8px;color:var(--danger)">${icon('ban', 22)} Suspensos para o próximo jogo</h2>
       ${suspended.map((x) => `
         <div class="team-row">
-          <span>⛔</span>
+          <span style="color:var(--danger)">${icon('ban')}</span>
           <span><strong>${esc(x.athlete.nome)}</strong> <span class="muted">— ${esc(x.team.nome)}</span></span>
           <span class="muted">${esc(x.info.reason)}</span>
         </div>
@@ -30,7 +31,7 @@ export function renderDiscipline(store) {
       <h2>Cartões</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Atleta</th><th>Equipe</th><th>🟨</th><th>🟥</th></tr></thead>
+          <thead><tr><th>#</th><th>Atleta</th><th>Equipe</th><th>${cardChip('var(--warning)')}</th><th>${cardChip('var(--danger)')}</th></tr></thead>
           <tbody>
             ${rows.map((r, i) => `
               <tr>

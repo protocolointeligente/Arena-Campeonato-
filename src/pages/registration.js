@@ -6,6 +6,7 @@ import { esc } from '../app/utils.ts';
 import { toastError } from '../components/Toast.js';
 import { registrationLimiter, getClientFingerprint } from '../app/rate-limiter.js';
 import { Captcha, CAPTCHA_TYPES } from '../components/Captcha.js';
+import { icon } from '../app/icons.js';
 
 export function validateRegistrationForm({ teamName, responsible, phone, email, consent, athletes, rosterMode = 'team', maxRoster = 50 }) {
   if (!teamName || !responsible || !phone || !consent) {return 'Preencha todos os campos obrigatórios.';}
@@ -157,7 +158,7 @@ export async function renderRegistration(root, id) {
       
       form.innerHTML = `
         <div style="text-align:center;padding:24px">
-          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <div style="color:var(--success);margin-bottom:16px">${icon('checkCircle', 48)}</div>
           <h2>Inscrição enviada</h2>
           <p class="muted">O organizador analisará os dados antes de confirmar a participação.</p>
           <p>Protocolo: <strong data-protocol>${esc(registration.id)}</strong> <button class="btn ghost sm" type="button" data-copy-protocol>Copiar</button></p>

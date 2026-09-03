@@ -1,5 +1,6 @@
 import { PHASE_FORMATS, progressionSummary } from '../../../app/phases.js';
 import { esc } from '../../../app/utils.ts';
+import { icon } from '../../../app/icons.js';
 
 function teamName(state, id) {
   return (state.teams || []).find((team) => team.id === id)?.nome || '—';
@@ -18,7 +19,7 @@ function drawCardHTML(state) {
   const draw = state.draw;
   return `
     <div class="card" style="margin-top:16px">
-      <h2>🎲 Sorteio ao vivo</h2>
+      <h2 style="display:flex;align-items:center;gap:8px">${icon('shuffle', 22)} Sorteio ao vivo</h2>
       <p class="muted">Sorteia a distribuição das equipes ao vivo, com tela de projeção pro telão.</p>
       ${!draw ? `
         <button class="btn primary" data-start-draw>Iniciar sorteio</button>
@@ -26,11 +27,11 @@ function drawCardHTML(state) {
         <div class="row" style="justify-content:space-between;flex-wrap:wrap;margin-top:8px">
           <span class="muted">${draw.pool.length} equipe(s) restante(s)</span>
           <div class="row" style="gap:8px">
-            <button class="btn ghost" data-open-draw>🖥️ Abrir tela de projeção</button>
+            <button class="btn ghost" data-open-draw>${icon('monitor', 16)} Abrir tela de projeção</button>
             <button class="btn ghost" data-cancel-draw>Cancelar</button>
           </div>
         </div>
-        ${!draw.done ? '<button class="btn primary" style="margin-top:10px" data-reveal-draw>🎲 Revelar próxima equipe</button>' : '<button class="btn primary" style="margin-top:10px" data-apply-draw>✅ Aplicar e gerar fase</button>'}
+        ${!draw.done ? `<button class="btn primary" style="margin-top:10px" data-reveal-draw>${icon('shuffle', 16)} Revelar próxima equipe</button>` : `<button class="btn primary" style="margin-top:10px" data-apply-draw>${icon('checkCircle', 16)} Aplicar e gerar fase</button>`}
         <div style="margin-top:14px">${drawProgressHTML(state)}</div>
       `}
     </div>

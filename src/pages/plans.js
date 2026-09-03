@@ -3,6 +3,7 @@ import { toast, modal, closeModal } from '../app/ui.js';
 import { auth } from '../services/firebase.js';
 import { PLAN_DEFINITIONS, planCardsHTML, planLimitText, currentPlan, choosePlan } from '../app/plans.js';
 import { createCheckout, cancelSubscription, getBilling } from '../services/billing.js';
+import { icon } from '../app/icons.js';
 
 export async function renderPlans(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section"><div data-body><div class="card">Carregando planos...</div></div></main></div>`;
@@ -24,7 +25,12 @@ export async function renderPlans(root) {
     const planId = currentPlan(billingDoc);
     const plan = PLAN_DEFINITIONS[planId] || PLAN_DEFINITIONS.free;
     const billing = billingDoc?.billing || {};
-    const statusLabel = billing.status === 'active' ? '✅ Ativo' : billing.status === 'past_due' ? '⚠️ Pagamento atrasado' : billing.status === 'pending' ? '⏳ Pagamento pendente' : billing.status === 'cancelled' ? '🚫 Cancelada (ativa até o fim do período)' : '⚪ Grátis';
+    const statusChip = (iconName, color, text) => `<span style="display:inline-flex;align-items:center;gap:5px;color:${color}">${icon(iconName, 16)} ${text}</span>`;
+    const statusLabel = billing.status === 'active' ? statusChip('checkCircle', 'var(--success)', 'Ativo')
+      : billing.status === 'past_due' ? statusChip('alertTriangle', 'var(--warning)', 'Pagamento atrasado')
+      : billing.status === 'pending' ? statusChip('hourglass', 'var(--muted)', 'Pagamento pendente')
+      : billing.status === 'cancelled' ? statusChip('xCircle', 'var(--danger)', 'Cancelada (ativa até o fim do período)')
+      : statusChip('circle', 'var(--muted)', 'Grátis');
     const pendingResume = billing.status === 'pending' && billing.checkoutUrl
       ? `<p class="muted" style="margin-top:8px"><a href="${billing.checkoutUrl}" target="_blank" rel="noopener">Finalizar pagamento pendente →</a></p>`
       : '';

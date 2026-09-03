@@ -2,6 +2,7 @@ import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
 import { auth } from '../services/firebase.js';
 import { listAudit } from '../services/audit.js';
+import { icon } from '../app/icons.js';
 
 export async function renderPrivacyCenter(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Superadmin</button></header><main class="section"><div class="hero" style="padding-top:10px;min-height:0"><h1>CENTRAL DE <em>PRIVACIDADE</em></h1><p class="muted">LGPD · Direitos do titular · Aviso de privacidade.</p></div><div data-body><div class="card">Carregando privacidade...</div></div></main></div>`;
@@ -22,7 +23,7 @@ export async function renderPrivacyCenter(root) {
   }
 
   function renderBody() {
-    body.innerHTML = `<div class="grid" style="margin-top:18px"><div class="card"><small>SEU EMAIL</small><h2 style="font-size:16px">${esc(user.email)}</h2></div><div class="card"><small>UID</small><h2 style="font-size:16px">${esc(user.uid)}</h2></div><div class="card"><small>PROVEDOR</small><h2 style="font-size:16px">${esc(user.providerData?.[0]?.providerId || 'password')}</h2></div></div><div class="card" style="margin-top:16px"><h2>Ações LGPD</h2><div class="row" style="flex-wrap:wrap;gap:8px;margin-top:12px"><button class="btn primary" data-export-data>📥 Exportar meus dados</button><button class="btn ghost" data-request-deletion>🗑️ Solicitar exclusão</button></div></div><div class="card" style="margin-top:16px"><h2>Aviso de Privacidade</h2>${privacyNoticeHTML()}</div>`;
+    body.innerHTML = `<div class="grid" style="margin-top:18px"><div class="card"><small>SEU EMAIL</small><h2 style="font-size:16px">${esc(user.email)}</h2></div><div class="card"><small>UID</small><h2 style="font-size:16px">${esc(user.uid)}</h2></div><div class="card"><small>PROVEDOR</small><h2 style="font-size:16px">${esc(user.providerData?.[0]?.providerId || 'password')}</h2></div></div><div class="card" style="margin-top:16px"><h2>Ações LGPD</h2><div class="row" style="flex-wrap:wrap;gap:8px;margin-top:12px"><button class="btn primary" data-export-data>${icon('download', 16)} Exportar meus dados</button><button class="btn ghost" data-request-deletion>${icon('trash', 16)} Solicitar exclusão</button></div></div><div class="card" style="margin-top:16px"><h2>Aviso de Privacidade</h2>${privacyNoticeHTML()}</div>`;
     body.querySelector('[data-export-data]').onclick = async () => {
       try {
         const logs = await listAudit();
