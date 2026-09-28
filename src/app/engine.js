@@ -158,7 +158,7 @@ export function findTie(bracket, id) {
   return null;
 }
 
-export function generateActivePhase(state) {
+export function generateActivePhase(state, { shuffle = false } = {}) {
   // root state is the source of truth for the active phase's formato/cfg — mutating phase.formato/cfg
   // without syncing root first is silently discarded by saveRootIntoActive below.
   saveRootIntoActive(state);
@@ -199,6 +199,12 @@ export function generateActivePhase(state) {
     phase.matches = buildGxg(idxsA, idxsB, turnos);
   } else if (phase.formato === 'mata') {
     const ids = participants.map((ti) => teams[ti].id);
+    if (shuffle) {
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+    }
     phase.bracket = makeBracketFromOrdered(ids, phase.cfg);
   } else {
     return { ok: false, reason: 'Formato de fase desconhecido.' };

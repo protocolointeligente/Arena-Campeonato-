@@ -1,7 +1,7 @@
 import { produce } from 'immer';
 import { uid } from './utils.ts';
 import { ensureCategories, activeCategory, loadCategoryIntoRoot, saveRootIntoActive, switchCategory, addCategory, renameCategory, removeCategory } from './categories.js';
-import { activePhaseOf, loadPhaseIntoRoot, saveRootIntoPhase, saveRootIntoPhaseImmer, addPhase, renamePhase, removePhase, switchPhase, setPhaseFormat, setProgressTarget, setProgressMode, setProgressCount } from './phases.js';
+import { activePhaseOf, loadPhaseIntoRoot, saveRootIntoPhase, saveRootIntoPhaseImmer, addPhase, renamePhase, removePhase, switchPhase, setPhaseFormat, setProgressTarget, setProgressMode, setProgressCount, knockoutSizeFromName, configureKnockout, addKnockoutPhase } from './phases.js';
 import { setScore, saveMatchOps, clearResults, addMatchEvent, removeMatchEvent } from './matches.js';
 import { generateActivePhase, advanceBracket, findTie } from './engine.js';
 import { computeStandings, applyProgression, genCross } from './standings.js';
@@ -201,19 +201,29 @@ export class ChampionshipStore {
       toastError(e.message);
       return { ok: false, errors: e.message };
     }
+    // Nome de fase eliminatória ("Quartas", "Semifinal"…) configura o mata-mata sozinho,
+    // exceto na primeira fase, que não tem de onde receber classificados.
+    const size = knockoutSizeFromName(validatedName.nome);
+    let knockout = null;
     this.produce((draft) => {
       const category = this.getActiveCategory(draft);
       renamePhase(category, id, validatedName.nome);
+      const phase = category.phases.find((p) => p.id === id);
+      if (size && category.phases.indexOf(phase) > 0 && phase.cfg?.knockoutSize !== size) {
+        knockout = configureKnockout(draft, category, id, size);
+      }
     });
-    return { ok: true };
+    return { ok: true, knockoutSize: knockout?.ok ? size : null, knockout };
   }
 
   removePhase(id) {
-    return this.produce((draft) => {
+    let result;
+    this.produce((draft) => {
       const category = this.getActiveCategory(draft);
       saveRootIntoPhaseImmer(draft, category);
-      return removePhase(draft, category, id);
+      result = removePhase(draft, category, id);
     });
+    return result;
   }
 
   switchPhase(id) {
@@ -259,10 +269,10 @@ export class ChampionshipStore {
   }
 
   // Generate phase
-  generateActivePhase() {
+  generateActivePhase(opts) {
     let result;
     this.produce((draft) => {
-      result = generateActivePhase(draft);
+      result = generateActivePhase(draft, opts);
     });
     return result;
   }
@@ -326,9 +336,9 @@ export class ChampionshipStore {
   }
 
   genCross() {
-    return this.produce((draft) => {
-      return genCross(draft);
-    });
+    let result;
+    this.produce((draft) => { result = genCross(draft); });
+    return result;
   }
 
   // Scoreboard
@@ -719,13 +729,15 @@ export class ChampionshipStore {
   }
 
   updateScoring(cfg) {
-    let validatedCfg;
-    try {
-      validatedCfg = validated('championship.scoring', cfg);
-    } catch (e) {
-      toastError(e.message);
-      return { ok: false, errors: e.message };
+    // Valida só os campos enviados e mantém os que o schema não conhece (turnos, nGrupos,
+    // maoUnica, terceiro, setsToWin…). Com o schema completo, mudar só "turnos" falhava em
+    // todos os outros campos e o zod ainda descartava as chaves extras.
+    const check = validate(schemas.championship.scoring.partial().loose(), cfg);
+    if (!check.ok) {
+      toastError(check.errors);
+      return { ok: false, errors: check.errors };
     }
+    const validatedCfg = check.data;
     this.produce((draft) => {
       draft.cfg = { ...draft.cfg, ...validatedCfg };
     });
@@ -778,10 +790,19 @@ export class ChampionshipStore {
   }
 
   applyProgression(phaseId, force = false) {
-    return this.produce((draft) => {
+    let result;
+    this.produce((draft) => {
       const category = this.getActiveCategory(draft);
-      return applyProgression(draft, category, phaseId, { force });
+      result = applyProgression(draft, category, phaseId, { force });
     });
+    return result;
+  }
+
+  // Fase de mata-mata pronta (16/8/4/2 equipes) ligada à fase anterior.
+  addKnockoutPhase(size) {
+    let result;
+    this.produce((draft) => { result = addKnockoutPhase(draft, this.getActiveCategory(draft), size); });
+    return result;
   }
 }
 

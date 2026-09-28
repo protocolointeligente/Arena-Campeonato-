@@ -1,6 +1,6 @@
 import { allMatchObjs } from './matches.js';
 import { athName } from './roster.js';
-import { phaseParticipants, phaseComplete, loadPhaseIntoRoot } from './phases.js';
+import { phaseParticipants, phaseComplete, loadPhaseIntoRoot, crossSeedGroups } from './phases.js';
 import { saveRootIntoActive } from './categories.js';
 import { makeBracketFromOrdered, advanceBracket } from './engine.js';
 
@@ -62,17 +62,21 @@ export function standingsForPhase(state, phase, idxs, matches) {
   return computeStandings(state.teams || [], idxs, matches || phase.matches || [], phase.cfg || state.cfg || {});
 }
 
+// [[1º A, 2º A…], [1º B, 2º B…], …]
+export function qualifiedByGroup(state, phase, count) {
+  const teams = state.teams || [];
+  return (phase.grupos || []).map((group, gi) => {
+    const idxs = group.map((id) => teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
+    const ms = (phase.matches || []).filter((m) => (m.grupo || 0) === gi);
+    return standingsForPhase(state, phase, idxs, ms).slice(0, Math.max(1, +count || 1)).map((x) => teams[x.team].id);
+  });
+}
+
 export function qualifiedFromPhase(state, phase, mode, count) {
   count = Math.max(1, +count || 1);
   const teams = state.teams || [];
   if (phase.formato === 'grupos' && mode === 'perGroup') {
-    const out = [];
-    (phase.grupos || []).forEach((group, gi) => {
-      const idxs = group.map((id) => teams.findIndex((t) => t.id === id)).filter((i) => i >= 0);
-      const ms = (phase.matches || []).filter((m) => (m.grupo || 0) === gi);
-      standingsForPhase(state, phase, idxs, ms).slice(0, count).forEach((x) => out.push(teams[x.team].id));
-    });
-    return out;
+    return qualifiedByGroup(state, phase, count).flat();
   }
   if (phase.formato === 'mata' && phase.bracket) {
     const rounds = phase.bracket.rounds || [];
@@ -91,7 +95,12 @@ export function applyProgression(state, category, srcId, { force = false } = {})
   const target = (category.phases || []).find((p) => p.id === src.progression.targetPhaseId);
   if (!target) {return { ok: false, reason: 'target-missing' };}
   if (!phaseComplete(src) && !force) {return { ok: false, reason: 'incomplete' };}
-  const ids = qualifiedFromPhase(state, src, src.progression.mode || 'overall', src.progression.count || 2);
+  const mode = src.progression.mode || 'overall';
+  const count = src.progression.count || 2;
+  // Mata-mata alimentado por grupos: cruza 1A×2B em vez de A1×A2 (rematch do mesmo grupo).
+  const ids = target.formato === 'mata' && src.formato === 'grupos' && mode === 'perGroup'
+    ? crossSeedGroups(qualifiedByGroup(state, src, count))
+    : qualifiedFromPhase(state, src, mode, count);
   if (!ids.length) {return { ok: false, reason: 'no-qualifiers' };}
   target.participantTeamIds = [...new Set(ids)];
   target.status = 'planejada';

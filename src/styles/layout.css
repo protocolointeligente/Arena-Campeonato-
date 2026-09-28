@@ -110,6 +110,7 @@ th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--li
 th { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
 tbody tr:hover { background: var(--surface-muted); }
 label { display:block; margin:16px 0; } label input,label select { display:block; width:100%; margin-top:8px; }
+.phase-field { margin:0; font-size:12px; font-weight:600; color:var(--muted, #6b7a72); } .phase-field input, .phase-field select { margin-top:4px; font-size:14px; color:var(--text); }
 @media (max-width: 760px) { .hero, .grid { grid-template-columns: 1fr; } .hero { min-height: 0; padding: 50px 0; } }
 
 /* Landing (visitante, não logado) — visual próprio de campanha, sempre escuro estilo

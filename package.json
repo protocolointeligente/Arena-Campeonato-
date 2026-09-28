@@ -20,6 +20,7 @@
     "firebase": "^12.17.1",
     "immer": "^11.1.18",
     "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "path-to-regexp": "^8.4.2",
     "qrcode": "^1.5.4",
     "zod": "^4.4.3"

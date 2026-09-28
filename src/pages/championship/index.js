@@ -1,6 +1,6 @@
 import { navigate } from '../../app/router-v2.js';
 import { getChampionship, saveChampionship, checkSlugAvailable, getEngagementStats } from '../../services/championships.js';
-import { listRegistrations, updateRegistration } from '../../services/registrations.js';
+import { listRegistrationsPage, updateRegistration } from '../../services/registrations.js';
 import { addAudit, listAudit } from '../../services/audit.js';
 import { downloadChampionshipPDF } from '../../services/pdf.js';
 import { esc, uid } from '../../app/utils.js';
@@ -58,7 +58,7 @@ const TAB_RENDERERS = {
   documentos: renderDocuments,
 };
 
-const TABS = [['overview','Visão geral','dashboard'],['categorias','Categorias','layers'],['fases','Fases','flag'],['jogos','Jogos','calendar'],['chave','Chaveamento','bracket'],['classif','Tabela','table'],['equipes','Equipes','users'],['artilharia','Artilharia','target'],['disciplina','Disciplina','shieldCheck'],['inscricoes','Inscrições','inbox'],['publicacao','Publicação','megaphone'],['historico','Histórico','clock'],['gerenciamento','Gerenciamento','sliders'],['config','Configurações','gear'],['documentos','Documentos','fileText']];
+const TABS = [['overview','Visão geral','dashboard'],['categorias','Categorias','layers'],['fases','Fases','flag'],['jogos','Jogos','calendar'],['chave','Chaveamento','bracket'],['classif','Classificação','table'],['equipes','Equipes','users'],['artilharia','Artilharia','target'],['disciplina','Disciplina','shieldCheck'],['inscricoes','Inscrições','inbox'],['publicacao','Publicação','megaphone'],['historico','Histórico','clock'],['gerenciamento','Gerenciamento','sliders'],['config','Configurações','gear'],['documentos','Documentos','fileText']];
 // No celular a sidebar vira menu inferior fixo — só cabem poucos itens sem virar sopa de
 // ícones, então fixamos os 3 mais usados e o resto entra no "Mais" (abre um modal com a lista).
 const PRIMARY_MOBILE_TABS = ['overview', 'jogos', 'classif'];
@@ -82,6 +82,7 @@ async function mount(root, initial) {
   let tab = 'overview';
   let placarTarget = null;
   let registrations = [];
+  let registrationsCursor = null;
   let auditRows = [];
   let superadmin = false;
   let engagement = null;
@@ -127,7 +128,11 @@ async function mount(root, initial) {
   async function switchTab(key) {
     tab = key;
     if (tab === 'inscricoes') {
-      try { registrations = await listRegistrations(store.getState().id); } catch { registrations = []; }
+      try {
+        const page = await listRegistrationsPage(store.getState().id);
+        registrations = page.items;
+        registrationsCursor = page.nextCursor;
+      } catch { registrations = []; registrationsCursor = null; }
     }
     if (tab === 'historico') {
       try { auditRows = await listAudit(store.getState().id); } catch { auditRows = []; }
@@ -179,10 +184,19 @@ async function mount(root, initial) {
     });
     root.querySelector('[data-more]').classList.toggle('active', !PRIMARY_MOBILE_TABS.includes(tab));
     root.querySelector('[data-categorybar]').innerHTML = renderCategoryBar(store.getState());
-    content.innerHTML = TAB_RENDERERS[tab] ? TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement }) : '';
+    content.innerHTML = TAB_RENDERERS[tab] ? TAB_RENDERERS[tab](store, { registrations, registrationsCursor, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement }) : '';
     content.setAttribute('aria-label', tab);
   bindEvents(root, store, { persist, tab, setTab: (t) => { tab = t; }, setPlacarTarget: (id, kind) => { placarTarget = { id, kind }; }, render, registrations, auditRows, superadmin });
   bindRegistrationSearch(root);
+  root.querySelector('[data-registration-load-more]')?.addEventListener('click', async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+      const page = await listRegistrationsPage(store.getState().id, { cursor: registrationsCursor });
+      registrations = registrations.concat(page.items);
+      registrationsCursor = page.nextCursor;
+      render();
+    } catch { event.currentTarget.disabled = false; }
+  });
   }
   
   function renderCategoryBar(state) {
@@ -195,10 +209,19 @@ async function mount(root, initial) {
     shell.style.setProperty('--championship-accent', state.branding?.accent || '#2fcf6b');
     root.querySelector('[data-categorybar]').innerHTML = renderCategoryBar(state);
     if (TAB_RENDERERS[tab]) {
-      content.innerHTML = TAB_RENDERERS[tab](store, { registrations, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, listRegistrations, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement });
+      content.innerHTML = TAB_RENDERERS[tab](store, { registrations, registrationsCursor, auditRows, superadmin, persist, tab, setTab: (t) => { tab = t; }, esc, toast, modal, closeModal, navigate, uid, auth, addAudit, downloadChampionshipPDF, championshipJSON, exportTeamsReport, exportRosterReport, exportScheduleReport, exportStandingsReport, exportScorersReport, exportDisciplineReport, exportOfficialsReport, exportResultsReport, exportRoundBulletin, exportPDF, printSumula, exportAthleteCards, viewRelatoriosHTML, uploadBrandImage, uploadSponsorLogo, deleteImageByUrl, uploadAthletePhoto, uploadTeamLogo, updateRegistration, listAudit, isSuperadmin, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole, ensureCollaborators, placarTarget, engagement });
       content.setAttribute('aria-label', tab);
     bindEvents(root, store, { persist, tab, setTab: (t) => { tab = t; }, setPlacarTarget: (id, kind) => { placarTarget = { id, kind }; }, render, registrations, auditRows, superadmin });
     bindRegistrationSearch(root);
+    root.querySelector('[data-registration-load-more]')?.addEventListener('click', async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        const page = await listRegistrationsPage(store.getState().id, { cursor: registrationsCursor });
+        registrations = registrations.concat(page.items);
+        registrationsCursor = page.nextCursor;
+        render();
+      } catch { event.currentTarget.disabled = false; }
+    });
   }
     // Update tab ARIA attributes after re-render
     root.querySelectorAll('[data-tab]').forEach((button) => {
@@ -212,8 +235,13 @@ async function mount(root, initial) {
   render();
 }
 
+function knockoutToast(k) {
+  if (!k?.linked) {return `Fase configurada como mata-mata com ${k?.size} equipes.`;}
+  return `Mata-mata com ${k.size} equipes: ${k.mode === 'perGroup' ? `${k.count} classificado(s) por grupo` : `${k.count} melhores`} de "${k.source}".`;
+}
+
 function bindEvents(root, store, ctx) {
-  const { persist, tab, setTab, setPlacarTarget, render, registrations, auditRows, superadmin } = ctx;
+  const { persist, tab: _tab, setTab, setPlacarTarget, render, registrations, auditRows: _auditRows, superadmin } = ctx;
 
   root.querySelectorAll('[data-approve-registration]').forEach((button) => button.onclick = async () => {
     if (!superadmin && !can(store.getState(), auth.currentUser, 'registrations')) {return toast('Seu perfil não pode analisar inscrições.');}
@@ -448,9 +476,18 @@ function bindEvents(root, store, ctx) {
     await addAudit(store.getState().id, 'phase_added', 'Fase criada');
   });
   root.querySelectorAll('[data-phase-name]').forEach((input) => input.onchange = async () => {
-    store.renamePhase(input.dataset.phaseName, input.value);
+    const result = store.renamePhase(input.dataset.phaseName, input.value);
+    if (result?.knockoutSize) {toast(knockoutToast(result.knockout));}
     await persist();
     await addAudit(store.getState().id, 'phase_renamed', 'Fase renomeada');
+  });
+  root.querySelectorAll('[data-add-knockout]').forEach((button) => button.onclick = async () => {
+    const result = store.addKnockoutPhase(+button.dataset.addKnockout);
+    if (!result?.ok) {return toast('Não foi possível criar a fase.');}
+    toast(knockoutToast(result));
+    setTab('fases');
+    await persist();
+    await addAudit(store.getState().id, 'phase_added', `Fase de mata-mata criada (${result.size} equipes)`);
   });
   root.querySelectorAll('[data-phase-format]').forEach((select) => select.onchange = async () => {
     store.setPhaseFormat(select.dataset.phaseFormat, select.value);
@@ -488,7 +525,8 @@ function bindEvents(root, store, ctx) {
     await addAudit(store.getState().id, 'phase_removed', 'Fase excluída');
   });
   root.querySelectorAll('[data-generate-phase]').forEach((button) => button.onclick = async () => {
-    const result = store.generateActivePhase();
+    if ('confirmRegen' in button.dataset && !confirm('Refazer? Os confrontos e placares atuais desta fase serão substituídos.')) {return;}
+    const result = store.generateActivePhase({ shuffle: 'shuffle' in button.dataset });
     if (!result.ok) {return toast(result.reason);}
     await persist();
     await addAudit(store.getState().id, 'phase_generated', 'Jogos da fase gerados');
@@ -638,10 +676,8 @@ function bindEvents(root, store, ctx) {
   // Tie scores
   root.querySelectorAll('[data-tie-score]').forEach((input) => input.onchange = async () => {
     const [tieId, field] = input.dataset.tieScore.split(':');
-    const tie = store.findTie(tieId);
-    if (!tie) {return;}
-    tie[field] = input.value === '' ? null : Number(input.value);
-    store.advanceBracket();
+    if (!store.findTie(tieId)) {return;}
+    store.setTieScore(tieId, field, input.value);
     await persist();
     await addAudit(store.getState().id, 'tie_score_updated', 'Placar do chaveamento atualizado');
   });

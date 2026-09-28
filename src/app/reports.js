@@ -7,6 +7,7 @@ import { activePhaseOf } from './phases.js';
 import { fmtDateBR } from './format.js';
 import { esc } from './utils.ts';
 import { icon } from './icons.js';
+import { roundLabel } from './bracket-utils.js';
 import { 
   getJsPDF, 
   resolveCategories, 
@@ -99,7 +100,16 @@ export async function exportScheduleReport(state) {
       const x = matchMeta(m), v = venueById(state, x.venueId), r = officialById(state, x.refereeId);
       return [m.rodada || '—', fmtDateBR(x.date) || '—', x.time || '—', teams[m.home]?.nome || '—', teams[m.away]?.nome || '—', v?.name || '—', r?.name || '—'];
     });
-    b.doc.autoTable({ ...DEFAULT_TABLE_OPT, startY: b.y, head: [['Rod.', 'Data', 'Hora', 'Mandante', 'Visitante', 'Local', 'Árbitro']], body: rows, columnStyles: { 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' }, 6: { halign: 'left' } } });
+    const bracket = cat.bracket || state.bracket;
+    if (!rows.length && bracket) {
+      const tn = (id) => (id == null ? 'A definir' : teams.find((t) => t.id === id)?.nome || '—');
+      const tieRows = [];
+      (bracket.rounds || []).forEach((rd) => rd.forEach((t) => { if (t.a != null || t.b != null || rd.length === 1) {tieRows.push([roundLabel(rd.length * 2), tn(t.a), tn(t.b), t.winner ? tn(t.winner) : '']);} }));
+      if (bracket.third) {tieRows.push(['3º lugar', tn(bracket.third.a), tn(bracket.third.b), bracket.third.winner ? tn(bracket.third.winner) : '']);}
+      b.doc.autoTable({ ...DEFAULT_TABLE_OPT, startY: b.y, head: [['Fase', 'Equipe A', 'Equipe B', 'Classificado']], body: tieRows, columnStyles: { 1: { halign: 'left' }, 2: { halign: 'left' }, 3: { halign: 'left' } } });
+    } else {
+      b.doc.autoTable({ ...DEFAULT_TABLE_OPT, startY: b.y, head: [['Rod.', 'Data', 'Hora', 'Mandante', 'Visitante', 'Local', 'Árbitro']], body: rows, columnStyles: { 3: { halign: 'left' }, 4: { halign: 'left' }, 5: { halign: 'left' }, 6: { halign: 'left' } } });
+    }
     if (categories.length > 1) {b.doc.addPage();}
     b.doc.save(makeReportName(state, 'tabela_jogos', cat.nome));
   }
@@ -221,13 +231,13 @@ export async function exportPDF(state) {
   const jsPDF = await getJsPDF();
   const categories = resolveCategories(state);
   
-  for (const cat of categories) {
+  for (const _cat of categories) {
     const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
     const W = doc.internal.pageSize.getWidth();
     let y = 46;
-    const opt = { ...DEFAULT_TABLE_OPT };
+    const _opt = { ...DEFAULT_TABLE_OPT };
     const pageGuard = (need) => { if (y > 800 - (need || 40)) { doc.addPage(); y = 46; } };
-    const sectTitle = (txt) => { pageGuard(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(txt, 40, y); y += 4; };
+    const _sectTitle = (txt) => { pageGuard(60); doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(26, 120, 70); doc.text(txt, 40, y); y += 4; };
     
     doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20, 60, 40); doc.text(state.nome || 'Campeonato', 40, y);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(120); doc.text(`${state.formato || 'liga'  }  ·  ${  new Date().toLocaleDateString('pt-BR')}`, 40, y + 16);
@@ -288,7 +298,7 @@ export async function exportPDF(state) {
       const single = cfg?.maoUnica;
       const body = [];
       const rowFor = (t, fase) => { if (t.a == null && t.b == null) {return;} const sc = single ? `${t.ag1 ?? '-'} x ${t.bg1 ?? '-'}` : `${(t.ag1 == null && t.ag2 == null) ? '-' : ((t.ag1 || 0) + (t.ag2 || 0))} x ${(t.bg1 == null && t.bg2 == null) ? '-' : ((t.bg1 || 0) + (t.bg2 || 0))}`; const pen = (t.apen != null && t.bpen != null) ? ` (pên ${t.apen}x${t.bpen})` : ''; body.push([fase, `${tn(t.a)  } x ${  tn(t.b)}`, sc + pen, t.winner ? tn(t.winner) : '']); };
-      (bracket.rounds || []).forEach((rd, idx) => { const size = rd.length * 2; rd.forEach((t) => rowFor(t, `${size  }-avos`)); });
+      (bracket.rounds || []).forEach((rd, _idx) => { const size = rd.length * 2; rd.forEach((t) => rowFor(t, `${size  }-avos`)); });
       if (bracket.third) {rowFor(bracket.third, '3º lugar');}
       doc.autoTable({ ...DEFAULT_TABLE_OPT, startY: y + 8, head: [['Fase', 'Confronto', 'Placar', 'Classificado']], body, columnStyles: { 1: { halign: 'left' }, 3: { halign: 'left' } } }); y = doc.lastAutoTable.finalY + 16;
     }
@@ -363,7 +373,7 @@ export async function exportAthleteCards(state, categoryId) {
   (cat.teams || []).forEach((t) => (t.roster || []).forEach((a) => athletes.push({ a, t })));
   if (!athletes.length) {return;}
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-  const W = 210, H = 297, m = 10, g = 5, cw = (W - 2 * m - g) / 2, ch = 58;
+  const W = 210, _H = 297, m = 10, g = 5, cw = (W - 2 * m - g) / 2, ch = 58;
   let idx = 0;
   for (const it of athletes) {
     if (idx && idx % 8 === 0) {doc.addPage();}

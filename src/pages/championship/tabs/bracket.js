@@ -11,14 +11,17 @@ export function renderBracket(store) {
     return `<div class="card"><p class="muted">Esta fase não usa chaveamento. Troque o formato da fase ativa para "Mata-Mata" na aba Fases.</p></div>`;
   }
   
-  if (!state.bracket) {return `<div class="card"><p class="muted">Nenhum chaveamento gerado ainda. Use "Gerar/Refazer" na aba Fases.</p></div>`;}
-  
-  store.advanceBracket();
+  if (!state.bracket) {return `<div class="card"><p class="muted" style="margin-bottom:14px">Nenhum chaveamento gerado ainda. Sorteie os confrontos entre as equipes inscritas.</p><button class="btn primary" data-generate-phase data-shuffle>${icon('shuffle', 16)} Sortear e gerar chaveamento</button></div>`;}
+
+  // Não chamar store.advanceBracket() aqui: ele dispara notify() -> re-render -> loop infinito.
+  // setTieScore() já avança o chaveamento a cada placar.
   const rounds = state.bracket.rounds;
-  
+
   return `
     <div class="card">
-      ${state.formato === 'grupos' ? '<div class="actions" style="justify-content:flex-end;margin-bottom:8px"><button class="btn ghost sm" data-regen-cross>↻ Regerar</button></div>' : ''}
+      <div class="actions" style="justify-content:flex-end;margin-bottom:8px">
+        ${state.formato === 'grupos' ? '<button class="btn ghost sm" data-regen-cross>↻ Regerar</button>' : `<button class="btn ghost sm" data-generate-phase data-shuffle data-confirm-regen>${icon('shuffle', 16)} Refazer sorteio</button>`}
+      </div>
       <h2>Chaveamento</h2>
       <div class="bracket-cols">
         ${rounds.map((round) => `

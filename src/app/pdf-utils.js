@@ -4,7 +4,9 @@ let jsPDFCache = null;
 
 export async function getJsPDF() {
   if (jsPDFCache) {return jsPDFCache;}
-  const { jsPDF } = await import('jspdf');
+  const [{ jsPDF }, { applyPlugin }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+  // doc.autoTable() vinha de um <script> do CDN no HTML legado; no app Vite precisa ser registrado aqui.
+  if (typeof jsPDF === 'function') {applyPlugin(jsPDF);}
   jsPDFCache = jsPDF;
   return jsPDF;
 }

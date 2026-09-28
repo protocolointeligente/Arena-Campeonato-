@@ -207,3 +207,77 @@ export function progressionSummary(category, phase) {
 }
 
 
+
+const KNOCKOUT_NAMES = { 32: '16-avos de final', 16: 'Oitavas de final', 8: 'Quartas de final', 4: 'Semifinal', 2: 'Final' };
+export const KNOCKOUT_PRESETS = [[16, 'Oitavas'], [8, 'Quartas'], [4, 'Semifinal'], [2, 'Final']];
+
+// "Oitavas", "quartas de final", "seminfinal", "Grande Final"… → nº de equipes que a fase recebe.
+export function knockoutSizeFromName(name) {
+  const n = String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  if (/16\s*-?\s*avos|dezesseis/.test(n)) {return 32;}
+  if (/oitava/.test(n)) {return 16;}
+  if (/quarta/.test(n)) {return 8;}
+  if (/semi/.test(n)) {return 4;}
+  if (/final/.test(n)) {return 2;}
+  return null;
+}
+
+// Classificados por grupo ([[1A,2A],[1B,2B],…]) → ordem da chave que cruza os grupos:
+// 1A×2B, 1C×2D… num lado e 1B×2A, 1D×2C… no outro, pra ninguém reencontrar o próprio
+// grupo antes da final. Sem pares de grupos completos, cai no seed geral (1º×último).
+export function crossSeedGroups(groups) {
+  const k = Math.max(0, ...groups.map((g) => g.length));
+  if (k <= 1) {return groups.map((g) => g[0]).filter((id) => id != null);}
+  if (groups.length % 2 === 0 && groups.every((g) => g.length === k) && k % 2 === 0) {
+    const top = [], bottom = [];
+    for (let i = 0; i < groups.length; i += 2) {
+      const a = groups[i], b = groups[i + 1];
+      for (let p = 0; p < k / 2; p++) {
+        top.push(a[p], b[k - 1 - p]);
+        bottom.push(b[p], a[k - 1 - p]);
+      }
+    }
+    return top.concat(bottom);
+  }
+  const seeds = [];
+  for (let p = 0; p < k; p++) {groups.forEach((g) => { if (g[p] != null) {seeds.push(g[p]);} });}
+  const out = [];
+  for (let i = 0, j = seeds.length - 1; i <= j; i++, j--) {out.push(seeds[i]); if (i !== j) {out.push(seeds[j]);}}
+  return out;
+}
+
+// Transforma a fase em mata-mata para `size` equipes e faz a fase anterior mandar os
+// classificados pra ela: por grupo quando a divisão é exata (8 equipes, 2 grupos → 4 por
+// grupo), senão pela classificação geral. Mata-mata anterior entrega só o campeão, então
+// não é ligado. Um único mata-mata já contém as rodadas seguintes (quartas → semi → final).
+export function configureKnockout(state, category, phaseId, size) {
+  const idx = (category.phases || []).findIndex((p) => p.id === phaseId);
+  if (idx < 0) {return { ok: false };}
+  const phase = category.phases[idx];
+  if (category.activePhaseId === phaseId) {saveRootIntoPhase(state, phase);}
+  if (phase.formato !== 'mata') {
+    phase.formato = 'mata';
+    phase.grupos = [];
+    phase.matches = [];
+    phase.bracket = null;
+  }
+  phase.cfg = { ...(phase.cfg || {}), knockoutSize: size };
+  if (category.activePhaseId === phaseId) {loadPhaseIntoRoot(state, phase);}
+  const prev = category.phases[idx - 1];
+  if (!prev || prev.formato === 'mata') {return { ok: true, size, linked: false };}
+  if (category.activePhaseId === prev.id) {saveRootIntoPhase(state, prev);}
+  const nGroups = prev.formato === 'grupos' ? ((prev.grupos || []).length || prev.cfg?.nGrupos || 2) : 0;
+  prev.progression = nGroups && size % nGroups === 0 && size / nGroups >= 1
+    ? { targetPhaseId: phase.id, mode: 'perGroup', count: size / nGroups }
+    : { targetPhaseId: phase.id, mode: 'overall', count: size };
+  return { ok: true, size, linked: true, source: prev.nome, mode: prev.progression.mode, count: prev.progression.count };
+}
+
+// Cria a fase de mata-mata já configurada, sem trocar a fase ativa (os grupos seguem em jogo).
+export function addKnockoutPhase(state, category, size) {
+  ensurePhases(category, state);
+  saveRootIntoPhase(state, activePhaseOf(category));
+  const phase = blankPhase(state, KNOCKOUT_NAMES[size] || `Mata-mata (${size})`, category.phases.length + 1);
+  category.phases.push(phase);
+  return { ...configureKnockout(state, category, phase.id, size), phaseId: phase.id };
+}
