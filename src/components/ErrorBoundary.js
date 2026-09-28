@@ -10,7 +10,7 @@ export class ErrorBoundary {
     this.errorInfo = null;
   }
 
-  defaultFallback(error, retry) {
+  defaultFallback(error, _retry) {
     return `
       <div class="error-boundary" role="alert">
         <div class="error-content">
@@ -181,4 +181,3 @@ export function handleNetworkError(error, fallbackMessage = 'Erro de conexão. V
   
   return error;
 }
-

@@ -21,7 +21,7 @@ export function Table({ headers = [], rows = [], sortable = false, sortColumn, s
   const headerRow = document.createElement('tr');
   headerRow.setAttribute('role', 'row');
   
-  headers.forEach((header, index) => {
+  headers.forEach((header, _index) => {
     const th = document.createElement('th');
     th.setAttribute('role', 'columnheader');
     th.setAttribute('scope', 'col');

@@ -28,10 +28,8 @@ function setupDOM() {
 }
 
 describe('Integration Tests - Championship Flows', () => {
-  let root;
-
   beforeEach(() => {
-    root = setupDOM();
+    setupDOM();
     vi.clearAllMocks();
   });
 

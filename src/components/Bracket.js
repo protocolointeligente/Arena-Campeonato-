@@ -16,7 +16,7 @@ export function Bracket({ rounds = [], thirdPlace = null, teamNames = {}, onScor
   cols.className = 'bracket-cols';
   cols.setAttribute('role', 'list');
   
-  rounds.forEach((round, roundIndex) => {
+  rounds.forEach((round, _roundIndex) => {
     const col = document.createElement('div');
     col.className = 'bracket-col';
     col.setAttribute('role', 'listitem');
@@ -32,7 +32,7 @@ export function Bracket({ rounds = [], thirdPlace = null, teamNames = {}, onScor
     const tiesList = document.createElement('div');
     tiesList.className = 'bracket-ties';
     
-    round.forEach((tie, tieIndex) => {
+    round.forEach((tie, _tieIndex) => {
       const tieEl = createTieElement(tie, teamNames, {
         onScoreChange: (field, value) => onScoreChange?.(tie.id, field, value),
         onSumula: () => onSumula?.('tie', tie.id),
@@ -163,7 +163,7 @@ function getRoundLabel(size) {
   return labels[size] || `${size}-avos`;
 }
 
-export function BracketMatch({ home, away, score, winner, onScoreChange, onSumula, className = '' }) {
+export function BracketMatch({ home, away, score, winner, onScoreChange: _onScoreChange, onSumula, className = '' }) {
   const el = document.createElement('div');
   el.className = `bracket-match ${className}`.trim();
   
@@ -180,4 +180,3 @@ export function BracketMatch({ home, away, score, winner, onScoreChange, onSumul
   
   return el;
 }
-

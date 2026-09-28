@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, limit as fsLimit, onSnapshot, orderBy, query, where, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit as fsLimit, onSnapshot, orderBy, query, startAfter, where, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase.js';
 import { clone } from '../app/utils.ts';
 
@@ -103,12 +103,29 @@ export async function removeChampionship(id) { const batch = writeBatch(db); bat
 // championships-directory.js — suficiente na escala atual do app.
 // ponytail: se a coleção pública crescer a ponto do limit cortar campeonatos relevantes, troca
 // por paginação (startAfter) ou por um índice composto com where('status','in',...) no servidor.
-export async function listPublicDirectory() {
-  const snapshot = await getDocs(query(publicCollection, orderBy('updated', 'desc'), fsLimit(500)));
-  return snapshot.docs.map((docSnap) => {
+export function directoryPageResult(items, nextCursor = null) {
+  return { items, nextCursor: nextCursor || null };
+}
+
+function directoryItem(docSnap) {
     const data = docSnap.data();
     return { id: docSnap.id, nome: data.nome, formato: data.formato, modalidade: data.modalidade || '', status: data.status, cidade: data.cidade || '', estado: data.estado || '', publicSlug: data.publicSlug || '', updated: data.updated || 0 };
-  });
+}
+
+export async function listPublicDirectoryPage({ pageSize = 500, cursor = null } = {}) {
+  const normalizedSize = Math.min(500, Math.max(1, Number(pageSize) || 500));
+  const constraints = [orderBy('updated', 'desc')];
+  if (cursor) {constraints.push(startAfter(await getDoc(doc(publicCollection, cursor))));}
+  constraints.push(fsLimit(normalizedSize));
+  const snapshot = await getDocs(query(publicCollection, ...constraints));
+  const items = snapshot.docs.map(directoryItem);
+  const nextCursor = snapshot.docs.length === normalizedSize ? snapshot.docs.at(-1)?.id || null : null;
+  return directoryPageResult(items, nextCursor);
+}
+
+export async function listPublicDirectory() {
+  const page = await listPublicDirectoryPage();
+  return page.items;
 }
 
 

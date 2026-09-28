@@ -1,6 +1,6 @@
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
-import { listPublicDirectory } from '../services/championships.js';
+import { listPublicDirectoryPage } from '../services/championships.js';
 import { MODALITIES } from '../app/templates.js';
 import { UF_LIST } from './championship/tabs/config.js';
 
@@ -14,7 +14,13 @@ export async function renderChampionshipsDirectory(root) {
 
   // rascunho nunca aparece aqui — é um estado interno do organizador, não um campeonato público.
   let all = [];
-  try { all = (await listPublicDirectory()).filter((c) => c.status !== 'rascunho'); }
+  let nextCursor = null;
+  let loadingMore = false;
+  try {
+    const page = await listPublicDirectoryPage();
+    all = (page.items || []).filter((c) => c.status !== 'rascunho');
+    nextCursor = page.nextCursor;
+  }
   catch { body.innerHTML = '<div class="card">Não foi possível carregar os campeonatos.</div>'; return; }
 
   let tab = 'atual';
@@ -53,6 +59,7 @@ export async function renderChampionshipsDirectory(root) {
         </div>
       </div>
       <div class="grid" style="margin-top:16px">${results.map(cardHTML).join('') || '<p class="muted">Nenhum campeonato encontrado com esses filtros.</p>'}</div>
+      ${nextCursor ? '<div class="actions center" style="margin-top:16px"><button class="btn ghost" data-load-more>Carregar mais</button></div>' : ''}
     `;
 
     body.querySelectorAll('[data-tab]').forEach((button) => {
@@ -62,6 +69,21 @@ export async function renderChampionshipsDirectory(root) {
     body.querySelector('[data-filter-cidade]').oninput = (event) => { filters.cidade = event.target.value; renderResultsOnly(); };
     body.querySelector('[data-filter-estado]').onchange = (event) => { filters.estado = event.target.value; renderResultsOnly(); };
     body.querySelector('[data-filter-modalidade]').onchange = (event) => { filters.modalidade = event.target.value; renderResultsOnly(); };
+    body.querySelector('[data-load-more]')?.addEventListener('click', async (event) => {
+      if (loadingMore || !nextCursor) {return;}
+      loadingMore = true;
+      event.currentTarget.disabled = true;
+      try {
+        const page = await listPublicDirectoryPage({ cursor: nextCursor });
+        all = all.concat((page.items || []).filter((c) => c.status !== 'rascunho'));
+        nextCursor = page.nextCursor;
+        renderBody();
+      } catch {
+        event.currentTarget.disabled = false;
+      } finally {
+        loadingMore = false;
+      }
+    });
   }
 
   // Reaplica só a grade de resultados (sem recriar os campos de filtro) pra não perder o foco

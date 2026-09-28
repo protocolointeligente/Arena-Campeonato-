@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { reportBase, reportName, reportStandingsBlocks } from './reports.js';
+import { describe, it, expect, vi } from 'vitest';
+import { reportName, reportStandingsBlocks } from './reports.js';
 
 vi.mock('jspdf', () => ({
   jsPDF: vi.fn().mockImplementation(() => ({

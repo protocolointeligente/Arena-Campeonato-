@@ -1,4 +1,4 @@
-import { COLLAB_ROLES, isOwner, can, roleLabel, inviteManager, removeManager, changeManagerRole } from '../../../app/collaborators.js';
+import { COLLAB_ROLES, isOwner, can } from '../../../app/collaborators.js';
 import { auth } from '../../../services/firebase.js';
 import { esc } from '../../../app/utils.ts';
 
@@ -40,4 +40,3 @@ export function renderManagement(store, { superadmin }) {
     </div>
   `;
 }
-

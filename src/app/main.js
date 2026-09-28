@@ -28,6 +28,7 @@ import { renderRegistrationStatus } from '../pages/registration-status.js';
 import { setUser, getAppState } from './store.js';
 import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoundary.js';
 import { getErrorLogger } from '../services/error-logger.js';
+import { ROUTE_DEFINITIONS } from './routes.js';
 
 const root = document.querySelector('#app');
 applyTheme();
@@ -65,34 +66,45 @@ const safeRoute = (handler) => (params) => {
   }
 };
 
-route('/', safeRoute(() => (getAppState().user ? renderHome(mainContent) : renderLanding(mainContent))));
-route('/login', safeRoute(() => renderAuth(mainContent, 'login')));
-route('/register', safeRoute(() => renderAuth(mainContent, 'register')));
-route('/tutorial', safeRoute(() => renderTutorial(mainContent)));
-route('/demo', safeRoute(() => renderDemo(mainContent)));
-route('/campeonatos/novo', safeRoute(() => renderNewChampionship(mainContent)));
-route('/campeonatos', safeRoute(() => renderChampionshipsDirectory(mainContent)));
-route('/planos', safeRoute(() => renderPlans(mainContent)));
-route('/superadmin', safeRoute(() => renderSuperadmin(mainContent)));
-route('/publicacao', safeRoute(() => renderLanding(mainContent)));
-route('/superadmin/auditoria', safeRoute(() => renderAuditCenter(mainContent)));
-route('/superadmin/seguranca', safeRoute(() => renderSecurityCenter(mainContent)));
-route('/superadmin/privacidade', safeRoute(() => renderPrivacyCenter(mainContent)));
-route('/superadmin/beta', safeRoute(() => renderBetaHardening(mainContent)));
-route('/superadmin/planos', safeRoute(() => renderPlansBilling(mainContent)));
-route('/publicacao/:id', safeRoute((params) => renderPublication(mainContent, params.id)));
-route('/inscrever/:id', safeRoute((params) => renderRegistration(mainContent, params.id)));
-route('/publico/:id', safeRoute((params) => renderPublicChampionship(mainContent, params.id)));
-route('/c/:slug', safeRoute((params) => renderPublicChampionshipBySlug(mainContent, params.slug)));
-route('/embed/:id', safeRoute((params) => renderEmbedWidget(mainContent, params.id)));
-route('/equipe/:id/:teamId', safeRoute((params) => renderTeamPortal(mainContent, params.id, params.teamId)));
-route('/campeonatos/:id', safeRoute((params) => renderChampionship(mainContent, params.id)));
-route('/placar/:id/:matchId', safeRoute((params) => {
+if (ROUTE_DEFINITIONS.length !== 25) {
+  throw new Error(`Tabela de rotas incompleta: esperadas 25, encontradas ${ROUTE_DEFINITIONS.length}`);
+}
+
+const registerRoute = (pattern, handler) => {
+  if (!ROUTE_DEFINITIONS.some((definition) => definition.pattern === pattern)) {
+    throw new Error(`Rota não declarada na tabela: ${pattern}`);
+  }
+  route(pattern, handler);
+};
+
+registerRoute('/', safeRoute(() => (getAppState().user ? renderHome(mainContent) : renderLanding(mainContent))));
+registerRoute('/login', safeRoute(() => renderAuth(mainContent, 'login')));
+registerRoute('/register', safeRoute(() => renderAuth(mainContent, 'register')));
+registerRoute('/tutorial', safeRoute(() => renderTutorial(mainContent)));
+registerRoute('/demo', safeRoute(() => renderDemo(mainContent)));
+registerRoute('/campeonatos/novo', safeRoute(() => renderNewChampionship(mainContent)));
+registerRoute('/campeonatos', safeRoute(() => renderChampionshipsDirectory(mainContent)));
+registerRoute('/planos', safeRoute(() => renderPlans(mainContent)));
+registerRoute('/superadmin', safeRoute(() => renderSuperadmin(mainContent)));
+registerRoute('/publicacao', safeRoute(() => renderLanding(mainContent)));
+registerRoute('/superadmin/auditoria', safeRoute(() => renderAuditCenter(mainContent)));
+registerRoute('/superadmin/seguranca', safeRoute(() => renderSecurityCenter(mainContent)));
+registerRoute('/superadmin/privacidade', safeRoute(() => renderPrivacyCenter(mainContent)));
+registerRoute('/superadmin/beta', safeRoute(() => renderBetaHardening(mainContent)));
+registerRoute('/superadmin/planos', safeRoute(() => renderPlansBilling(mainContent)));
+registerRoute('/publicacao/:id', safeRoute((params) => renderPublication(mainContent, params.id)));
+registerRoute('/inscrever/:id', safeRoute((params) => renderRegistration(mainContent, params.id)));
+registerRoute('/publico/:id', safeRoute((params) => renderPublicChampionship(mainContent, params.id)));
+registerRoute('/c/:slug', safeRoute((params) => renderPublicChampionshipBySlug(mainContent, params.slug)));
+registerRoute('/embed/:id', safeRoute((params) => renderEmbedWidget(mainContent, params.id)));
+registerRoute('/equipe/:id/:teamId', safeRoute((params) => renderTeamPortal(mainContent, params.id, params.teamId)));
+registerRoute('/campeonatos/:id', safeRoute((params) => renderChampionship(mainContent, params.id)));
+registerRoute('/placar/:id/:matchId', safeRoute((params) => {
   const kind = new URLSearchParams(window.location.search).get('kind') || 'match';
   renderScoreboardDisplay(mainContent, params.id, params.matchId, kind);
 }));
-route('/sorteio/:id', safeRoute((params) => renderDrawDisplay(mainContent, params.id)));
-route('/inscrever/:championshipId/status/:registrationId', safeRoute((params) => renderRegistrationStatus(mainContent, params.championshipId, params.registrationId)));
+registerRoute('/sorteio/:id', safeRoute((params) => renderDrawDisplay(mainContent, params.id)));
+registerRoute('/inscrever/:championshipId/status/:registrationId', safeRoute((params) => renderRegistrationStatus(mainContent, params.championshipId, params.registrationId)));
 
 start();
 

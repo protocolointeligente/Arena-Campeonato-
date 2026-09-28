@@ -1,6 +1,4 @@
-import { ROUTE_DEFINITIONS } from '../src/app/routes.js';
-
-const expected = [
+export const ROUTE_DEFINITIONS = [
   '/', '/login', '/register', '/tutorial', '/demo', '/campeonatos/novo',
   '/campeonatos', '/planos', '/superadmin', '/publicacao',
   '/superadmin/auditoria', '/superadmin/seguranca', '/superadmin/privacidade',
@@ -8,10 +6,7 @@ const expected = [
   '/publico/:id', '/c/:slug', '/embed/:id', '/equipe/:id/:teamId',
   '/campeonatos/:id', '/placar/:id/:matchId', '/sorteio/:id',
   '/inscrever/:championshipId/status/:registrationId',
-];
-
-const actual = ROUTE_DEFINITIONS.map(({ pattern }) => pattern);
-if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-  throw new Error(`Tabela de rotas divergente. Esperadas ${expected.length}, encontradas ${actual.length}`);
-}
-console.log(`OK: ${actual.length} rotas verificadas`);
+].map((pattern) => ({
+  pattern,
+  params: [...pattern.matchAll(/:([A-Za-z0-9_]+)/g)].map((match) => match[1]),
+}));

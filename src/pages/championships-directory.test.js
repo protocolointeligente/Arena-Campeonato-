@@ -8,8 +8,8 @@ const FIXTURES = [
   { id: 'd', nome: 'Rascunho Nunca Publicado', formato: 'liga', modalidade: 'futebol', status: 'rascunho', cidade: 'Rio de Janeiro', estado: 'RJ', publicSlug: '', updated: 4 },
 ];
 
-const { listPublicDirectory } = vi.hoisted(() => ({ listPublicDirectory: vi.fn() }));
-vi.mock('../services/championships.js', () => ({ listPublicDirectory }));
+const { listPublicDirectory, listPublicDirectoryPage } = vi.hoisted(() => ({ listPublicDirectory: vi.fn(), listPublicDirectoryPage: vi.fn() }));
+vi.mock('../services/championships.js', () => ({ listPublicDirectory, listPublicDirectoryPage }));
 
 const { renderChampionshipsDirectory } = await import('./championships-directory.js');
 
@@ -17,6 +17,7 @@ describe('championships directory', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="app"></div>';
     listPublicDirectory.mockReset().mockResolvedValue(FIXTURES);
+    listPublicDirectoryPage.mockReset().mockResolvedValue({ items: FIXTURES, nextCursor: null });
   });
 
   it('nunca lista rascunhos, mesmo tendo doc público', async () => {
@@ -62,5 +63,20 @@ describe('championships directory', () => {
     await renderChampionshipsDirectory(root);
     expect(root.querySelector('a[href="/c/volei-sp"]')).toBeTruthy();
     expect(root.querySelector('a[href="/publico/a"]')).toBeTruthy();
+  });
+
+  it('carrega a próxima página sem apagar os campeonatos já exibidos', async () => {
+    listPublicDirectoryPage
+      .mockResolvedValueOnce({ items: FIXTURES.slice(0, 2), nextCursor: 'cursor-1' })
+      .mockResolvedValueOnce({ items: [FIXTURES[2]], nextCursor: null });
+    const root = document.querySelector('#app');
+    await renderChampionshipsDirectory(root);
+    expect(root.querySelector('[data-load-more]')).toBeTruthy();
+    root.querySelector('[data-load-more]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(root.textContent).toMatch(/Copa do Bairro/);
+    root.querySelector('[data-tab="passado"]').click();
+    expect(root.textContent).toMatch(/Liga Encerrada 2025/);
+    expect(root.querySelector('[data-load-more]')).toBeFalsy();
   });
 });

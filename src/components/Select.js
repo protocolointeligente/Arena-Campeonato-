@@ -1,6 +1,6 @@
 import { esc } from '../app/utils.ts';
 
-export function Select({ label, name, id, options = [], value = '', placeholder, required = false, disabled = false, error, hint, multiple = false, className = '', onChange, onBlur, ...props }) {
+export function Select({ label, name, id, options = [], value = '', placeholder, required = false, disabled = false, error, hint, multiple = false, className = '', onChange, onBlur, ..._props }) {
   const selectId = id || name || `select-${Math.random().toString(36).slice(2, 9)}`;
   const errorId = error ? `${selectId}-error` : null;
   const hintId = hint ? `${selectId}-hint` : null;

@@ -13,7 +13,7 @@ const captchaScriptsLoaded = {
   [CAPTCHA_TYPES.RECAPTCHA]: false,
 };
 
-const captchaWidgets = new Map();
+const _captchaWidgets = new Map();
 
 export function loadCaptchaScript(type, siteKey) {
   if (captchaScriptsLoaded[type]) {return Promise.resolve();}
@@ -61,7 +61,7 @@ export function Captcha({
   onVerify,
   onExpire,
   onError,
-  required = true,
+  required: _required = true,
   id,
   className = '',
 }) {

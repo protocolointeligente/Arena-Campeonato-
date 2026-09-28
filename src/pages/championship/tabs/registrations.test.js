@@ -24,6 +24,13 @@ describe('registration operations', () => {
     expect(rows[2].textContent).not.toMatch(/pago|aguardando/i);
   });
 
+  it('shows a load-more control when another page is available', () => {
+    const dom = new JSDOM('<div id="root"></div>');
+    const root = dom.window.document.querySelector('#root');
+    root.innerHTML = renderRegistrations({}, { registrations: [{ id: 'p1', teamName: 'Equipe', athletes: [] }], nextCursor: 'cursor-1' });
+    expect(root.querySelector('[data-registration-load-more]')).toBeTruthy();
+  });
+
   it('filters registrations by team, responsible or protocol', () => {
     const dom = new JSDOM('<div id="root"></div>');
     const root = dom.window.document.querySelector('#root');

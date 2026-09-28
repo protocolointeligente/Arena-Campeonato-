@@ -4,7 +4,7 @@ export function registrationStatusLabel(status) {
   return { pending: 'Pendente', approved: 'Aprovada', rejected: 'Recusada' }[status] || 'Pendente';
 }
 
-export function renderRegistrations(store, { registrations }) {
+export function renderRegistrations(store, { registrations, nextCursor = null }) {
   return `
     <div class="card">
       <h2>Inscrições recebidas</h2>
@@ -20,7 +20,7 @@ export function renderRegistrations(store, { registrations }) {
           ${item.status === 'pending' ? `
             <button class="btn primary" data-approve-registration="${item.id}">Aprovar</button>
             <button class="btn ghost" data-reject-registration="${item.id}">Recusar</button>
-          ` : ''}
+      ` : ''}${nextCursor ? '<div class="actions center" style="margin-top:16px"><button class="btn ghost" data-registration-load-more>Carregar mais</button></div>' : ''}
         </div>
       `).join('')}` : '<p class="muted">Nenhuma inscrição recebida.</p>'}
     </div>

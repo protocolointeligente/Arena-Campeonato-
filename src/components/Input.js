@@ -54,7 +54,7 @@ export function Input({ label, type = 'text', name, id, value = '', placeholder,
   return wrapper;
 }
 
-export function Textarea({ label, name, id, value = '', placeholder, required = false, disabled = false, error, hint, rows = 4, className = '', onChange, onBlur, ...props }) {
+export function Textarea({ label, name, id, value = '', placeholder, required = false, disabled = false, error, hint, rows = 4, className = '', onChange, onBlur, ..._props }) {
   const inputId = id || name || `textarea-${Math.random().toString(36).slice(2, 9)}`;
   const errorId = error ? `${inputId}-error` : null;
   const hintId = hint ? `${inputId}-hint` : null;
@@ -101,7 +101,7 @@ export function Textarea({ label, name, id, value = '', placeholder, required = 
   return wrapper;
 }
 
-export function Checkbox({ label, name, id, checked = false, required = false, disabled = false, error, className = '', onChange, ...props }) {
+export function Checkbox({ label, name, id, checked = false, required = false, disabled = false, error, className = '', onChange, ..._props }) {
   const inputId = id || name || `checkbox-${Math.random().toString(36).slice(2, 9)}`;
   
   const wrapper = document.createElement('div');
@@ -130,7 +130,7 @@ export function Checkbox({ label, name, id, checked = false, required = false, d
   return wrapper;
 }
 
-export function RadioGroup({ label, name, options = [], value, required = false, disabled = false, error, className = '', onChange, inline = false, ...props }) {
+export function RadioGroup({ label, name, options = [], value, required = false, disabled = false, error, className = '', onChange, inline = false, ..._props }) {
   const groupId = `radiogroup-${Math.random().toString(36).slice(2, 9)}`;
   const errorId = error ? `${groupId}-error` : null;
   
