@@ -19,7 +19,7 @@ service cloud.firestore {
     function isCollaborator() {
       return signedIn()
         && request.auth.token.email != null
-        && lower(request.auth.token.email) in resource.data.collaboratorEmails;
+        && request.auth.token.email.lower() in resource.data.collaboratorEmails;
     }
 
     function canManageChampionship() {
@@ -33,7 +33,7 @@ service cloud.firestore {
       let champ = get(/databases/$(database)/documents/championships/$(championshipId)).data;
       return isPlatformAdmin()
         || (signedIn() && (champ.ownerUid == request.auth.uid
-          || (request.auth.token.email != null && lower(request.auth.token.email) in champ.get('collaboratorEmails', []))));
+          || (request.auth.token.email != null && request.auth.token.email.lower() in champ.get('collaboratorEmails', []))));
     }
 
     // Um usuário só ganha o doc users/{uid} ao passar pelo checkout (createCheckout grava ele
