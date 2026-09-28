@@ -741,6 +741,13 @@ function bindEvents(root, store, ctx) {
     await persist();
   });
 
+  // Scoreboard: alterna a projeção entre placar e intervalo (patrocinadores)
+  root.querySelectorAll('[data-scoreboard-screen]').forEach((button) => button.onclick = async () => {
+    const [kind, id, screen] = button.dataset.scoreboardScreen.split(':');
+    store.setScoreboardScreen(id, kind, screen);
+    await persist();
+  });
+
   // Scoreboard: open projection window (no store mutation, no re-render needed)
   root.querySelectorAll('[data-scoreboard-open]').forEach((button) => button.onclick = () => {
     const [kind, id] = button.dataset.scoreboardOpen.split(':');

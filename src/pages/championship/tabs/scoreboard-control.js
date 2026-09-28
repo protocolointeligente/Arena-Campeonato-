@@ -22,8 +22,15 @@ export function renderScoreboardControl(store, ctx) {
     <div class="card scoreboard-control">
       <div class="actions" style="justify-content:space-between">
         <h2>Placar ao vivo</h2>
-        <button class="btn primary" data-scoreboard-open="${ref()}">${icon('monitor', 16)} Abrir tela de projeção</button>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" data-sumula="${ref()}">${icon('clipboard', 16)} Súmula</button>
+          ${payload.screen === 'intervalo'
+            ? `<button class="btn" data-scoreboard-screen="${ref('placar')}">${icon('monitor', 16)} Voltar ao placar</button>`
+            : `<button class="btn ghost" data-scoreboard-screen="${ref('intervalo')}" title="Mostra a tela de intervalo com os patrocinadores">${icon('image', 16)} Intervalo</button>`}
+          <button class="btn primary" data-scoreboard-open="${ref()}">${icon('monitor', 16)} Abrir tela de projeção</button>
+        </div>
       </div>
+      ${payload.screen === 'intervalo' ? '<p class="notice" style="margin:8px 0">Projeção mostrando o <strong>intervalo com patrocinadores</strong>.</p>' : ''}
       <div class="scoreboard-score-row">
         <div>
           <span>${esc(payload.homeName)}</span>

@@ -50,3 +50,38 @@ describe('dígitos de 7 segmentos', () => {
     expect(segmentNumber(123, 2).match(/<svg/g)).toHaveLength(3);
   });
 });
+
+describe('súmula e intervalo na projeção', () => {
+  const state = {
+    nome: 'Copa X', modalidade: 'futsal', scoreType: 'goals',
+    sponsors: [{ id: 's1', name: 'Padaria Sol', logo: '' }, { id: 's2', name: 'Loja', logo: 'https://x/logo.png' }],
+    teams: [
+      { id: 'tA', nome: 'Leões', roster: [{ id: 'a1', nome: 'João', numero: '10' }] },
+      { id: 'tB', nome: 'Tigres', roster: [{ id: 'b1', nome: 'Pedro' }] },
+    ],
+    matches: [{ id: 'm1', home: 0, away: 1, hg: 2, ag: 0, events: [
+      { type: 'goal', teamId: 'tA', athleteId: 'a1' },
+      { type: 'yellow', teamId: 'tB', athleteId: 'b1' },
+      { type: 'goal', teamId: 'tA', athleteId: 'a1' },
+    ] }],
+  };
+
+  it('lista gols agrupados por atleta e cartões do lado certo', () => {
+    const payload = scoreboardPayload(state, 'm1', 'match');
+    expect(payload.events.map((e) => [e.type, e.side])).toEqual([['goal', 'home'], ['yellow', 'away'], ['goal', 'home']]);
+    const html = scoreboardFrameHTML(payload, state.nome);
+    expect(html).toContain('10 · João');
+    expect(html).toContain('×2');
+    expect(html).toContain('sb-ev-card yellow');
+    expect(html.indexOf('Casa')).toBeLessThan(html.indexOf('sb-window'));
+  });
+
+  it('tela de intervalo mostra placar e patrocinadores', () => {
+    const payload = { ...scoreboardPayload(state, 'm1', 'match'), screen: 'intervalo' };
+    const html = scoreboardFrameHTML(payload, state.nome);
+    expect(html).toContain('Intervalo');
+    expect(html).toContain('Padaria Sol');
+    expect(html).toContain('src="https://x/logo.png"');
+    expect(html).not.toContain('sb-clock');
+  });
+});

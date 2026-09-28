@@ -80,6 +80,31 @@ export function toggleServer(obj) {
   return { ok: true };
 }
 
+// Tela exibida na projeção: placar (padrão) ou intervalo com patrocinadores.
+export function setScreen(obj, screen) {
+  obj.screen = screen === 'intervalo' ? 'intervalo' : null;
+  return { ok: true, screen: obj.screen };
+}
+
+// Lances da súmula já resolvidos para a projeção: lado (casa/visitante) e nome do atleta.
+function scoreboardEvents(state, obj, kind) {
+  const homeId = kind === 'tie' ? obj.a : state.teams?.[obj.home]?.id;
+  const awayId = kind === 'tie' ? obj.b : state.teams?.[obj.away]?.id;
+  const athletes = new Map((state.teams || []).flatMap((team) => (team.roster || []).map((athlete) => [athlete.id, athlete])));
+  return (obj.events || [])
+    .filter((event) => ['goal', 'yellow', 'red'].includes(event.type))
+    .map((event) => {
+      const athlete = event.athleteId ? athletes.get(event.athleteId) : null;
+      return {
+        type: event.type,
+        side: event.teamId === homeId ? 'home' : event.teamId === awayId ? 'away' : null,
+        name: athlete?.nome || event.name || '',
+        number: athlete?.numero || '',
+      };
+    })
+    .filter((event) => event.side);
+}
+
 export function adjustScore(obj, field, delta) {
   const next = Math.max(0, (obj[field] || 0) + delta);
   obj[field] = next;
@@ -113,5 +138,8 @@ export function scoreboardPayload(state, id, kind) {
     mode: scoreboardMode(state),
     clock: { running: !!clock.running, period: clock.period || 1, elapsedMs: currentElapsedMs({ clock }) },
     fouls, timeouts, penalties, server: obj.server ?? null,
+    screen: obj.screen || null,
+    events: scoreboardEvents(state, obj, kind),
+    sponsors: (state.sponsors || []).filter((sponsor) => sponsor && (sponsor.logo || sponsor.name)),
   };
 }
