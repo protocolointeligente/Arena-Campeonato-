@@ -46,15 +46,7 @@ export async function submitRegistration(championshipId, data) {
       throw new Error(`Esta modalidade permite no máximo ${maxRoster} participantes.`);
     }
   }
-  const registrations = await getDocs(collection(db, 'championships', championshipId, 'registrations'));
-  const teamKey = registrationTeamKey(validation.data.teamName);
-  if (registrations.docs.some((item) => {
-    const record = item.data();
-    return ['pending', 'approved'].includes(record.status)
-      && registrationTeamKey(record.teamNameKey || record.teamName) === teamKey;
-  })) {
-    throw new Error('Esta equipe já possui uma inscrição neste campeonato.');
-  }
+  // Público não tem permissão de list; o id determinístico por nome + transação já barra duplicata.
   const registrationCollection = collection(db, 'championships', championshipId, 'registrations');
   const teamNameKey = registrationTeamKey(validation.data.teamName);
   const registrationRef = doc(registrationCollection, registrationDocId(teamNameKey));

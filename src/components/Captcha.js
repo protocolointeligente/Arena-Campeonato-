@@ -69,6 +69,7 @@ export function Captcha({
   const effectiveSiteKey = siteKey || (type === CAPTCHA_TYPES.HCAPTCHA ? DEFAULT_HCAPTCHA_SITEKEY : DEFAULT_RECAPTCHA_SITEKEY);
   
   const container = document.createElement('div');
+  container.id = captchaId;
   container.className = `captcha-container ${className}`.trim();
   container.dataset.captchaType = type;
   container.dataset.captchaId = captchaId;

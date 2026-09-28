@@ -8,7 +8,7 @@ export function renderPublication(store) {
   const championshipId = encodeURIComponent(state.id || '');
   const teamInvites = (state.teams || []).map((team) => {
     const url = `${location.origin}/equipe/${championshipId}/${encodeURIComponent(team.id)}`;
-    return `<div class="team-row"><span style="flex:1"><strong>${esc(team.nome)}</strong><br><code class="pix-key">${esc(url)}</code></span><button class="btn ghost sm" data-team-invite-copy="${esc(url)}">Copiar</button><button class="btn ghost sm" data-team-invite-qr="${esc(url)}" data-team-invite-name="${esc(team.nome)}">QR</button></div>`;
+    return `<div class="team-row" style="grid-template-columns:minmax(0,1fr) auto auto"><span style="min-width:0"><strong>${esc(team.nome)}</strong><br><code class="pix-key" style="display:block;margin-top:6px;padding:8px 10px;font-size:13px">${esc(url)}</code></span><button class="btn ghost sm" data-team-invite-copy="${esc(url)}">Copiar</button><button class="btn ghost sm" data-team-invite-qr="${esc(url)}" data-team-invite-name="${esc(team.nome)}">QR</button></div>`;
   }).join('');
   return `
     <div class="card">
