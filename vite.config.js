@@ -1,6 +1,18 @@
 import { defineConfig } from 'vite';
 
+// Identificador do deploy: o app compara com /version.json pra saber que saiu versão nova
+// (telão aberto por horas recarrega sozinho; o painel mostra "Nova versão").
+const BUILD_ID = Date.now().toString(36);
+
 export default defineConfig({
+  define: { 'import.meta.env.VITE_BUILD_ID': JSON.stringify(BUILD_ID) },
+  plugins: [{
+    name: 'arena-version-file',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD_ID }) });
+    },
+  }],
   build: {
     rollupOptions: {
       output: {

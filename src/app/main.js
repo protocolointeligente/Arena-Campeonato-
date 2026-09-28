@@ -31,6 +31,7 @@ import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoun
 import { getErrorLogger } from '../services/error-logger.js';
 import { ROUTE_DEFINITIONS } from './routes.js';
 import { rememberLoginRedirect, takeLoginRedirect } from './login-redirect.js';
+import { watchForUpdates } from './update-check.js';
 
 const root = document.querySelector('#app');
 applyTheme();
@@ -116,6 +117,23 @@ notFound(safeRoute(() => {
 }));
 
 start();
+
+// Deploy novo: telas de projeção (telão ligado por horas) recarregam sozinhas; no resto do
+// app aparece um aviso pra pessoa atualizar quando quiser, sem perder o que está digitando.
+watchForUpdates(() => {
+  if (/^\/(placar|sorteio|embed)\//.test(window.location.pathname)) {
+    window.location.reload();
+    return;
+  }
+  if (document.getElementById('arena-update-banner')) {return;}
+  const banner = document.createElement('div');
+  banner.id = 'arena-update-banner';
+  banner.className = 'update-banner';
+  banner.setAttribute('role', 'status');
+  banner.innerHTML = '<span>Nova versão do Arena disponível.</span><button class="btn primary sm" type="button">Atualizar agora</button>';
+  banner.querySelector('button').onclick = () => window.location.reload();
+  document.body.appendChild(banner);
+});
 
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   navigator.serviceWorker.register('/sw.js').catch((error) => console.warn('[PWA] Service worker indisponível', error));
