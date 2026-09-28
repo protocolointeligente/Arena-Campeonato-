@@ -1,4 +1,5 @@
 import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
+import { friendlyError } from '../app/friendly-error.js';
 import { db } from '../services/firebase.js';
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
@@ -358,6 +359,6 @@ export async function renderTeamPortal(root, championshipId, teamId) {
     root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Campeonato</button></header><main class="section"><div class="public-hero"><small>EQUIPE</small><h1>${esc(view.team.nome)}</h1><p class="muted">${esc(state.nome || 'Campeonato')}</p></div><div class="public-stats"><div><strong>${view.standing?.P || 0}</strong><span>pontos</span></div><div><strong>${view.standing?.J || 0}</strong><span>jogos</span></div><div><strong>${view.standing?.DISC || 0}</strong><span>disciplina</span></div></div><div class="public-grid">${messagesPanel}<section class="card"><h2>Jogos da equipe</h2><ul class="public-list">${matchText || '<li class="muted">Nenhum jogo registrado.</li>'}</ul></section><section class="card"><h2>Estatísticas dos atletas</h2><ul class="public-list">${athleteText || '<li class="muted">Elenco não publicado.</li>'}</ul></section><section class="card"><h2>Goleadores</h2><ul class="public-list">${scorerText || '<li class="muted">Nenhum gol registrado.</li>'}</ul></section></div></main></div>`;
     root.querySelector('[data-back]').onclick = () => navigate(`/publico/${championshipId}`);
   } catch (error) {
-    root.innerHTML = `<div class="shell"><main class="section"><div class="card"><h2>Não foi possível carregar</h2><p class="muted">${esc(error.message || 'Tente novamente.')}</p></div></main></div>`;
+    root.innerHTML = `<div class="shell"><main class="section"><div class="card"><h2>Não foi possível carregar</h2><p class="muted">${esc(friendlyError(error, 'Tente novamente.'))}</p></div></main></div>`;
   }
 }

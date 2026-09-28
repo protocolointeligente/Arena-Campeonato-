@@ -89,8 +89,11 @@ function actionFeedback(button, message) {
 export async function renderPublication(root, id) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Voltar</button></header><main class="section"><div class="card">Carregando...</div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate(`/campeonatos/${id}`);
+  const openedAt = window.location.pathname;
   let slug = '';
   try { slug = await getPublicSlug(id); } catch { /* mantém o link padrão baseado no id */ }
+  // Visitante é mandado pro login enquanto isso carrega: não sobrescreve a tela de login.
+  if (window.location.pathname !== openedAt) {return;}
   const publicUrl = slug ? `${location.origin}/c/${slug}` : `${location.origin}/publico/${id}`;
   const registrationUrl = `${location.origin}/inscrever/${id}`;
   const embedUrl = `${location.origin}/embed/${id}`;

@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { esc } from '../app/utils.ts';
 import { auth } from '../services/firebase.js';
 import { icon } from '../app/icons.js';
@@ -18,7 +19,7 @@ export async function renderSecurityCenter(root) {
       const mfa = user.multiFactor?.enrolledFactors?.length > 0;
       renderBody(mfa);
     } catch (error) {
-      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(error.message)}</p></div>`;
+      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(friendlyError(error))}</p></div>`;
     }
   }
 

@@ -1,4 +1,5 @@
 import { navigate } from '../../app/router-v2.js';
+import { friendlyError } from '../../app/friendly-error.js';
 import { getChampionship, saveChampionship, checkSlugAvailable, getEngagementStats } from '../../services/championships.js';
 import { listRegistrationsPage, updateRegistration } from '../../services/registrations.js';
 import { addAudit, listAudit } from '../../services/audit.js';
@@ -67,12 +68,17 @@ export async function renderChampionship(root, id) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/" data-link>ARENA</a><button class="btn ghost" data-back>← Meus campeonatos</button></header><main class="section" role="main"><div class="card">Carregando campeonato...</div></main></div>`;
   root.querySelector('[data-back]').onclick = () => navigate('/');
   
+  const openedAt = window.location.pathname;
+  // Se a rota mudou enquanto carregava (ex.: visitante mandado pro login), não sobrescreve a tela nova.
+  const stale = () => window.location.pathname !== openedAt;
   try {
     const championship = await getChampionship(id);
+    if (stale()) {return;}
     if (!championship) {throw new Error('Campeonato não encontrado.');}
     await mount(root, championship);
   } catch (error) {
-    root.querySelector('main').innerHTML = `<div class="card"><h2>Não foi possível abrir</h2><p class="muted">${esc(error.message || error)}</p><button class="btn ghost" data-back>← Voltar</button></div>`;
+    if (stale()) {return;}
+    root.querySelector('main').innerHTML = `<div class="card"><h2>Não foi possível abrir</h2><p class="muted">${esc(friendlyError(error))}</p><button class="btn ghost" data-back>← Voltar</button></div>`;
     root.querySelector('[data-back]').onclick = () => navigate('/');
   }
 }
@@ -165,7 +171,7 @@ async function mount(root, initial) {
     } catch (error) {
       enqueueSync(state);
       saveTag.textContent = 'Erro ao salvar';
-      toast(navigator.onLine ? (error.message || 'Não foi possível salvar.') : 'Sem conexão. Alteração guardada para sincronizar.');
+      toast(navigator.onLine ? friendlyError(error, 'Não foi possível salvar.') : 'Sem conexão. Alteração guardada para sincronizar.');
     }
   }
 
@@ -255,7 +261,7 @@ function bindEvents(root, store, ctx) {
       if (item) {item.status = 'approved'; Object.assign(item, feeFields);}
       await addAudit(store.getState().id, 'registration_approved', `Inscrição aprovada: ${item?.teamName || button.dataset.approveRegistration}`);
       render();
-    } catch (error) {button.disabled = false; toast(error.message || 'Não foi possível aprovar a inscrição.');}
+    } catch (error) {button.disabled = false; toast(friendlyError(error, 'Não foi possível aprovar a inscrição.'));}
   });
   root.querySelectorAll('[data-reject-registration]').forEach((button) => button.onclick = async () => {
     if (!superadmin && !can(store.getState(), auth.currentUser, 'registrations')) {return toast('Seu perfil não pode analisar inscrições.');}
@@ -267,7 +273,7 @@ function bindEvents(root, store, ctx) {
       if (item) {item.status = 'rejected';}
       await addAudit(store.getState().id, 'registration_rejected', `Inscrição recusada: ${item?.teamName || button.dataset.rejectRegistration}`);
       render();
-    } catch (error) {button.disabled = false; toast(error.message || 'Não foi possível recusar a inscrição.');}
+    } catch (error) {button.disabled = false; toast(friendlyError(error, 'Não foi possível recusar a inscrição.'));}
   });
   
   root.querySelector('[data-pdf]')?.addEventListener('click', async () => {
@@ -805,7 +811,7 @@ function bindEvents(root, store, ctx) {
     const oldUrl = store.getState().branding?.[kind] || '';
     let url;
     try { url = await uploadBrandImage(store.getState().id, kind, file, oldUrl); }
-    catch (error) { return toast(error.message || 'Não foi possível enviar a imagem.'); }
+    catch (error) { return toast(friendlyError(error, 'Não foi possível enviar a imagem.')); }
     store.setBrandImage(kind, url);
     await persist();
     await addAudit(store.getState().id, 'branding_updated', kind === 'logo' ? 'Logo atualizada' : 'Capa atualizada');
@@ -826,7 +832,7 @@ function bindEvents(root, store, ctx) {
     const logoInput = root.querySelector('[data-new-sponsor-logo]');
     let logo = '';
     try { const file = logoInput.files[0]; if (file) {logo = await uploadSponsorLogo(store.getState().id, file, '');} }
-    catch (error) { return toast(error.message || 'Não foi possível enviar a logo.'); }
+    catch (error) { return toast(friendlyError(error, 'Não foi possível enviar a logo.')); }
     const result = store.addSponsor({ name: nameInput.value, url: urlInput.value, logo });
     if (!result.ok) {return toast(result.reason);}
     await persist();
@@ -867,7 +873,7 @@ function bindEvents(root, store, ctx) {
       const oldUrl = team?.logo || '';
       let url;
       try { url = await uploadTeamLogo(store.getState().id, file, oldUrl); }
-      catch (error) { return toast(error.message || 'Não foi possível enviar a logo.'); }
+      catch (error) { return toast(friendlyError(error, 'Não foi possível enviar a logo.')); }
       store.setTeamLogo(el.dataset.pickLogo, url);
       await persist();
     };
@@ -897,7 +903,7 @@ function bindEvents(root, store, ctx) {
       await addAudit(store.getState().id, 'backup_restored', `Backup restaurado como ${imported.value.id}`);
       toast('Backup restaurado');
       navigate(`/campeonatos/${imported.value.id}`);
-    } catch (error) {toast(error.message || 'Não foi possível restaurar o backup.');}
+    } catch (error) {toast(friendlyError(error, 'Não foi possível restaurar o backup.'));}
     event.target.value = '';
   });
 }
@@ -938,9 +944,9 @@ function sumulaModal(kind, id, store, { persist, addAudit }) {
   const state = store.getState();
   const obj = sumulaObj(kind, id, state);
   if (!obj) {return;}
-  obj.events = obj.events || [];
+  const events = obj.events || [];
   const sides = kind === 'match' ? [state.teams?.[obj.home], state.teams?.[obj.away]].filter(Boolean) : [obj.a, obj.b].map((tid) => teamById(state, tid)).filter(Boolean);
-  const evHTML = obj.events.length ? obj.events.map((e, i) => { const name = e.athleteId ? (state.teams?.flatMap(t => t.roster || []).find(a => a.id === e.athleteId)?.nome || '?') : (e.name || '?'); return `<div class="team-row"><span>${eventIconHTML(e.type)}</span><span>${esc(name)} <span class="muted">— ${esc(teamById(state, e.teamId)?.nome || '—')}</span></span><span class="muted"></span><button class="btn ghost sm" data-sumula-remove="${i}">✕</button></div>`; }).join('') : '<p class="muted">Nenhum lance registrado.</p>';
+  const evHTML = events.length ? events.map((e, i) => { const name = e.athleteId ? (state.teams?.flatMap(t => t.roster || []).find(a => a.id === e.athleteId)?.nome || '?') : (e.name || '?'); return `<div class="team-row"><span>${eventIconHTML(e.type)}</span><span>${esc(name)} <span class="muted">— ${esc(teamById(state, e.teamId)?.nome || '—')}</span></span><span class="muted"></span><button class="btn ghost sm" data-sumula-remove="${i}">✕</button></div>`; }).join('') : '<p class="muted">Nenhum lance registrado.</p>';
   const teamPicker = sides.map((team) => { const roster = team.roster || []; return `<div style="margin-top:12px"><strong>${esc(team.nome)}</strong>${roster.length ? roster.map((athlete) => { const suspension = suspensionInfo(state, athlete.id); return `<div class="team-row"><span>${athlete.numero ? esc(athlete.numero) : ''}</span><span>${esc(athlete.nome)}${suspension.suspended ? ' <span class="tag">Suspenso</span>' : ''}</span><span class="row">${suspension.suspended ? '<span class="muted">Indisponível</span>' : `<button class="btn ghost sm" aria-label="Registrar gol de ${esc(athlete.nome)}" title="Registrar gol" data-sumula-add="${esc(team.id)}:${esc(athlete.id)}:goal">${icon('ball', 16)}</button><button class="btn ghost sm" aria-label="Registrar cartão amarelo para ${esc(athlete.nome)}" title="Cartão amarelo" data-sumula-add="${esc(team.id)}:${esc(athlete.id)}:yellow">${cardChip('var(--warning)')}</button><button class="btn ghost sm" aria-label="Registrar cartão vermelho para ${esc(athlete.nome)}" title="Cartão vermelho" data-sumula-add="${esc(team.id)}:${esc(athlete.id)}:red">${cardChip('var(--danger)')}</button>`}</span></div>`; }).join('') : '<p class="muted">Sem elenco cadastrado.</p>'}<div class="row" style="margin-top:6px"><button class="btn ghost sm" aria-label="Registrar gol sem atleta" title="Gol sem atleta" data-sumula-anon="${esc(team.id)}:goal">+ ${icon('ball', 16)} s/ atleta</button><button class="btn ghost sm" aria-label="Registrar cartão amarelo sem atleta" title="Cartão amarelo" data-sumula-anon="${esc(team.id)}:yellow">+ ${cardChip('var(--warning)')}</button><button class="btn ghost sm" aria-label="Registrar cartão vermelho sem atleta" title="Cartão vermelho" data-sumula-anon="${esc(team.id)}:red">+ ${cardChip('var(--danger)')}</button></div></div>`; }).join('');
   modal(`<h3 style="display:flex;align-items:center;gap:8px">${icon('clipboard', 20)} Súmula</h3><p class="muted">${sides.map((t) => esc(t.nome)).join(' × ')}</p><div style="margin:14px 0">${evHTML}</div><div style="border-top:1px solid var(--line);margin:10px 0"></div>${teamPicker}<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" data-close-modal>Concluir</button></div>`);
   const box = document.getElementById('modalBox');
@@ -958,20 +964,20 @@ function rosterModal(teamId, store, { persist, addAudit }) {
   const box = document.getElementById('modalBox');
   box.querySelector('[data-close-modal]').onclick = () => closeModal();
   box.querySelectorAll('[data-athlete-name]').forEach((input) => input.onchange = async () => {
-    const result = store.updateAthlete(team, input.dataset.athleteName, { nome: input.value, numero: box.querySelector(`[data-athlete-numero="${input.dataset.athleteName}"]`).value });
+    const result = store.updateAthlete(team.id, input.dataset.athleteName, { nome: input.value, numero: box.querySelector(`[data-athlete-numero="${input.dataset.athleteName}"]`).value });
     if (!result.ok) {return;}
     await persist();
     await addAudit(state.id, 'athlete_updated', 'Atleta atualizado');
   });
   box.querySelectorAll('[data-athlete-numero]').forEach((input) => input.onchange = async () => {
     const nameInput = box.querySelector(`[data-athlete-name="${input.dataset.athleteNumero}"]`);
-    const result = store.updateAthlete(team, input.dataset.athleteNumero, { nome: nameInput?.value, numero: input.value });
+    const result = store.updateAthlete(team.id, input.dataset.athleteNumero, { nome: nameInput?.value, numero: input.value });
     if (!result.ok) {return;}
     await persist();
     await addAudit(state.id, 'athlete_updated', 'Atleta atualizado');
   });
   box.querySelectorAll('[data-athlete-remove]').forEach((button) => button.onclick = async () => {
-    const result = store.removeAthlete(team, button.dataset.athleteRemove);
+    const result = store.removeAthlete(team.id, button.dataset.athleteRemove);
     if (!result.ok) {return;}
     await persist();
     await addAudit(state.id, 'athlete_removed', 'Atleta removido');
@@ -988,8 +994,8 @@ function rosterModal(teamId, store, { persist, addAudit }) {
       const oldUrl = athlete?.foto || '';
       let url;
       try { url = await uploadAthletePhoto(state.id, file, oldUrl); }
-      catch (error) { return toast(error.message || 'Não foi possível enviar a foto.'); }
-      store.setAthletePhoto(team, button.dataset.athletePhoto, url);
+      catch (error) { return toast(friendlyError(error, 'Não foi possível enviar a foto.')); }
+      store.setAthletePhoto(team.id, button.dataset.athletePhoto, url);
       await persist();
       rosterModal(teamId, store, { persist, addAudit });
     };
@@ -998,7 +1004,7 @@ function rosterModal(teamId, store, { persist, addAudit }) {
   const addButton = box.querySelector('[data-add-athlete]');
   if (addButton) {addButton.onclick = async () => {
     const nameInput = box.querySelector('[data-new-athlete-name]');
-    const result = store.addAthlete(team, { nome: nameInput.value });
+    const result = store.addAthlete(team.id, { nome: nameInput.value });
     if (!result.ok) {return toast(result.reason);}
     await persist();
     await addAudit(state.id, 'athlete_added', `Atleta adicionado: ${result.athlete.nome}`);
@@ -1006,7 +1012,7 @@ function rosterModal(teamId, store, { persist, addAudit }) {
   };}
   box.querySelectorAll('[data-staff]').forEach((input) => input.onchange = async () => {
     const [staffTeamId, key] = input.dataset.staff.split(':');
-    store.setTeamStaff(teamById(state, staffTeamId), key, input.value);
+    store.setTeamStaff(staffTeamId, key, input.value);
     await persist();
   });
 }

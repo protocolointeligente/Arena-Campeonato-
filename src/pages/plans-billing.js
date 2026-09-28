@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { esc } from '../app/utils.ts';
 import { db } from '../services/firebase.js';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -16,7 +17,7 @@ export async function renderPlansBilling(root) {
       const users = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       renderBody(users);
     } catch (error) {
-      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(error.message)}</p></div>`;
+      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(friendlyError(error))}</p></div>`;
     }
   }
 

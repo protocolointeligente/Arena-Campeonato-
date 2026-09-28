@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { submitRegistration } from '../services/registrations.js';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
@@ -84,7 +85,7 @@ export async function renderRegistration(root, id) {
       <label class="muted">E-mail<input name="email" type="email"></label>
       <label class="muted">Técnico/professor<input name="coach"></label>
       <label class="muted">${state.rosterMode === 'individual' ? 'Participante' : state.rosterMode === 'dupla' ? 'Participantes' : 'Atletas'} (máx. ${rosterLimit})<textarea name="athletes" placeholder="${state.rosterMode === 'dupla' ? 'Um nome por linha (2 participantes)' : 'Um nome por linha'}" rows="6"></textarea></label>
-      <label class="muted"><input name="consent" type="checkbox" required> Confirmo que posso fornecer estes dados ao organizador.</label>
+      <label class="muted"><input name="consent" type="checkbox" required> Confirmo que posso fornecer estes dados ao organizador e li a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</label>
       
       <div class="captcha-wrapper" style="margin: 16px 0;"></div>
       
@@ -174,7 +175,7 @@ export async function renderRegistration(root, id) {
       };
       
     } catch (error) {
-      messageEl.textContent = error.message || 'Não foi possível enviar a inscrição.';
+      messageEl.textContent = friendlyError(error, 'Não foi possível enviar a inscrição.');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Enviar inscrição';
       captcha.reset(); // Reset CAPTCHA on error

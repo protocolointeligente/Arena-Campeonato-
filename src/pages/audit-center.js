@@ -1,6 +1,7 @@
 import { navigate } from '../app/router-v2.js';
 import { esc } from '../app/utils.ts';
-import { listAudit } from '../services/audit.js';
+import { listPlatformAudit } from '../services/audit.js';
+import { friendlyError } from '../app/friendly-error.js';
 
 export async function renderAuditCenter(root) {
   root.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a><button class="btn ghost" data-back>← Superadmin</button></header><main class="section"><div class="hero" style="padding-top:10px;min-height:0"><h1>CENTRAL DE <em>AUDITORIA</em></h1><p class="muted">Log de ações em toda a plataforma.</p></div><div data-body><div class="card">Carregando auditoria...</div></div></main></div>`;
@@ -9,10 +10,10 @@ export async function renderAuditCenter(root) {
 
   async function load() {
     try {
-      const logs = await listAudit();
+      const logs = await listPlatformAudit();
       renderBody(logs);
     } catch (error) {
-      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(error.message || 'Não foi possível carregar a auditoria.')}</p></div>`;
+      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(friendlyError(error, 'Não foi possível carregar a auditoria.'))}</p></div>`;
     }
   }
 

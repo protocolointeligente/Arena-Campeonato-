@@ -1,6 +1,6 @@
 import '../styles/tokens.css';
 import '../styles/layout.css';
-import { route, navigate, start } from './router-v2.js';
+import { route, navigate, start, notFound } from './router-v2.js';
 import { applyTheme } from './theme.js';
 import { ensureUiRoot } from './ui.js';
 import { renderLanding } from '../pages/landing.js';
@@ -16,6 +16,7 @@ import { renderPlans } from '../pages/plans.js';
 import { renderPublicChampionship, renderTeamPortal, renderPublicChampionshipBySlug, renderEmbedWidget } from '../pages/public-championship.js';
 import { renderRegistration } from '../pages/registration.js';
 import { renderSuperadmin } from '../pages/superadmin.js';
+import { renderLegal } from '../pages/legal.js';
 import { renderAuditCenter } from '../pages/audit-center.js';
 import { renderSecurityCenter } from '../pages/security-center.js';
 import { renderPrivacyCenter } from '../pages/privacy-center.js';
@@ -29,6 +30,7 @@ import { setUser, getAppState } from './store.js';
 import { ErrorBoundary, setupGlobalErrorHandlers } from '../components/ErrorBoundary.js';
 import { getErrorLogger } from '../services/error-logger.js';
 import { ROUTE_DEFINITIONS } from './routes.js';
+import { rememberLoginRedirect, takeLoginRedirect } from './login-redirect.js';
 
 const root = document.querySelector('#app');
 applyTheme();
@@ -66,8 +68,8 @@ const safeRoute = (handler) => (params) => {
   }
 };
 
-if (ROUTE_DEFINITIONS.length !== 25) {
-  throw new Error(`Tabela de rotas incompleta: esperadas 25, encontradas ${ROUTE_DEFINITIONS.length}`);
+if (ROUTE_DEFINITIONS.length !== 27) {
+  throw new Error(`Tabela de rotas incompleta: esperadas 27, encontradas ${ROUTE_DEFINITIONS.length}`);
 }
 
 const registerRoute = (pattern, handler) => {
@@ -105,6 +107,13 @@ registerRoute('/placar/:id/:matchId', safeRoute((params) => {
 }));
 registerRoute('/sorteio/:id', safeRoute((params) => renderDrawDisplay(mainContent, params.id)));
 registerRoute('/inscrever/:championshipId/status/:registrationId', safeRoute((params) => renderRegistrationStatus(mainContent, params.championshipId, params.registrationId)));
+registerRoute('/termos', safeRoute(() => renderLegal(mainContent, 'termos')));
+registerRoute('/privacidade', safeRoute(() => renderLegal(mainContent, 'privacidade')));
+
+notFound(safeRoute(() => {
+  mainContent.innerHTML = `<div class="shell"><header class="topbar"><a class="logo" href="/">ARENA</a></header><main class="section"><div class="card" style="max-width:560px;margin:40px auto;text-align:center"><h1 style="font-size:28px">Página não encontrada</h1><p class="muted">O endereço pode estar incorreto ou a página foi removida.</p><div class="row" style="justify-content:center;gap:8px;margin-top:16px"><button class="btn primary" data-go="/">Ir para o início</button><button class="btn ghost" data-go="/campeonatos">Ver campeonatos</button></div></div></main></div>`;
+  mainContent.querySelectorAll('[data-go]').forEach((button) => { button.onclick = () => navigate(button.dataset.go); });
+}));
 
 start();
 
@@ -120,6 +129,22 @@ window.addEventListener('arena:error-reset', () => {
   window.dispatchEvent(new PopStateEvent('popstate'));
 });
 
-observeAuth((user) => { setUser(user); if (user && ['/login', '/register'].includes(window.location.pathname)) { window.history.replaceState({}, '', '/'); renderHome(mainContent); } if (user && window.location.pathname === '/') {renderHome(mainContent);} if (!user && window.location.pathname.startsWith('/campeonatos/')) {navigate('/login');} });
+// Rotas que só fazem sentido logado. Visitante é mandado pro login e volta pra cá depois.
+const isPrivatePath = (path) => path.startsWith('/campeonatos/') || path.startsWith('/publicacao/') || path === '/superadmin' || path.startsWith('/superadmin/');
+
+observeAuth((user) => {
+  setUser(user);
+  const path = window.location.pathname;
+  if (user && ['/login', '/register'].includes(path)) {
+    const next = takeLoginRedirect();
+    if (next) {navigate(next);} else { window.history.replaceState({}, '', '/'); renderHome(mainContent); }
+    return;
+  }
+  if (user && path === '/') {renderHome(mainContent);}
+  if (!user && isPrivatePath(path)) {
+    rememberLoginRedirect(path + window.location.search);
+    navigate('/login');
+  }
+});
 
 

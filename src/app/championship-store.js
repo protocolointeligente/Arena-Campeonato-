@@ -58,7 +58,11 @@ export class ChampionshipStore {
   }
 
   produce(fn) {
-    this.state = produce(this.state, fn);
+    // O valor de retorno de `fn` é descartado de propósito: no immer, um recipe que muta o
+    // draft E retorna algo lança "[Immer] minified error nr: 4" (foi o que derrubou
+    // removePhase/removeCategory/applyProgression). Métodos que precisam de resultado o
+    // capturam numa variável local (padrão `let result; this.produce(d => { result = … })`).
+    this.state = produce(this.state, (draft) => { fn(draft); });
     // Placar, cartões, bracket etc. são editados na cópia "root" (state.matches/bracket/...)
     // pra todo o resto do app poder ler `state.matches` direto sem saber de fases — mas essa
     // cópia só era salva de volta dentro da fase ativa em switchPhase/switchCategory. Qualquer
@@ -164,9 +168,9 @@ export class ChampionshipStore {
   }
 
   removeCategory(id) {
-    return this.produce((draft) => {
-      return removeCategory(draft, id);
-    });
+    let result;
+    this.produce((draft) => { result = removeCategory(draft, id); });
+    return result;
   }
 
   // Phases
@@ -302,16 +306,30 @@ export class ChampionshipStore {
     return result;
   }
 
+  // `obj` vem de getState() (congelado): localiza a partida/confronto equivalente no draft
+  // pelo id — mutar o objeto de fora lançava "object is not extensible" e não salvava nada.
+  draftMatchObj(draft, obj) {
+    if (!obj) {return null;}
+    return (draft.matches || []).find((m) => m.id === obj.id)
+      || (draft.bracket ? findTie(draft.bracket, obj.id) : null);
+  }
+
   addMatchEvent(obj, event) {
-    this.produce((_draft) => {
-      addMatchEvent(obj, event);
+    let result = { ok: false };
+    this.produce((draft) => {
+      const target = this.draftMatchObj(draft, obj);
+      if (target) {result = addMatchEvent(target, event);}
     });
+    return result;
   }
 
   removeMatchEvent(obj, index) {
-    this.produce((_draft) => {
-      removeMatchEvent(obj, index);
+    let result = { ok: false };
+    this.produce((draft) => {
+      const target = this.draftMatchObj(draft, obj);
+      if (target) {result = removeMatchEvent(target, index);}
     });
+    return result;
   }
 
   // Bracket

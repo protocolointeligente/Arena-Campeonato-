@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { toast, modal, closeModal } from '../app/ui.js';
 import { auth } from '../services/firebase.js';
 import { PLAN_DEFINITIONS, planCardsHTML, planLimitText, currentPlan, choosePlan } from '../app/plans.js';
@@ -62,7 +63,7 @@ export async function renderPlans(root) {
         billingDoc = await getBilling();
         renderBody();
       } catch (error) {
-        toast(error.message || 'Não foi possível cancelar.');
+        toast(friendlyError(error, 'Não foi possível cancelar.'));
       }
     });
   }
@@ -80,7 +81,7 @@ export async function renderPlans(root) {
           window.location.href = checkoutUrl;
         } catch (error) {
           closeModal();
-          toast(error.message || 'Não foi possível iniciar o pagamento.');
+          toast(friendlyError(error, 'Não foi possível iniciar o pagamento.'));
         }
       };
     });

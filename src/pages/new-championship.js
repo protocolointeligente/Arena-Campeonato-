@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { saveChampionship } from '../services/championships.js';
 import { uid } from '../app/utils.ts';
 import { CHAMPIONSHIP_TEMPLATES, COMPETITION_MODELS, templateConfig } from '../app/templates.js';
@@ -15,6 +16,6 @@ export function renderNewChampionship(root) {
       cfg: templateConfig(data.get('template'), data.get('model')).cfg,
     };
     try { await saveChampionship(value); navigate(`/campeonatos/${value.id}`); }
-    catch (error) { root.querySelector('[data-error]').textContent = error.message || 'Não foi possível criar.'; }
+    catch (error) { root.querySelector('[data-error]').textContent = friendlyError(error, 'Não foi possível criar.'); }
   };
 }

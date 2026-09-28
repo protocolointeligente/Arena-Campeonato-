@@ -6,6 +6,7 @@ export const ROUTE_DEFINITIONS = [
   '/publico/:id', '/c/:slug', '/embed/:id', '/equipe/:id/:teamId',
   '/campeonatos/:id', '/placar/:id/:matchId', '/sorteio/:id',
   '/inscrever/:championshipId/status/:registrationId',
+  '/termos', '/privacidade',
 ].map((pattern) => ({
   pattern,
   params: [...pattern.matchAll(/:([A-Za-z0-9_]+)/g)].map((match) => match[1]),

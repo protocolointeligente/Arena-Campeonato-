@@ -1,6 +1,12 @@
 import { pathToRegexp } from 'path-to-regexp';
 
 const routes = [];
+let notFoundHandler = null;
+
+// Chamado quando nenhuma rota casa (senão a tela fica em branco).
+export function notFound(handler) {
+  notFoundHandler = handler;
+}
 
 export function route(pattern, handler) {
   // path-to-regexp v8 returns { regexp, keys } and never mutates an argument — passing a
@@ -23,7 +29,10 @@ export function replace(path) {
   dispatch(path);
 }
 
-function dispatch(path) {
+function dispatch(rawPath) {
+  // Só o pathname entra no match: "/placar/a/b?kind=tie" não casaria com nenhuma rota.
+  let path = String(rawPath).split(/[?#]/)[0] || '/';
+  if (path.length > 1 && path.endsWith('/')) {path = path.slice(0, -1);}
   for (const { regex, keys, handler } of routes) {
     const match = regex.exec(path);
     if (match) {
@@ -33,6 +42,7 @@ function dispatch(path) {
       return true;
     }
   }
+  if (notFoundHandler) {notFoundHandler({ path });}
   return false;
 }
 

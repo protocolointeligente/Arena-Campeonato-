@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [22, 24]
 
     steps:
       - name: Checkout repository
@@ -35,6 +35,9 @@ jobs:
         run: npx tsc --noEmit
         continue-on-error: true
 
+      - name: Verify routes and internal links
+        run: npm run verify
+
       - name: Run tests
         run: npm test
 
@@ -46,7 +49,7 @@ jobs:
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        if: matrix.node-version == 20
+        if: matrix.node-version == 22
         with:
           name: dist-${{ matrix.node-version }}
           path: dist/
@@ -54,7 +57,7 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: matrix.node-version == 20
+        if: matrix.node-version == 22
         with:
           name: coverage
           path: coverage/

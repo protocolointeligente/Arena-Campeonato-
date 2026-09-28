@@ -146,3 +146,56 @@ describe('fase de mata-mata pré-configurada', () => {
     expect(html).toContain('data-add-knockout="2"');
   });
 });
+
+describe('ações do store que devolvem resultado não quebram o immer', () => {
+  it('removePhase remove e devolve ok', () => {
+    const store = groupStore();
+    store.addKnockoutPhase(4);
+    const id = cat(store).phases[1].id;
+    expect(store.removePhase(id)).toEqual({ ok: true });
+    expect(cat(store).phases).toHaveLength(1);
+  });
+
+  it('removePhase da fase ativa volta para a primeira', () => {
+    const store = groupStore();
+    store.addPhase();
+    const active = cat(store).activePhaseId;
+    expect(store.removePhase(active).ok).toBe(true);
+    expect(cat(store).activePhaseId).toBe(cat(store).phases[0].id);
+  });
+
+  it('removeCategory devolve ok', () => {
+    const store = groupStore();
+    store.addCategory();
+    const id = store.getState().categories[1].id;
+    expect(store.removeCategory(id).ok).toBe(true);
+    expect(store.getState().categories).toHaveLength(1);
+  });
+
+  it('genCross devolve ok', () => {
+    const store = groupStore();
+    expect(store.genCross().ok).toBe(true);
+    expect(store.getState().bracket).toBeTruthy();
+  });
+});
+
+describe('súmula e elenco gravam no estado congelado', () => {
+  it('addMatchEvent/removeMatchEvent com objeto vindo de getState()', () => {
+    const store = groupStore();
+    const match = store.getState().matches[0];
+    expect(Object.isFrozen(match)).toBe(true);
+    expect(store.addMatchEvent(match, { type: 'goal', teamId: 't0', athleteId: null }).ok).toBe(true);
+    expect(store.getState().matches[0].events).toHaveLength(1);
+    expect(store.removeMatchEvent(store.getState().matches[0], 0).ok).toBe(true);
+    expect(store.getState().matches[0].events).toHaveLength(0);
+  });
+
+  it('elenco: adicionar e editar atleta pelo id da equipe', () => {
+    const store = groupStore();
+    expect(store.addAthlete('t0', { nome: 'Novo Atleta' }).ok).toBe(true);
+    const athlete = store.getState().teams[0].roster.at(-1);
+    expect(athlete.nome).toBe('Novo Atleta');
+    expect(store.updateAthlete('t0', athlete.id, { nome: 'Editado', numero: '9' }).ok).toBe(true);
+    expect(store.getState().teams[0].roster.at(-1).nome).toBe('Editado');
+  });
+});

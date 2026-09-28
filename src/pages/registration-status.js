@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { esc } from '../app/utils.ts';
@@ -53,7 +54,7 @@ export async function renderRegistrationStatus(root, championshipId, registratio
         const { checkoutUrl } = await createRegistrationCheckout(championshipId, registrationId);
         window.location.href = checkoutUrl;
       } catch (error) {
-        toastError(error.message || 'Não foi possível gerar o pagamento.');
+        toastError(friendlyError(error, 'Não foi possível gerar o pagamento.'));
         payBtn.disabled = false;
         payBtn.textContent = `Pagar inscrição (R$ ${Number(registration.feeAmount || 0).toFixed(2)})`;
       }

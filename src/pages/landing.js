@@ -398,7 +398,7 @@ export function renderLanding(root) {
         <img src="/brand/arena-logo.png" alt="Arena Campeonatos" class="footer-logo">
         <div class="footer-col"><h4>PRODUTO</h4><a href="#recursos">Recursos</a><a href="#modalidades">Modalidades</a><a href="#planos">Planos</a><button class="btn-link" data-route="/demo">Demonstração</button></div>
         <div class="footer-col"><h4>CONTA</h4><button class="btn-link" data-route="/register">Criar conta</button><button class="btn-link" data-route="/login">Entrar</button></div>
-        <div class="footer-col"><h4>INSTITUCIONAL</h4><a href="#" aria-disabled="true">Termos</a><a href="#" aria-disabled="true">Privacidade</a><a href="#" aria-disabled="true">LGPD</a></div>
+        <div class="footer-col"><h4>INSTITUCIONAL</h4><button class="btn-link" data-route="/termos">Termos</button><button class="btn-link" data-route="/privacidade">Privacidade</button><button class="btn-link" data-route="/privacidade#lgpd">LGPD</button></div>
         <div class="footer-col"><h4>SUPORTE</h4><button class="btn-link" data-route="/tutorial">Tutorial</button></div>
       </div>
       <div class="landing-footer-bottom"><span>© Arena Campeonatos</span><span>Competição ao seu alcance.</span></div>

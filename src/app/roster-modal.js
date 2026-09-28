@@ -3,8 +3,7 @@ import { STAFF_ROLES } from './ops.js';
 import { icon } from './icons.js';
 
 export function rosterModalHTML(team) {
-  team.roster = team.roster || [];
-  const rosterHTML = team.roster.map((athlete) => `
+  const rosterHTML = (team.roster || []).map((athlete) => `
     <div class="ath-row">
       <span>${athlete.foto ? `<img class="miniphoto" src="${athlete.foto}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">` : icon('user')}</span>
       <input data-athlete-name="${esc(athlete.id)}" value="${esc(athlete.nome)}" placeholder="Nome" style="flex:1">

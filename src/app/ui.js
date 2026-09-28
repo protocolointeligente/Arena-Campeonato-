@@ -30,12 +30,13 @@ export function toast(message) {
 }
 
 export function modal(html) {
+  ensureUiRoot();
   document.getElementById('modalBox').innerHTML = html;
   document.getElementById('modalBg').classList.add('open');
 }
 
 export function closeModal() {
-  document.getElementById('modalBg').classList.remove('open');
+  document.getElementById('modalBg')?.classList.remove('open');
 }
 
 export function loadingHTML(text) {

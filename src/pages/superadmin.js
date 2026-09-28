@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { esc } from '../app/utils.ts';
 import { platformOverview } from '../services/superadmin.js';
 import { icon } from '../app/icons.js';
@@ -13,7 +14,7 @@ export async function renderSuperadmin(root) {
       const overview = await platformOverview();
       renderBody(overview);
     } catch (error) {
-      body.innerHTML = `<div class="card"><h2>Acesso restrito</h2><p class="muted">${esc(error.message || 'Você não possui permissão de superadmin.')}</p></div>`;
+      body.innerHTML = `<div class="card"><h2>Acesso restrito</h2><p class="muted">${esc(friendlyError(error, 'Você não possui permissão de superadmin.'))}</p></div>`;
     }
   }
 

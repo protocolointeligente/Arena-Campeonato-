@@ -1,4 +1,5 @@
 import { navigate } from '../app/router-v2.js';
+import { friendlyError } from '../app/friendly-error.js';
 import { esc } from '../app/utils.ts';
 import { db } from '../services/firebase.js';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -14,7 +15,7 @@ export async function renderBetaHardening(root) {
       const features = featuresSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       renderBody(features);
     } catch (error) {
-      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(error.message || 'Não foi possível carregar feature flags.')}</p></div>`;
+      body.innerHTML = `<div class="card"><h2>Erro</h2><p class="muted">${esc(friendlyError(error, 'Não foi possível carregar feature flags.'))}</p></div>`;
     }
   }
 

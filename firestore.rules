@@ -26,6 +26,16 @@ service cloud.firestore {
       return isPlatformAdmin() || isOwner() || isCollaborator();
     }
 
+    // Para subcoleções de /championships/{id}: ali `resource` é o doc da inscrição/log, não o
+    // campeonato — canManageChampionship() lia ownerUid do doc errado e negava todo organizador
+    // que não fosse superadmin (inscrições e histórico nunca carregavam pra ele).
+    function canManageParent(championshipId) {
+      let champ = get(/databases/$(database)/documents/championships/$(championshipId)).data;
+      return isPlatformAdmin()
+        || (signedIn() && (champ.ownerUid == request.auth.uid
+          || (request.auth.token.email != null && lower(request.auth.token.email) in champ.get('collaboratorEmails', []))));
+    }
+
     // Um usuário só ganha o doc users/{uid} ao passar pelo checkout (createCheckout grava ele
     // pela primeira vez) — a maioria nunca assinou nada, então o doc não existe. get(...).data
     // sozinho JOGA ERRO num doc inexistente (não retorna null como em JS), e o mesmo vale pra
@@ -80,7 +90,7 @@ service cloud.firestore {
         // pública de status/pagamento. list continua exigindo ser o organizador, senão dava pra
         // enumerar todas as inscrições de um campeonato sem autenticar.
         allow get: if true;
-        allow list, update, delete: if canManageChampionship();
+        allow list, update, delete: if canManageParent(championshipId);
         allow create: if exists(/databases/$(database)/documents/publicChampionships/$(championshipId))
             && get(/databases/$(database)/documents/publicChampionships/$(championshipId)).data.status != 'arquivado'
             && request.resource.data.status == 'pending'
@@ -102,9 +112,14 @@ service cloud.firestore {
       }
 
       match /auditLogs/{auditId} {
-        allow read: if canManageChampionship();
-        allow create: if canManageChampionship();
+        allow read: if canManageParent(championshipId);
+        allow create: if canManageParent(championshipId);
       }
+    }
+
+    // Central de auditoria do superadmin: consulta collectionGroup('auditLogs').
+    match /{path=**}/auditLogs/{auditId} {
+      allow read: if isPlatformAdmin();
     }
 
     match /publicChampionships/{championshipId} {
